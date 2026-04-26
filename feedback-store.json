@@ -1,0 +1,121 @@
+[
+  {
+    "messageId": "test-message-1",
+    "conversationId": "test-conversation-1",
+    "selectedFeedback": "dislike",
+    "optionalComment": "not great",
+    "metadata": {
+      "primaryMode": "education",
+      "selectedModes": [
+        "education"
+      ],
+      "intent": "education_content",
+      "requiredAdapters": [
+        "qwen-text"
+      ],
+      "memoryScopes": [
+        "global",
+        "mode:education",
+        "session"
+      ],
+      "safetyFlags": {
+        "requiresFinancialDisclaimer": false
+      }
+    },
+    "createdAt": 1777034917796
+  },
+  {
+    "messageId": "candidate-test-1",
+    "conversationId": "conv-test-1",
+    "selectedFeedback": "like",
+    "optionalComment": "Updated comment",
+    "metadata": {
+      "primaryMode": "education",
+      "selectedModes": [
+        "education"
+      ],
+      "intent": "education_content",
+      "requiredAdapters": [
+        "qwen-text"
+      ],
+      "memoryScopes": [
+        "global",
+        "mode:education",
+        "session"
+      ],
+      "safetyFlags": {
+        "requiresFinancialDisclaimer": false
+      }
+    },
+    "createdAt": 1777036431085
+  },
+  {
+    "messageId": "candidate-test-2",
+    "conversationId": "conv-test-1",
+    "selectedFeedback": "dislike",
+    "optionalComment": "Needs improvement",
+    "metadata": {
+      "primaryMode": "code",
+      "selectedModes": [
+        "code"
+      ],
+      "intent": "code",
+      "requiredAdapters": [
+        "qwen-text"
+      ],
+      "memoryScopes": [
+        "global",
+        "mode:code",
+        "session"
+      ],
+      "safetyFlags": {
+        "requiresFinancialDisclaimer": false
+      }
+    },
+    "createdAt": 1777036430983
+  },
+  {
+    "messageId": "1777194768063",
+    "conversationId": "1777190023213",
+    "selectedFeedback": "like",
+    "metadata": {
+      "primaryMode": "general",
+      "selectedModes": [
+        "general"
+      ],
+      "intent": "text",
+      "requiredAdapters": [
+        "qwen-text"
+      ],
+      "memoryScopes": [
+        "global",
+        "session",
+        "mode:general"
+      ],
+      "safetyFlags": {}
+    },
+    "createdAt": 1777194811536
+  },
+  {
+    "messageId": "1777194730570",
+    "conversationId": "1777190023213",
+    "selectedFeedback": "like",
+    "metadata": {
+      "primaryMode": "general",
+      "selectedModes": [
+        "general"
+      ],
+      "intent": "text",
+      "requiredAdapters": [
+        "qwen-text"
+      ],
+      "memoryScopes": [
+        "global",
+        "session",
+        "mode:general"
+      ],
+      "safetyFlags": {}
+    },
+    "createdAt": 1777194843099
+  }
+]

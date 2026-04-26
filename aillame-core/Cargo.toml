@@ -1,0 +1,31 @@
+[package]
+name = "aillame-core"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+# NAPI-RS for Node.js Integration
+napi = { version = "2.12.2", default-features = false, features = ["napi4", "async"] }
+napi-derive = "2.12.2"
+
+# Deep Learning (Candle)
+candle-core = { version = "0.8.4" }
+candle-nn = "0.8.4"
+candle-transformers = { version = "0.8.4" }
+hf-hub = "0.3.2" # Hugging Face Model Downloader
+
+# Performance & Utilities
+rayon = "1.8.0"
+rand = "0.8.5"
+safetensors = "0.3.3"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+tokio = { version = "1", features = ["full"] }
+anyhow = "1.0"
+tokenizers = "0.13.4" # Optional: for future BPE usage
+
+[build-dependencies]
+napi-build = "2.0.1"

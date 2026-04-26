@@ -1,0 +1,92 @@
+# ============================================================
+# Aillame .gitignore
+# ============================================================
+
+# ---- Ortam değişkenleri (ASLA commit'lenme) ---------------
+.env
+.env.local
+.env.*.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# ---- Next.js build çıktısı --------------------------------
+.next/
+out/
+
+# ---- Node bağımlılıkları ----------------------------------
+node_modules/
+
+# ---- Geçici / test dosyaları ------------------------------
+temp-*.js
+temp-*.ts
+tmp-*.js
+tmp-*.ts
+tmp-test/
+scratch/
+
+# ---- Build logları (repo kökünde biriken) ------------------
+build-*.log
+build.log
+build.check.log
+build-output.log
+build-status.log
+build-stage*.log
+build24*.log
+
+# ---- Rust/NAPI çıktısı ------------------------------------
+*.node
+aillame-core.old
+build_temp/
+
+# ---- TypeScript derleme önbelleği -------------------------
+tsconfig.tsbuildinfo
+
+# ---- OS / Editor ------------------------------------------
+.DS_Store
+Thumbs.db
+.vscode/settings.json
+
+# ---- Runtime Data -----------------------------------------
+data/
+*.json.bak
+*.log
+api-clients-store.json
+ai_lab_sessions.json
+agent-tasks-store.json
+agent-task-steps-store.json
+agent-execution-log-store.json
+research-results-store.json
+memory-cards-store.json
+memory-write-queue-store.json
+learning-candidates-store.json
+distillation-preview-store.json
+audit_logs.json
+
+# Aillame local/runtime ignores
+.env
+.env.local
+.env.*.local
+.next/
+node_modules/
+data/
+target/
+aillame-core/target/
+*.log
+api-clients-store.json
+ai_lab_sessions.json
+agent-tasks-store.json
+agent-task-steps-store.json
+agent-execution-log-store.json
+research-results-store.json
+memory-cards-store.json
+memory-write-queue-store.json
+learning-candidates-store.json
+distillation-preview-store.json
+audit_logs.json
+aillame-core/target_alt/
+aillame-core/target_isolated/
+target_alt/
+target_isolated/
+aillame-core/target*/
+target*/

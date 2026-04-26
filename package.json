@@ -1,0 +1,36 @@
+{
+    "name":  "aillame",
+    "version":  "1.3.0",
+    "private":  true,
+    "scripts":  {
+                    "dev":  "next dev --webpack",
+                    "build":  "next build --webpack",
+                    "start":  "next start",
+                    "lint":  "next lint",
+                    "core:build":  "napi build --platform --release --cargo-cwd aillame-core",
+                    "core:dev":  "napi build --cargo-cwd aillame-core",
+                    "core:train":  "npx tsx src/core/engine/supervisor.ts",
+                    "core:test":  "npx tsx src/core/engine/test-rust.ts",
+                    "dev:turbo":  "next dev",
+                    "build:turbo":  "next build"
+                },
+    "dependencies":  {
+                         "@lingo-reader/epub-parser":  "^0.4.6",
+                         "autoprefixer":  "^10.4.14",
+                         "idb":  "^7.1.1",
+                         "mammoth":  "^1.12.0",
+                         "next":  "^16.2.4",
+                         "pdfjs-dist":  "^4.2.67",
+                         "postcss":  "^8.4.24",
+                         "react":  "^19.2.5",
+                         "react-dom":  "^19.2.5",
+                         "react-icons":  "^5.6.0",
+                         "tailwindcss":  "^3.4.1"
+                     },
+    "devDependencies":  {
+                            "@napi-rs/cli":  "^2.18.4",
+                            "@types/node":  "20.11.30",
+                            "@types/react":  "^19.0.0",
+                            "typescript":  "5.4.5"
+                        }
+}
