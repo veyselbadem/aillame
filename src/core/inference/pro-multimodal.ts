@@ -65,7 +65,7 @@ export async function generateProMultimodalResponse({
       getScriptPath('inference', 'scripts', 'qwen3_vl_infer.py'),
       [],
       runnerInput,
-      images.length > 0 ? 10 * 60 * 1000 : 5 * 60 * 1000
+      images.length > 0 ? 3 * 60 * 1000 : 90 * 1000
     );
     const parsed = parsePythonJson<PythonQwenResponse>(result);
     return parsed.response;

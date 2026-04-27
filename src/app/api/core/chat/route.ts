@@ -1,60 +1,48 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSharedCore } from '@/lib/aillame-engine';
 import { routeRequest } from '@/core/model-orchestration/router';
+import { webSearch } from '@/core/research/search';
+import { summarizeResearch } from '@/core/research/summarize';
+import { ProServerProvider } from '@/providers/llm/pro-server-provider';
+import { generateProMultimodalResponse } from '@/core/inference/pro-multimodal';
 
-/**
- * Nano modeli bazen anlamsız karakterler üretebilir (untrained haliyle).
- * Bu fonksiyon çıktının kalitesini kontrol eder.
- */
-function looksMalformedNanoText(text: string): boolean {
-  const trimmed = text.trim();
-  if (trimmed.length < 1) return true;
-  
-  const lowerText = trimmed.toLowerCase();
-  // Bilinen hata mesajları veya asistanın "durduğu" durumlar
-  if (lowerText.includes('işlem durduruldu') || lowerText.includes('islem durduruldu')) {
-    return true;
+import { 
+  getQuickResponse, 
+  getGeneralKnowledgeResponse, 
+  looksMalformedNanoText, 
+  safeFallback,
+  classifyTask
+} from '@/core/nano-cognitive/service';
+
+const GENERAL_KNOWLEDGE_PROMPTS = [
+  'ekonomi nedir',
+  'yapay zeka nedir',
+  'javascript nedir',
+  'psikoloji nedir',
+  'hukuk nedir',
+  'enflasyon nedir',
+  'arz ve talep nedir',
+  'api nedir',
+  'algoritma nedir',
+  'web sitesi nedir',
+];
+
+async function getProAnswer(prompt: string): Promise<string | null> {
+  try {
+    const response = await generateProMultimodalResponse({
+      prompt,
+      maxTokens: 100,
+      temperature: 0.7
+    });
+    
+    if (!response || looksMalformedNanoText(response)) return null;
+    return response;
+  } catch (error) {
+    console.error('getProAnswer error:', error);
+    return null;
   }
-
-  // Karakter dağılımı kontrolü (Çok fazla sembol veya bilinmeyen karakter varsa)
-  const replacementCount = (trimmed.match(/\ufffd/g) || []).length;
-  if (replacementCount > 0) return true;
-
-  // Çok kısa cevaplar (eğer selamlaşma değilse) malformed olabilir
-  // Ama selamlaşmaları QuickResponseLayer halledeceği için burası daha esnek olabilir.
-  const letters = (trimmed.match(/[a-zA-ZğüşöçıİĞÜŞÖÇ0-9]/g) || []).length;
-  const visible = trimmed.replace(/\s/g, '').length || 1;
-  
-  // Harf oranı %25'in altındaysa muhtemelen çöp veridir
-  return letters / visible < 0.25;
 }
 
-/**
- * Basit selamlaşmalar ve genel ifadeler için Nano'nun modelden bağımsız 
- * doğal cevaplar vermesini sağlayan kural tabanlı katman.
- */
-function getQuickResponse(prompt: string): string | null {
-  const p = prompt.trim().toLowerCase();
-  
-  if (p === 'selam' || p === 'selamlar' || p === 'slm') return 'Selam! Sana nasıl yardımcı olabilirim?';
-  if (p === 'merhaba' || p === 'merhabalar' || p === 'mrb') return 'Merhaba! Ben Aillame Nano. Size nasıl yardımcı olabilirim?';
-  if (p === 'nasılsın' || p === 'nasilsin' || p === 'ne haber') return 'İyiyim, teşekkür ederim. Siz nasılsınız?';
-  if (p === 'kimsin' || p === 'adın ne') return 'Ben Aillame Nano, yerel cihazında çalışan hafif bir yapay zeka modeliyim.';
-  if (p === 'teşekkürler' || p === 'teşekkür ederim' || p === 'sağol') return 'Rica ederim! Her zaman buradayım.';
-  if (p === 'güle güle' || p === 'hoşça kal' || p === 'bay bay') return 'Görüşmek üzere! Kendinize iyi bakın.';
-  
-  return null;
-}
-
-function nanoFallback(prompt: string): string {
-  const quick = getQuickResponse(prompt);
-  if (quick) return quick;
-
-  const safePrompt = prompt.trim();
-  return safePrompt
-    ? `Aillame Nano mesajınızı aldı: "${safePrompt.substring(0, 50)}${safePrompt.length > 50 ? '...' : ''}". Şu an yerel motorum bu talebi tam işleyemiyor ama gelişmeye devam ediyorum. Daha karmaşık işler için Pro modunu deneyebilirsiniz.`
-    : 'Aillame Nano hazır. Size nasıl yardımcı olabilirim?';
-}
 
 export async function POST(req: NextRequest) {
     let prompt = '';
@@ -67,20 +55,52 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ status: 'ready' });
         }
 
-        // 1. Model Orchestration Plan
-        const plan = routeRequest(prompt);
+        // 1. Nano Cognitive Layer - Task Classification
+        const cognitivePlan = classifyTask(prompt);
+        const plan = routeRequest(prompt); // Keep orchestration plan for compatibility
 
-        // 2. Önce hızlı cevap katmanını kontrol et
-        const quickResponse = getQuickResponse(prompt);
-        if (quickResponse) {
-            return NextResponse.json({ 
-                response: quickResponse, 
-                modelId: 'aillame-nano-v1-quick',
-                plan
+        // 2. Handle Social Chat / Quick Response
+        if (cognitivePlan.taskType === 'social_chat') {
+            const quickResponse = getQuickResponse(prompt);
+            if (quickResponse) {
+                return NextResponse.json({ 
+                    response: quickResponse, 
+                    modelId: 'aillame-nano-v1-cognitive-social',
+                    plan: { ...plan, cognitivePlan }
+                });
+            }
+        }
+
+        // 3. Handle General Knowledge
+        if (cognitivePlan.taskType === 'general_knowledge') {
+            const generalKnowledge = getGeneralKnowledgeResponse(prompt);
+            if (generalKnowledge) {
+                const proResponse = await getProAnswer(prompt);
+                if (proResponse) {
+                    return NextResponse.json({
+                        response: proResponse,
+                        modelId: 'aillame-pro-v1',
+                        plan: { ...plan, cognitivePlan }
+                    });
+                }
+                return NextResponse.json({
+                    response: generalKnowledge,
+                    modelId: 'aillame-nano-v1-cognitive-gk',
+                    plan: { ...plan, cognitivePlan }
+                });
+            }
+        }
+
+        // 4. Handle Image Generation
+        if (cognitivePlan.taskType === 'image_generation' || plan.selectedTarget === 'sdxl') {
+            return NextResponse.json({
+                response: 'Görsel üretim modülü (SDXL) şu an sohbet içinde doğrudan desteklenmiyor. Lütfen Görsel Üretim sayfasını kullanın veya daha sonra tekrar deneyin.',
+                modelId: 'aillame-nano-v1-planner',
+                plan: { ...plan, cognitivePlan }
             });
         }
 
-        // 3. Planning-only fallback (e.g. Image Generation requested but not active)
+
         if (plan.executionMode === 'planning_only') {
             let planningMsg = `Aillame Nano: "${plan.intent}" talebini algıladım. `;
             if (plan.intent === 'image_generation') {
@@ -97,11 +117,48 @@ export async function POST(req: NextRequest) {
             });
         }
 
+        if (plan.selectedTarget === 'web_search' || cognitivePlan.taskType === 'current_research') {
+            try {
+                const sources = await webSearch(prompt);
+                const provider = new ProServerProvider();
+                await provider.loadModel();
+                let summary = await summarizeResearch(provider, sources);
+                
+                if (!summary || looksMalformedNanoText(summary)) {
+                    // Fallback: Format sources manually
+                    summary = `Araştırma tamamlandı. İşte bazı kaynaklar:\n\n` + 
+                             sources.map((s, i) => `[${i+1}] ${s.title}\n${s.url}`).join('\n\n');
+                } else {
+                    // Nano Cognitive Commentary
+                    summary = `Aillame Nano: Güncel kaynakları taradım ve şu sonuçlara ulaştım:\n\n${summary}\n\nBu bilgi konunun güncel durumunu yansıtıyor.`;
+                }
+
+                return NextResponse.json({
+                    response: summary,
+                    modelId: 'aillame-nano-v1-web-search',
+                    plan: { ...plan, cognitivePlan }
+                });
+            } catch (error) {
+
+                console.error('Web Search Error:', error);
+                // Last resort fallback
+                const manualSummary = `Araştırma modülünde bir sorun oluştu, ancak şu sonuçlara ulaştım:\n\n` + 
+                                     prompt + " konusuyla ilgili güncel kaynakları kontrol ediyorum.";
+                
+                return NextResponse.json({
+                    response: manualSummary,
+                    modelId: 'aillame-nano-v1-web-search-fallback',
+                    plan
+                });
+            }
+        }
+
         // 4. Engine'i al
-        const core = await getSharedCore();
+        const requestedCheckpoint = req.headers.get('x-aillame-checkpoint') || undefined;
+        const core = await getSharedCore(requestedCheckpoint);
         if (!core) {
             return NextResponse.json({ 
-                response: nanoFallback(prompt), 
+                response: safeFallback(prompt), 
                 modelId: 'aillame-nano-v1-fallback',
                 plan
             });
@@ -118,7 +175,7 @@ export async function POST(req: NextRequest) {
         const rawResponse = tokenizer.decode(generatedIds.length > 0 ? generatedIds : outputIds);
         
         // 6. Kalite kontrolü ve Fallback
-        const response = looksMalformedNanoText(rawResponse) ? nanoFallback(prompt) : rawResponse;
+        const response = looksMalformedNanoText(rawResponse) ? safeFallback(prompt) : rawResponse;
 
         return NextResponse.json({ 
             response, 
@@ -128,7 +185,7 @@ export async function POST(req: NextRequest) {
     } catch (error: any) {
         console.error('API Chat Error:', error);
         return NextResponse.json({ 
-            response: nanoFallback(prompt), 
+            response: safeFallback(prompt), 
             modelId: 'aillame-nano-v1-error' 
         });
     }

@@ -118,6 +118,7 @@ Aillame, yerel modelin eğitimi için güvenli bir veri akışı sunar:
 - **Nano Training Bridge:** Onaylanmış geri bildirimleri modelin anlayacağı eğitim formatına dönüştürür.
 - **Dataset Validator (MVP):** Eğitim verilerini "İşlem durduruldu" hataları, sırlar veya yüksek riskli içerikler için otomatik olarak denetler.
 - **Güvenli Export:** Sadece `admin` yetkisiyle, doğrulanmış ve düşük riskli veriler dışarı aktarılabilir.
+- **Smoke Training (v1.3.1):** Modelin temel genel bilgi sorularına (ekonomi, yapay zeka vb.) anlamlı cevaplar verebilmesi için 1000 step'lik hafif bir eğitim fazı uygulanmıştır. Bu fazda `aillame_rust_tuned_v1_3_1_smoke.safetensors` adlı özel checkpoint üretilmiştir.
 
 ## 9. Integration Kit ve SDK
 
@@ -130,15 +131,16 @@ Dış sistemlerin (Doomsgame, BOSS, Bademakademi vb.) Aillame'e kolayca bağlanm
 
 Platform güvenliği için kritik olaylar (admin girişi, API anahtarı oluşturma, hatalı denemeler vb.) `data/audit_logs.json` dosyasına kaydedilir. Bu kayıtlar hassas bilgiler (şifre, ham token) içermez.
 
-## 11. Model Orkestrasyonu
+## 11. Nano Cognitive Layer (Atom Karınca Görev Zekâsı)
 
-Aillame, görev tipine göre farklı modelleri yöneten bir orkestrasyon yapısına sahiptir:
-- **Nano (Local):** Hızlı, yerel metin görevleri için varsayılan çekirdek.
-- **Qwen / Pro:** Karmaşık akıl yürütme ve çok modlu (görsel anlama) görevler için planlanan katman.
-- **SDXL:** Görsel üretimi için özelleşmiş modül.
-- **Model Orchestration Router:** Nano, gelen isteği analiz eder ve ilgili modele/araçlara yönlendirir.
+Aillame Nano, sadece bir metin üreticisi değil, sistemin akıllı orkestratörü olarak çalışır. "Cognitive Layer" sayesinde şu yeteneklere sahiptir:
+- **Görev Sınıflandırma:** Gelen mesajın sosyal, teknik, güncel araştırma veya görsel üretim olup olmadığını anlar.
+- **Akıllı Yönlendirme:** Görevi en uygun modüle (Web Search, SDXL, Qwen veya QuickResponse) paslar.
+- **Güvenli Cevap Katmanı:** Ham model çıktılarını denetler, gibberish (anlamsız metin) veya hatalı JSON çıktılarını engeller.
+- **AI Lab Yorumlama:** Diğer modellerin (Qwen, Web Search) çıktılarını analiz eder, özetler ve "öğrenme adayı" önerir.
 
-**Önemli:** Modeller birbirleriyle doğrudan iletişim kurmaz. Orkestratör, kullanıcı niyetine göre görevi uygun modele paslar ve süreci yönetir.
+**Nano'nun Yeni Rolü:** Nano = Görev Anlayıcı + Yönlendirici + Kısa Yorumlayıcı + Öğrenme Adayı Çıkarıcı.
+
 
 ## 12. AI Lab (Modeller Arası Sohbet)
 

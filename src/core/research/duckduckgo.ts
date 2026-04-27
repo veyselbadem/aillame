@@ -37,6 +37,23 @@ function decodeHtml(html: string): string {
     .replaceAll('&#39;', "'");
 }
 
+function cleanUrl(url: string): string {
+  if (url.includes('uddg=')) {
+    try {
+      const parts = url.split('uddg=');
+      if (parts.length > 1) {
+        const raw = parts[1].split('&')[0];
+        const decoded = decodeURIComponent(raw);
+        if (decoded.startsWith('http')) return decoded;
+      }
+    } catch {
+      // Decode failed, return original
+    }
+  }
+  if (url.startsWith('//')) return `https:${url}`;
+  return url;
+}
+
 async function searchDuckDuckGoJson(query: string): Promise<ResearchSource[]> {
   const url = new URL('https://api.duckduckgo.com/');
   url.searchParams.set('q', query);
@@ -61,14 +78,16 @@ async function searchDuckDuckGoJson(query: string): Promise<ResearchSource[]> {
 
   if (data.AbstractText && data.AbstractURL) {
     results.push({
-      url: data.AbstractURL,
+      url: cleanUrl(data.AbstractURL),
       title: data.AbstractText.split(' - ')[0],
       snippet: data.AbstractText,
     });
   }
 
   if (data.RelatedTopics) {
-    results.push(...parseRelatedTopics(data.RelatedTopics));
+    const parsed = parseRelatedTopics(data.RelatedTopics);
+    parsed.forEach(s => s.url = cleanUrl(s.url));
+    results.push(...parsed);
   }
 
   return results.slice(0, 5);
@@ -93,12 +112,12 @@ async function searchDuckDuckGoHtml(query: string): Promise<ResearchSource[]> {
   let match: RegExpExecArray | null;
 
   while (results.length < 5 && (match = regex.exec(html)) !== null) {
-    const url = decodeHtml(match[1]);
+    const rawUrl = decodeHtml(match[1]);
     const title = decodeHtml(match[2].replaceAll(/<[^>]+>/g, '').trim());
     const snippet = decodeHtml(match[3].replaceAll(/<[^>]+>/g, '').trim());
 
     results.push({
-      url,
+      url: cleanUrl(rawUrl),
       title: title || query,
       snippet: snippet || query,
     });

@@ -1,5 +1,5 @@
 import { getModel } from '@core/models/registry';
-import { getModelInstallStatus } from './status';
+import { getAllModelInstallStatuses } from './status';
 import { getScriptPath, parsePythonJson, runPythonScript } from './python-runner';
 
 export type InstallModelResult = {
@@ -12,7 +12,7 @@ export type InstallModelResult = {
 
 export async function installManagedModel(modelId: string): Promise<InstallModelResult> {
   const model = getModel(modelId);
-  const current = getModelInstallStatus(modelId);
+  const current = getAllModelInstallStatuses().find((s: any) => s.modelId === modelId);
 
   if (model.builtIn) {
     return {
@@ -26,7 +26,7 @@ export async function installManagedModel(modelId: string): Promise<InstallModel
     throw new Error(`${model.label} has no downloadable repository configured.`);
   }
 
-  if (current.installed && current.cachePath) {
+  if (current && current.installed && current.cachePath) {
     return {
       status: 'installed',
       modelId,

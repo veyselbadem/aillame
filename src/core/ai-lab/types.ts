@@ -9,7 +9,7 @@ export interface LabMessage {
   sessionId: string;
   model: LabParticipant;
   content: string;
-  outputType?: 'text' | 'image' | 'research' | 'planning';
+  outputType?: 'text' | 'image' | 'research' | 'planning' | 'error';
   imageUrl?: string;
   imagePath?: string;
   prompt?: string;

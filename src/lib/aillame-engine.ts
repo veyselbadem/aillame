@@ -6,11 +6,12 @@ import * as fs from 'fs';
 // Global singletons
 let globalEngine: RustEngine | null = null;
 let globalTokenizer: AillameTokenizer | null = null;
+let currentCheckpoint: string | null = null;
 
 let initializationPromise: Promise<{ engine: RustEngine, tokenizer: AillameTokenizer } | null> | null = null;
 
-export async function getSharedCore() {
-    if (globalEngine && globalTokenizer) {
+export async function getSharedCore(checkpointName: string = 'aillame_rust_tuned.safetensors') {
+    if (globalEngine && globalTokenizer && currentCheckpoint === checkpointName) {
         return { engine: globalEngine, tokenizer: globalTokenizer };
     }
 
@@ -23,7 +24,7 @@ export async function getSharedCore() {
             const rootPath = process.cwd();
             const dataPath = path.join(rootPath, 'src', 'core', 'engine', 'data', 'input.txt');
             const vocabPath = path.join(rootPath, 'src', 'core', 'engine', 'data', 'vocab.json');
-            const checkpointPath = path.join(rootPath, 'src', 'core', 'engine', 'checkpoints', 'aillame_rust_tuned.safetensors');
+            const checkpointPath = path.join(rootPath, 'src', 'core', 'engine', 'checkpoints', checkpointName);
 
             let text = '';
             if (fs.existsSync(dataPath)) {
@@ -52,10 +53,26 @@ export async function getSharedCore() {
 
             globalEngine = engine;
             globalTokenizer = tokenizer;
+            currentCheckpoint = checkpointName;
 
             return { engine: globalEngine, tokenizer: globalTokenizer };
         })();
+    } else if (currentCheckpoint !== checkpointName) {
+        // If already initialized but with a different checkpoint, reload it
+        const rootPath = process.cwd();
+        const checkpointPath = path.join(rootPath, 'src', 'core', 'engine', 'checkpoints', checkpointName);
+        if (fs.existsSync(checkpointPath) && globalEngine) {
+            globalEngine.loadCheckpoint(checkpointPath);
+            currentCheckpoint = checkpointName;
+        }
     }
 
     return initializationPromise;
+}
+
+/**
+ * Belirli bir checkpoint ile core motorunu alır (Test amaçlı)
+ */
+export async function getCoreWithCheckpoint(checkpointName: string) {
+    return getSharedCore(checkpointName);
 }

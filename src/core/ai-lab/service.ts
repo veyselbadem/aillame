@@ -3,6 +3,9 @@ import { loadSessions, saveSessions } from './store-json';
 import { webSearch } from '../research/search';
 import { generateProMultimodalResponse } from '../inference/pro-multimodal';
 import { generateImageWithSdxl } from '../image-generation/sdxl';
+import { reflectOnLabStep } from '../nano-cognitive/service';
+import { createTrainingCandidateFromAiLabMessage } from './training-candidate';
+
 
 export async function createSession(input: CreateSessionInput): Promise<LabSession> {
   const sessions = await loadSessions();
@@ -58,6 +61,18 @@ export async function updateSessionStatus(id: string, status: LabSession['status
     session.updatedAt = Date.now();
     await saveSessions(sessions);
   }
+}
+
+export async function deleteSession(id: string): Promise<boolean> {
+  const sessions = await loadSessions();
+  const initialLength = sessions.length;
+  const filtered = sessions.filter(s => s.id !== id);
+  
+  if (filtered.length !== initialLength) {
+    await saveSessions(filtered);
+    return true;
+  }
+  return false;
 }
 
 export async function addMessageToSession(id: string, model: LabParticipant, content: string): Promise<LabMessage> {
@@ -138,9 +153,11 @@ export async function executeNextStep(id: string): Promise<LabMessage> {
             maxTokens: 300,
             temperature: 0.7
           });
-        } catch (err) {
-          content = `Qwen Execution Hatası: Model veya çalışma zamanı hazır değil. Fallback planına geçiliyor.`;
+        } catch (err: any) {
+          const detail = err?.message || 'Bilinmeyen hata';
+          content = `Qwen Çalıştırma Hatası: ${detail}\n\nNot: Qwen şu an gerçek zamanlı yanıt veremediği için planlama moduna (fallback) geçiliyor.`;
           success = false;
+          outputType = 'planning';
         }
       } else {
         content = `Qwen (Pro Model): Qwen çalışma zamanı (AILLAME_PYTHON) yapılandırılmadığı için şu an planlama modunda yanıt veriyor. Konu: ${session.topic}`;
@@ -169,7 +186,25 @@ export async function executeNextStep(id: string): Promise<LabMessage> {
         outputType = 'planning';
       }
     } else if (currentParticipant === 'nano') {
-      content = `Aillame Nano: "${session.topic}" konusunu analiz ediyorum. Mevcut bilgilerimle konunun stratejik önemini değerlendiriyorum. (Local Inference Mode)`;
+      const lastMessages = session.messages.slice(-5);
+      const reflection = await reflectOnLabStep(session.topic, lastMessages);
+      
+      content = `Aillame Nano (Cognitive Layer):\n\n${reflection.summary}\n\n`;
+      if (reflection.suggestion) content += `Yorum: ${reflection.suggestion}\n`;
+      if (reflection.nextStep) content += `Öneri: ${reflection.nextStep}\n`;
+      
+      if (reflection.learningCandidate) {
+        content += `\n[Eğitim Adayı Tespit Edildi]: "${reflection.learningCandidate.reason}" - Admin onayı bekleniyor.`;
+        // Create candidate silently
+        await createTrainingCandidateFromAiLabMessage({
+          id: `msg_nano_${Date.now()}`,
+          sessionId: id,
+          model: 'nano',
+          content: reflection.learningCandidate.output,
+          outputType: 'text',
+          createdAt: Date.now()
+        }, session.topic);
+      }
     } else {
       content = `${currentParticipant.toUpperCase()} (Planned Model): Bu model henüz tam entegre edilmediği için planning modunda yanıt veriyor. Konu: ${session.topic}`;
       outputType = 'planning';
@@ -178,6 +213,7 @@ export async function executeNextStep(id: string): Promise<LabMessage> {
     content = `Hata: ${currentParticipant} çalıştırılırken bir sorun oluştu.`;
     console.error(error);
     success = false;
+    outputType = 'error';
   }
 
   const msg: LabMessage = {

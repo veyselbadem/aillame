@@ -12,7 +12,9 @@
                     "core:train":  "npx tsx src/core/engine/supervisor.ts",
                     "core:test":  "npx tsx src/core/engine/test-rust.ts",
                     "dev:turbo":  "next dev",
-                    "build:turbo":  "next build"
+                    "build:turbo":  "next build",
+                    "desktop:dev": "tauri dev",
+                    "desktop:build": "tauri build"
                 },
     "dependencies":  {
                          "@lingo-reader/epub-parser":  "^0.4.6",
@@ -31,6 +33,8 @@
                             "@napi-rs/cli":  "^2.18.4",
                             "@types/node":  "20.11.30",
                             "@types/react":  "^19.0.0",
+                            "@tauri-apps/api": "^2.0.0",
+                            "@tauri-apps/cli": "^2.0.0",
                             "typescript":  "5.4.5"
                         }
 }

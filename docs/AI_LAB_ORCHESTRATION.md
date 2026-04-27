@@ -24,6 +24,8 @@ Yöneticiler için özel olarak tasarlanan AI Lab, modeller arası kontrollü ta
 - **Error Handling:** Bir model hata verirse `errorCount` artar; kritik eşik (3 hata) aşılırsa oturum otomatik durdurulur.
 - **Cross-Model Discussion:** Birden fazla modelin aynı konu üzerinde fikir teatisi yapması.
 - **Learning Loop:** AI Lab çıktıları, Nano'nun eğitimi için `Learning Candidate` olarak sisteme beslenebilir.
+- **Nano Cognitive Reflection:** Nano artık AI Lab'de sadece bir katılımcı değil, bir gözlemcidir. Her adımda tartışmayı analiz eder, özetler ve bir sonraki mantıklı adımı önerir.
+
 
 ## 3. Öğrenme Güvenliği
 

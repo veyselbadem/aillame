@@ -35,3 +35,18 @@ Gelecek aşamada, `export` endpoint'inden gelen yapılandırılmış verilerin (
 ## 4. Veri Kalitesi Denetimi
 
 `input.txt` içindeki veriler periyodik olarak taranmalı ve "İşlem durduruldu" gibi asistan hatalarından arındırılmalıdır. Bu işlem için `nano-training/validator.ts` içindeki mantık kullanılabilir.
+
+## 5. Smoke Training Phase (v1.3.1) & Cognitive Strategy
+
+Eğitim sisteminin doğrulanması için "Smoke Training" fazı uygulanmıştır.
+
+-   **Yeni Checkpoint:** `aillame_rust_tuned_v1_3_1_smoke.safetensors` (Teknik olarak başarılı, kalite olarak yetersiz).
+-   **Önemli Karar:** Smoke checkpoint testlerden (kalite/Türkçe doğallığı) geçemediği için **aktif edilmemiştir**.
+-   **Aktif Checkpoint:** `aillame_rust_tuned.safetensors` kullanılmaya devam etmektedir.
+
+### Yeni Strateji: Cognitive Layer (Atom Karınca)
+Nano modelini ham metin üretmeye zorlamak yerine, önce "Görev Zekâsı" (Cognitive Layer) ile güçlendirilmiştir:
+1.  **Nano Ham Çıktı Güvenliği:** Nano'nun ham çıktıları gibberish (anlamsız) ise asla kullanıcıya gösterilmez; bunun yerine akıllı fallback veya Qwen/Pro cevabı devreye girer.
+2.  **Merkezi Orkestratör:** Nano, gelen isteği anlayıp Web Search, SDXL veya Qwen modüllerine yönlendiren bir trafik polisi gibi çalışır.
+3.  **AI Lab Katılımı:** Nano artık AI Lab'de diyalogları yorumlar ve "öğrenme adayı" önerir, ancak ham model çıktısı doğrudan tartışmaya girmez.
+4.  **Kontrollü Eğitim:** Gerçek Nano checkpoint iyileştirmesi (tokenizer/decode/dataset) ayrı ve kontrollü bir fazda, admin onayıyla yapılacaktır.

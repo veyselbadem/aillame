@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PRO_CHAT_MODEL_ID, getModel } from '@core/models/registry';
-import { getModelInstallStatus } from '@core/model-management/status';
+import { getAllModelInstallStatuses } from '@core/model-management/status';
 import { generateProMultimodalResponse } from '@core/inference/pro-multimodal';
 
 export async function POST(req: NextRequest) {
@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
         modelId: model.id,
         repoId: model.repoId,
         capabilities: model.capabilities,
-        install: getModelInstallStatus(model.id),
+        install: getAllModelInstallStatuses().find((s: any) => s.modelId === model.id),
       });
     }
 

@@ -2,8 +2,10 @@ import { analyzeRequest } from './analyzer';
 import { routeProvider } from './provider-router';
 import { detectTools, TOOLS, ToolCall, ToolResult } from './tools';
 import { liveLearning } from './live-learning';
+import { summarizeResearch } from '../research/summarize';
 import type { ImageAttachment } from '@apptypes/attachments';
 import type { AillameTier, LLMMode } from '@apptypes/settings';
+import type { ResearchSource } from '@apptypes/research';
 
 export interface OrchestratorOptions {
   llmMode?: LLMMode;
@@ -39,6 +41,7 @@ export async function orchestrateChat(
     for (const call of toolCalls) {
       if (signal?.aborted) throw new Error('AbortError');
       
+      options?.onToken?.(`[Sistem: ${call.tool.replace('_', ' ')} çalıştırılıyor...]\n`);
       options?.onToolCall?.(call);
       const tool = TOOLS[call.tool];
       if (!tool) continue;
@@ -49,10 +52,30 @@ export async function orchestrateChat(
       options?.onToolResult?.(result);
 
       if (result.success && result.output) {
-        toolOutputs.push(`[${call.tool.replace('_', ' ').toUpperCase()}]\n${result.output}`);
+        if (result.tool === 'web_search') {
+          // Ham JSON çıktısını özetleyerek kullanıcıya sun
+          try {
+            const parsed = JSON.parse(result.output);
+            if (parsed && typeof parsed === 'object' && 'summary' in parsed) {
+              toolOutputs.push(parsed.summary);
+            } else {
+              const provider = routeProvider('text', llmMode, tier);
+            
+            options?.onToken?.(`[Sistem: Bilgiler özetleniyor...]\n`);
+            const summary = await summarizeResearch(provider as any, parsed as ResearchSource[], options?.onToken);
 
-        if (result.tool === 'web_search' && result.success) {
-          liveLearning.learnFromContent(result.output, 'research').catch(() => {});
+            toolOutputs.push(summary);
+            }
+            liveLearning.learnFromContent(result.output, 'research').catch(() => {});
+          } catch (e) {
+            // JSON değilse veya hata olursa ham çıktıyı ekle
+            toolOutputs.push(`[WEB SEARCH]\n${result.output}`);
+          }
+        } else {
+          toolOutputs.push(`[${call.tool.replace('_', ' ').toUpperCase()}]\n${result.output}`);
+          if (result.tool === 'learn_content') {
+            // Zaten öğrenildi mesajı, direkt eklenebilir
+          }
         }
       }
     }

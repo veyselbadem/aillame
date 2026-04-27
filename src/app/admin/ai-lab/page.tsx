@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Sidebar from '@/components/Sidebar';
 import StatusBadge from '@/components/ui/StatusBadge';
+import { FiRefreshCw, FiArrowRight, FiActivity, FiSearch, FiImage, FiCpu, FiPlus, FiTerminal, FiPause, FiPlay, FiStopCircle, FiX, FiStar, FiMessageSquare, FiTrash2 } from 'react-icons/fi';
 
 const RANDOM_TOPICS = [
   'Kuantum Bilgisayarların Geleceği',
@@ -24,16 +25,44 @@ export default function AiLabPage() {
   const [newTopic, setNewTopic] = useState('');
   const [selectedParticipants, setSelectedParticipants] = useState<string[]>(['nano']);
   const [selectedSession, setSelectedSession] = useState<any | null>(null);
+  const [qwenStatus, setQwenStatus] = useState<any>(null);
+  const [sdxlStatus, setSdxlStatus] = useState<any>(null);
 
   useEffect(() => {
     const savedToken = localStorage.getItem('aillame_admin_token');
     setToken(savedToken);
     if (savedToken) {
       fetchSessions(savedToken);
+      fetchQwenStatus(savedToken);
+      fetchSdxlStatus(savedToken);
     } else {
       setLoading(false);
     }
   }, []);
+
+  const fetchQwenStatus = async (authToken: string) => {
+    try {
+      const res = await fetch('/api/admin/model-status/qwen', {
+        headers: { 'x-aillame-admin-token': authToken }
+      });
+      const data = await res.json();
+      setQwenStatus(data);
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const fetchSdxlStatus = async (authToken: string) => {
+    try {
+      const res = await fetch('/api/admin/model-status/sdxl', {
+        headers: { 'x-aillame-admin-token': authToken }
+      });
+      const data = await res.json();
+      setSdxlStatus(data);
+    } catch (e) {
+      console.error(e);
+    }
+  };
 
   const fetchSessions = async (authToken: string) => {
     try {
@@ -91,52 +120,107 @@ export default function AiLabPage() {
         body: JSON.stringify({ status })
       });
       if (res.ok) {
+        refreshSession(id);
         fetchSessions(token);
-        if (selectedSession?.id === id) {
-          setSelectedSession((prev: any) => ({ ...prev, status }));
-        }
       }
     } catch (e) {
       console.error(e);
     }
   };
 
+  const handleDeleteSession = async (id: string) => {
+    if (!token || !confirm('Bu deneyi silmek istediğinize emin misiniz?')) return;
+    
+    try {
+      const res = await fetch(`/api/admin/ai-lab/sessions/${id}`, {
+        method: 'DELETE',
+        headers: { 'x-aillame-admin-token': token }
+      });
+      
+      if (res.ok) {
+        if (selectedSession?.id === id) {
+          setSelectedSession(null);
+        }
+        fetchSessions(token);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const refreshSession = async (id: string) => {
+    if (!token) return;
+    try {
+      const res = await fetch(`/api/admin/ai-lab/sessions/${id}`, {
+        headers: { 'x-aillame-admin-token': token }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setSelectedSession(data);
+        // Update in sessions list too
+        setSessions(prev => prev.map(s => s.id === id ? data : s));
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  useEffect(() => {
+    let interval: any;
+    if (selectedSession?.status === 'running') {
+      interval = setInterval(() => {
+        refreshSession(selectedSession.id);
+      }, 5000);
+    }
+    return () => clearInterval(interval);
+  }, [selectedSession?.id, selectedSession?.status, token]);
+
   const generateRandomTopic = () => {
     const topic = RANDOM_TOPICS[Math.floor(Math.random() * RANDOM_TOPICS.length)];
     setNewTopic(topic);
   };
 
-  if (loading) return <div className="p-8 text-white bg-[#0a0a0a] min-h-screen">Loading AI Lab...</div>;
-  if (!token) return <div className="p-8 text-red-500 bg-[#0a0a0a] min-h-screen font-bold">Access Denied. Admin token required.</div>;
+  if (loading) return <div className="p-8 text-[var(--text-main)] bg-[var(--bg-main)] min-h-screen flex items-center justify-center">
+    <div className="flex flex-col items-center gap-4">
+      <FiActivity className="w-12 h-12 text-indigo-500 animate-pulse" />
+      <span className="text-sm font-bold uppercase tracking-widest opacity-50">AI Lab Yükleniyor...</span>
+    </div>
+  </div>;
+
+  if (!token) return <div className="p-8 text-rose-500 bg-[var(--bg-main)] min-h-screen flex items-center justify-center font-bold italic underline decoration-rose-500/30">
+    Access Denied. Admin token required.
+  </div>;
 
   return (
-    <div className="flex h-screen bg-[#0a0a0a] text-white overflow-hidden">
+    <div className="flex h-screen bg-[var(--bg-main)] text-[var(--text-main)] overflow-hidden transition-colors duration-500">
       <Sidebar isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} />
-      <main className="flex-1 overflow-y-auto p-8 custom-scrollbar">
+      <main className="flex-1 overflow-y-auto p-4 md:p-8 custom-scrollbar">
         <header className="mb-8 flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-white to-zinc-500">AI Laboratory</h1>
-            <p className="text-zinc-400 mt-1">Modeller arası orkestrasyon ve kontrollü eğitim ortamı.</p>
+            <h1 className="text-3xl font-black tracking-tight text-gradient">AI Laboratory</h1>
+            <p className="text-[var(--text-muted)] mt-1 font-medium">Modeller arası orkestrasyon ve kontrollü eğitim ortamı.</p>
           </div>
           <div className="flex items-center gap-3">
-            <StatusBadge variant="protected" label="MVP v1.2" />
+            <StatusBadge variant="protected" label="Orchestrator v1.3" />
           </div>
         </header>
 
-        <section className="mb-12 grid grid-cols-1 gap-6 lg:grid-cols-3">
+        <section className="mb-10 grid grid-cols-1 gap-6 lg:grid-cols-3">
           {/* Create Session Card */}
-          <div className="col-span-1 rounded-2xl border border-zinc-800 bg-zinc-900/40 p-6 backdrop-blur-md shadow-2xl shadow-blue-500/5">
-            <h2 className="mb-4 text-xl font-semibold flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
+          <div className="col-span-1 glass-card rounded-3xl p-6 shadow-2xl">
+            <h2 className="mb-5 text-lg font-bold flex items-center gap-2">
+              <div className="p-2 rounded-lg bg-blue-500/10 text-blue-500">
+                <FiPlus className="w-4 h-4" />
+              </div>
               Yeni Deney Başlat
             </h2>
             <div className="space-y-5">
               <div>
-                <div className="flex justify-between items-center mb-1.5">
-                  <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest">Araştırma Konusu</label>
+                <div className="flex justify-between items-center mb-2">
+                  <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest">Araştırma Konusu</label>
                   <button 
                     onClick={generateRandomTopic}
-                    className="text-[10px] text-blue-400 hover:text-blue-300 font-bold uppercase"
+                    className="text-[10px] text-indigo-500 hover:text-indigo-400 font-bold uppercase tracking-tight"
                   >
                     Rastgele Üret
                   </button>
@@ -145,29 +229,36 @@ export default function AiLabPage() {
                   type="text" 
                   value={newTopic}
                   onChange={(e) => setNewTopic(e.target.value)}
-                  placeholder="Örn: Yapay Zeka Etiği..."
-                  className="w-full rounded-xl border border-zinc-700 bg-black/60 p-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all"
+                  placeholder="Örn: Kuantum Teknolojileri..."
+                  className="w-full rounded-2xl border border-[var(--glass-border)] bg-[var(--bg-main)]/50 p-4 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500/30 transition-all placeholder:opacity-30"
                 />
               </div>
               
               <div>
-                <label className="mb-2 block text-xs font-bold text-zinc-500 uppercase tracking-widest">Katılımcı Modeller</label>
+                <label className="mb-2 block text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest">Katılımcı Modeller</label>
                 <div className="flex flex-wrap gap-2">
-                  {['nano', 'qwen', 'sdxl', 'gemini', 'web_search'].map(p => (
+                  {[
+                    { id: 'nano', icon: <FiCpu /> },
+                    { id: 'qwen', icon: <FiTerminal /> },
+                    { id: 'sdxl', icon: <FiImage /> },
+                    { id: 'gemini', icon: <FiStar /> },
+                    { id: 'web_search', icon: <FiSearch /> }
+                  ].map(p => (
                     <button
-                      key={p}
+                      key={p.id}
                       onClick={() => {
                         setSelectedParticipants(prev => 
-                          prev.includes(p) ? prev.filter(x => x !== p) : [...prev, p]
+                          prev.includes(p.id) ? prev.filter(x => x !== p.id) : [...prev, p.id]
                         );
                       }}
-                      className={`rounded-xl px-3 py-2 text-xs font-bold transition-all border ${
-                        selectedParticipants.includes(p) 
-                          ? 'bg-blue-600/20 border-blue-500 text-blue-300 shadow-lg shadow-blue-500/10' 
-                          : 'bg-zinc-800/40 border-zinc-700 text-zinc-500 hover:border-zinc-500 hover:text-zinc-300'
+                      className={`rounded-xl px-3 py-2 text-[10px] font-black transition-all border flex items-center gap-2 ${
+                        selectedParticipants.includes(p.id) 
+                          ? 'bg-indigo-500 text-white border-indigo-400 shadow-lg shadow-indigo-500/20' 
+                          : 'bg-[var(--bg-main)]/30 border-[var(--glass-border)] text-[var(--text-muted)] hover:border-indigo-500/30 hover:text-[var(--text-main)]'
                       }`}
                     >
-                      {p.toUpperCase()}
+                      {p.icon}
+                      {p.id.toUpperCase()}
                     </button>
                   ))}
                 </div>
@@ -176,42 +267,78 @@ export default function AiLabPage() {
               <button 
                 onClick={handleCreateSession}
                 disabled={!newTopic}
-                className="w-full rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 py-3 font-bold text-sm hover:from-blue-500 hover:to-indigo-500 transition-all shadow-xl shadow-blue-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full rounded-2xl bg-indigo-600 py-4 font-black text-xs text-white hover:bg-indigo-500 transition-all shadow-xl shadow-indigo-500/30 disabled:opacity-30 disabled:cursor-not-allowed group"
               >
-                Laboratuvarı Hazırla
+                Laboratuvarı Hazırla <FiArrowRight className="inline-block ml-1 group-hover:translate-x-1 transition-transform" />
               </button>
             </div>
           </div>
 
           {/* Model Status Card */}
-          <div className="col-span-1 lg:col-span-2 rounded-2xl border border-zinc-800 bg-zinc-900/40 p-6 backdrop-blur-md">
-            <h2 className="mb-4 text-xl font-semibold">Orkestrasyon Durumu</h2>
+          <div className="col-span-1 lg:col-span-2 glass-card rounded-3xl p-6">
+            <div className="flex items-center justify-between mb-5">
+              <h2 className="text-lg font-bold">Orkestrasyon Durumu</h2>
+              {qwenStatus && (
+                <div className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${
+                  qwenStatus.status === 'active' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-rose-500/10 text-rose-500'
+                }`}>
+                  Qwen: {qwenStatus.status.replace('_', ' ')}
+                </div>
+              )}
+            </div>
             <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
               {[
-                { name: 'Nano', status: 'AKTİF', color: 'text-emerald-400', desc: 'Yerel Çekirdek' },
-                { name: 'Qwen', status: 'PLANLANIYOR', color: 'text-blue-400', desc: 'Pro Analiz' },
-                { name: 'SDXL', status: 'PLANLANIYOR', color: 'text-purple-400', desc: 'Görsel Üretim' },
-                { name: 'Gemini', status: 'BAĞLI DEĞİL', color: 'text-zinc-600', desc: 'Üst Akıl' },
-                { name: 'Web Search', status: 'HAZIR', color: 'text-orange-400', desc: 'Canlı Araştırma' },
-                { name: 'AI Lab', status: 'AKTİF', color: 'text-indigo-400', desc: 'Oturum Yöneticisi' },
+                { 
+                  name: 'Nano', 
+                  status: 'AKTİF', 
+                  color: 'text-emerald-500', 
+                  desc: 'Yerel Çekirdek' 
+                },
+                { 
+                  name: 'Qwen', 
+                  status: qwenStatus?.isReady ? 'AKTİF' : qwenStatus?.status === 'planning_only' ? 'KISITLI' : 'HAZIR DEĞİL', 
+                  color: qwenStatus?.isReady ? 'text-blue-500' : 'text-amber-500', 
+                  desc: qwenStatus?.message || 'Pro Analiz' 
+                },
+                { 
+                  name: 'SDXL', 
+                  status: sdxlStatus?.isReady ? 'AKTİF' : sdxlStatus?.status === 'planning_only' ? 'PLANLANIYOR' : 'HAZIR DEĞİL', 
+                  color: sdxlStatus?.isReady ? 'text-emerald-500' : 'text-amber-500', 
+                  bg: sdxlStatus?.isReady ? 'bg-emerald-500/10' : 'bg-amber-500/10', 
+                  desc: sdxlStatus?.details?.cudaAvailable ? 'Görsel Üretim (CUDA)' : sdxlStatus?.details?.error || 'Görsel Üretim'
+                },
+                { name: 'Gemini', status: 'BAĞLI DEĞİL', color: 'text-zinc-500', bg: 'bg-zinc-500/10', desc: 'Üst Akıl' },
+                { name: 'Web Search', status: 'HAZIR', color: 'text-orange-500', bg: 'bg-orange-500/10', desc: 'Canlı Araştırma' },
+                { name: 'AI Lab', status: 'AKTİF', color: 'text-indigo-500', bg: 'bg-indigo-500/10', desc: 'Oturum Yöneticisi' },
               ].map(m => (
-                <div key={m.name} className="rounded-2xl border border-zinc-800 bg-black/40 p-4 transition-all hover:border-zinc-700 group">
-                  <div className="text-[10px] text-zinc-500 font-black uppercase tracking-widest group-hover:text-zinc-400">{m.name}</div>
-                  <div className={`mt-1 font-bold text-sm ${m.color}`}>{m.status}</div>
-                  <div className="mt-2 text-[10px] text-zinc-600 font-medium italic">{m.desc}</div>
+                <div key={m.name} className="rounded-2xl border border-[var(--glass-border)] bg-[var(--bg-surface)]/30 p-4 transition-all hover:border-indigo-500/30 group">
+                  <div className="text-[10px] text-[var(--text-muted)] font-black uppercase tracking-widest group-hover:text-indigo-500 transition-colors">{m.name}</div>
+                  <div className={`mt-1 font-black text-xs ${m.color}`}>{m.status}</div>
+                  <div className="mt-2 text-[10px] text-[var(--text-muted)] font-bold italic opacity-60 leading-tight">{m.desc}</div>
                 </div>
               ))}
             </div>
+            {!qwenStatus || !qwenStatus.isReady ? (
+              <div className="mt-4 p-3 rounded-xl bg-amber-500/5 border border-amber-500/10">
+                <p className="text-[10px] font-bold text-amber-600/80 leading-relaxed">
+                  <FiTerminal className="inline mr-1" /> 
+                  Qwen tam kapasite çalışmıyor: {qwenStatus?.error || qwenStatus?.message || qwenStatus?.details?.error || 'Bağımlılıklar veya model dosyaları eksik.'} `docs/QWEN_SETUP.md` dosyasındaki adımları takip ederek aktif hale getirebilirsiniz.
+                </p>
+              </div>
+            ) : null}
           </div>
         </section>
 
-        <section className="grid grid-cols-1 gap-8 lg:grid-cols-5">
+        <section className="grid grid-cols-1 gap-8 lg:grid-cols-5 h-[calc(100vh-180px)]">
           {/* Session List */}
-          <div className={`${selectedSession ? 'lg:col-span-2' : 'lg:col-span-5'} transition-all`}>
-            <h2 className="mb-6 text-2xl font-semibold">Son Deneyler</h2>
-            <div className="space-y-4">
+          <div className={`${selectedSession ? 'lg:col-span-2' : 'lg:col-span-5'} transition-all overflow-y-auto custom-scrollbar pr-2`}>
+            <h2 className="mb-6 text-xl font-bold flex items-center gap-2">
+              Son Deneyler
+              <span className="px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-500 text-[10px] font-black">{sessions.length}</span>
+            </h2>
+            <div className="space-y-3">
               {sessions.length === 0 ? (
-                <div className="rounded-2xl border border-dashed border-zinc-800 p-12 text-center text-zinc-600 font-medium italic">
+                <div className="glass-card rounded-2xl border-dashed p-12 text-center text-[var(--text-muted)] font-bold italic opacity-50">
                   Henüz bir laboratuvar oturumu bulunmuyor.
                 </div>
               ) : (
@@ -219,26 +346,36 @@ export default function AiLabPage() {
                   <div 
                     key={s.id} 
                     onClick={() => setSelectedSession(s)}
-                    className={`group flex items-center justify-between rounded-2xl border p-5 cursor-pointer transition-all ${
+                    className={`group flex items-center justify-between rounded-2xl border p-4 cursor-pointer transition-all duration-300 ${
                       selectedSession?.id === s.id 
-                        ? 'bg-blue-600/5 border-blue-500/50 shadow-lg shadow-blue-500/5' 
-                        : 'bg-zinc-900/20 border-zinc-800 hover:bg-zinc-900/40 hover:border-zinc-700'
+                        ? 'bg-indigo-500/10 border-indigo-500/50 shadow-xl shadow-indigo-500/10' 
+                        : 'bg-[var(--bg-surface)]/40 border-[var(--glass-border)] hover:bg-[var(--bg-surface)]/60 hover:border-indigo-500/20'
                     }`}
                   >
                     <div className="min-w-0">
-                      <div className="font-bold text-base truncate pr-4">{s.topic}</div>
-                      <div className="mt-1.5 flex flex-wrap gap-x-4 gap-y-1 text-[10px] text-zinc-500 font-bold uppercase tracking-wider">
-                        <span className="flex items-center gap-1"><span className="w-1 h-1 rounded-full bg-zinc-600" /> {s.id}</span>
-                        <span className="flex items-center gap-1"><span className="w-1 h-1 rounded-full bg-zinc-600" /> {s.mode}</span>
-                        <span className="flex items-center gap-1"><span className="w-1 h-1 rounded-full bg-zinc-600" /> TUR: {s.currentTurn}/{s.maxTurns}</span>
+                      <div className="font-black text-sm truncate pr-4 group-hover:text-indigo-500 transition-colors">{s.topic}</div>
+                      <div className="mt-1.5 flex flex-wrap gap-x-3 gap-y-1 text-[9px] text-[var(--text-muted)] font-black uppercase tracking-wider">
+                        <span className="flex items-center gap-1">#{s.id.split('_').pop()}</span>
+                        <span className="flex items-center gap-1 opacity-60">{s.mode}</span>
+                        <span className="flex items-center gap-1 text-indigo-500/70">TUR: {s.currentTurn}/{s.maxTurns}</span>
                       </div>
                     </div>
-                    <div className="flex items-center gap-4 shrink-0">
-                      <StatusBadge 
-                        variant={s.status === 'running' ? 'running' : s.status === 'completed' ? 'completed' : 'pending'} 
-                        label={s.status} 
-                      />
-                    </div>
+                    <div className="flex items-center gap-3 shrink-0">
+                        <StatusBadge 
+                          variant={s.status === 'running' ? 'running' : s.status === 'completed' ? 'completed' : 'pending'} 
+                          label={s.status} 
+                        />
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteSession(s.id);
+                          }}
+                          className="p-2 rounded-lg hover:bg-rose-500/10 text-rose-500 opacity-0 group-hover:opacity-100 transition-all active:scale-90"
+                          title="Sil"
+                        >
+                          <FiTrash2 size={14} />
+                        </button>
+                      </div>
                   </div>
                 ))
               )}
@@ -246,104 +383,176 @@ export default function AiLabPage() {
           </div>
 
           {/* Details View */}
-          {selectedSession && (
-            <div className="lg:col-span-3 rounded-2xl border border-zinc-800 bg-zinc-900/20 flex flex-col overflow-hidden animate-in fade-in slide-in-from-right-4 duration-300">
-              <div className="p-6 border-b border-zinc-800 bg-zinc-900/40 flex items-center justify-between">
-                <div>
-                  <h3 className="font-bold text-lg">{selectedSession.topic}</h3>
-                  <p className="text-xs text-zinc-500 mt-1">Oturum Detayları ve Kontrol</p>
+          {selectedSession ? (
+            <div className="lg:col-span-3 glass-card rounded-3xl flex flex-col overflow-hidden animate-in fade-in slide-in-from-right-4 duration-500 shadow-2xl">
+              <div className="p-5 border-b border-[var(--glass-border)] bg-[var(--bg-surface)]/40 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-2xl bg-indigo-500/10 flex items-center justify-center text-indigo-500">
+                    <FiActivity className={selectedSession.status === 'running' ? 'animate-spin' : ''} />
+                  </div>
+                  <div>
+                    <h3 className="font-black text-sm">{selectedSession.topic}</h3>
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className="text-[9px] text-[var(--text-muted)] font-black uppercase tracking-widest">{selectedSession.id}</span>
+                      <button 
+                        onClick={() => refreshSession(selectedSession.id)}
+                        className="p-1 rounded-md hover:bg-indigo-500/10 text-indigo-500 transition-colors"
+                        title="Yenile"
+                      >
+                        <FiRefreshCw size={10} className={loading ? 'animate-spin' : ''} />
+                      </button>
+                    </div>
+                  </div>
                 </div>
-                <button onClick={() => setSelectedSession(null)} className="text-zinc-500 hover:text-white transition-colors">
-                  Kapat
+                <button onClick={() => setSelectedSession(null)} className="p-2 rounded-xl hover:bg-rose-500/10 text-rose-500 transition-all active:scale-90">
+                  <FiX size={18} />
                 </button>
               </div>
               
-              <div className="flex-1 p-6 overflow-y-auto custom-scrollbar space-y-4 max-h-[500px]">
-                <div className="flex items-center gap-2 mb-4">
-                  <div className="px-2 py-1 rounded bg-zinc-800 text-[10px] font-mono text-zinc-400">
-                    TURN: {selectedSession.currentTurn} / {selectedSession.maxTurns}
+              <div className="flex-1 p-6 overflow-y-auto custom-scrollbar space-y-6 bg-[var(--bg-main)]/20">
+                <div className="flex items-center justify-center gap-3 mb-4">
+                  <div className="h-px flex-1 bg-gradient-to-r from-transparent via-[var(--glass-border)] to-transparent" />
+                  <div className="px-3 py-1 rounded-full border border-[var(--glass-border)] bg-[var(--bg-surface)] text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest">
+                    Turn {selectedSession.currentTurn} / {selectedSession.maxTurns}
                   </div>
-                  <div className={`px-2 py-1 rounded text-[10px] font-mono uppercase tracking-wider ${
-                    selectedSession.status === 'running' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-zinc-800 text-zinc-500'
-                  }`}>
-                    {selectedSession.status}
-                  </div>
-                  {selectedSession.errorCount > 0 && (
-                    <div className="px-2 py-1 rounded bg-rose-500/10 text-rose-400 text-[10px] font-mono">
-                      ERRS: {selectedSession.errorCount}
-                    </div>
-                  )}
+                  <div className="h-px flex-1 bg-gradient-to-l from-transparent via-[var(--glass-border)] to-transparent" />
                 </div>
 
-                {selectedSession.messages.map((m: any, idx: number) => (
-                  <div key={idx} className={`p-4 rounded-2xl border ${
-                    m.model === 'system' ? 'bg-zinc-800/20 border-zinc-800 text-zinc-400 italic text-xs' : 
-                    m.model === 'nano' ? 'bg-indigo-500/10 border-indigo-500/20 shadow-sm' :
-                    m.model === 'web_search' ? 'bg-emerald-500/10 border-emerald-500/20 shadow-sm' :
-                    m.model === 'qwen' ? 'bg-purple-500/10 border-purple-500/20 shadow-sm' :
-                    m.model === 'sdxl' ? 'bg-amber-500/10 border-amber-500/20 shadow-sm' :
-                    'bg-zinc-900 border-zinc-800'
-                  }`}>
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-2">
-                        <span className={`w-2 h-2 rounded-full ${
-                          m.model === 'nano' ? 'bg-indigo-500' :
-                          m.model === 'web_search' ? 'bg-emerald-500' :
-                          m.model === 'qwen' ? 'bg-purple-500' :
-                          m.model === 'sdxl' ? 'bg-amber-500' :
-                          'bg-zinc-500'
-                        }`} />
-                        <span className="text-[10px] font-black uppercase tracking-widest text-zinc-300">{m.model}</span>
-                      </div>
-                      <span className="text-[8px] font-mono text-zinc-500">{new Date(m.createdAt).toLocaleTimeString()}</span>
-                    </div>
+                {selectedSession.messages.length === 0 ? (
+                  <div className="h-full flex flex-col items-center justify-center opacity-30 italic py-20">
+                    <FiMessageSquare size={32} className="mb-3" />
+                    <p className="text-xs font-bold uppercase tracking-widest">Henüz mesaj yok. Deneyi başlatın.</p>
+                  </div>
+                ) : (
+                  selectedSession.messages.map((m: any, idx: number) => {
+                    const isSystem = m.model === 'system';
+                    const isUserLike = m.model === 'nano' || m.model === 'qwen';
                     
-                    <div className="text-sm text-zinc-200 leading-relaxed whitespace-pre-wrap">
-                      {m.content}
-                    </div>
+                    return (
+                      <div key={idx} className={`animate-fade-in ${isSystem ? 'flex justify-center' : ''}`}>
+                        {isSystem ? (
+                          <div className="px-4 py-2 rounded-full bg-zinc-500/5 border border-dashed border-[var(--glass-border)] text-[10px] text-[var(--text-muted)] font-medium italic">
+                            {m.content}
+                          </div>
+                        ) : (
+                          <div className={`max-w-[90%] group`}>
+                            <div className="flex items-center gap-2 mb-1.5 px-1">
+                              <span className={`w-1.5 h-1.5 rounded-full ${
+                                m.model === 'nano' ? 'bg-indigo-500 shadow-[0_0_8px_var(--primary-glow)]' :
+                                m.model === 'web_search' ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.3)]' :
+                                m.model === 'qwen' ? 'bg-purple-500 shadow-[0_0_8px_rgba(168,85,247,0.3)]' :
+                                m.model === 'sdxl' ? 'bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.3)]' :
+                                'bg-zinc-500'
+                              }`} />
+                              <span className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)]">{m.model}</span>
+                              
+                              {/* Execution Mode Badge */}
+                              {m.outputType === 'planning' ? (
+                                <span className="px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-500 text-[8px] font-black uppercase tracking-tighter border border-amber-500/20">Planning Mode</span>
+                              ) : m.outputType === 'error' ? (
+                                <span className="px-1.5 py-0.5 rounded bg-rose-500/10 text-rose-500 text-[8px] font-black uppercase tracking-tighter border border-rose-500/20">Execution Error</span>
+                              ) : (
+                                <span className="px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-500 text-[8px] font-black uppercase tracking-tighter border border-emerald-500/20">Active</span>
+                              )}
 
-                    {/* Image Preview */}
-                    {(m.imageUrl || m.imagePath) && (
-                      <div className="mt-4 rounded-xl overflow-hidden border border-white/5 bg-black/20">
-                        <img 
-                          src={m.imageUrl || `/api/image-generation/view?path=${encodeURIComponent(m.imagePath || '')}`} 
-                          alt="Generated" 
-                          className="w-full h-auto max-h-[300px] object-contain"
-                        />
-                        {m.prompt && (
-                          <div className="p-3 border-t border-white/5 bg-black/40">
-                            <p className="text-[10px] font-mono text-zinc-500 uppercase mb-1">PROMPT</p>
-                            <p className="text-[11px] text-zinc-400 italic">"{m.prompt}"</p>
+                              <span className="text-[8px] font-bold text-[var(--text-muted)] opacity-30 ml-auto">{new Date(m.createdAt).toLocaleTimeString()}</span>
+                            </div>
+                            
+                            <div className={`p-4 rounded-2xl border transition-all duration-300 relative group/msg ${
+                              m.model === 'nano' ? 'bg-indigo-500/5 border-indigo-500/20 text-indigo-900 dark:text-indigo-100' :
+                              m.model === 'web_search' ? 'bg-emerald-500/5 border-emerald-500/20 text-emerald-900 dark:text-emerald-100' :
+                              m.model === 'qwen' ? 'bg-purple-500/5 border-purple-500/20 text-purple-900 dark:text-purple-100' :
+                              m.model === 'sdxl' ? 'bg-amber-500/5 border-amber-500/20 text-amber-900 dark:text-amber-100' :
+                              'bg-[var(--bg-surface)] border-[var(--glass-border)]'
+                            }`}>
+                              {/* Training Candidate Badge */}
+                              {m.candidateForTraining && (
+                                <div className="absolute -top-2 -right-2 bg-indigo-600 text-white p-1 rounded-lg shadow-xl shadow-indigo-500/40 animate-bounce" title="Eğitim İçin Uygun Aday">
+                                  <FiStar size={12} />
+                                </div>
+                              )}
+
+                              <div className="text-sm leading-relaxed whitespace-pre-wrap font-medium">
+                                {m.content}
+                              </div>
+
+                              {/* Safety Flags */}
+                              {m.safetyFlags && m.safetyFlags.length > 0 && (
+                                <div className="mt-3 flex flex-wrap gap-1">
+                                  {m.safetyFlags.map((f: string, fi: number) => (
+                                    <span key={fi} className="px-2 py-0.5 rounded-full bg-rose-500/10 text-rose-500 text-[8px] font-black uppercase border border-rose-500/20">
+                                      {f}
+                                    </span>
+                                  ))}
+                                </div>
+                              )}
+
+                              {/* SDXL Image Rendering */}
+                              {(m.imageUrl || m.imagePath) && (
+                                <div className="mt-4 rounded-2xl overflow-hidden border border-[var(--glass-border)] bg-black/5 group-hover:shadow-2xl transition-all">
+                                  <img 
+                                    src={m.imageUrl || `/api/image-generation/view?path=${encodeURIComponent(m.imagePath || '')}`} 
+                                    alt="Generated" 
+                                    className="w-full h-auto max-h-[400px] object-contain hover:scale-[1.02] transition-transform duration-700"
+                                  />
+                                  {m.prompt && (
+                                    <div className="p-3 border-t border-[var(--glass-border)] bg-[var(--bg-surface)]/80 backdrop-blur-sm">
+                                      <p className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest mb-1 opacity-50">Image Prompt</p>
+                                      <p className="text-[11px] text-[var(--text-main)] italic font-medium">"{m.prompt}"</p>
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+
+                              {/* Web Search Citations Rendering */}
+                              {m.citations && (
+                                <div className="mt-4 pt-3 border-t border-current opacity-20">
+                                  <p className="text-[9px] font-black uppercase tracking-widest mb-2 opacity-60">Verified Sources:</p>
+                                  <div className="flex flex-col gap-1.5">
+                                    {m.citations.map((c: string, ci: number) => {
+                                      // Simple URL extraction if present in string
+                                      const urlMatch = c.match(/\((https?:\/\/[^\)]+)\)/);
+                                      const url = urlMatch ? urlMatch[1] : null;
+                                      const title = c.replace(/\(https?:\/\/[^\)]+\)/, '').trim();
+
+                                      return (
+                                        <div key={ci} className="flex items-start gap-2 group/cite">
+                                          <span className="text-[9px] font-black opacity-40 mt-0.5">{ci + 1}.</span>
+                                          {url ? (
+                                            <a 
+                                              href={url} 
+                                              target="_blank" 
+                                              rel="noopener noreferrer" 
+                                              className="text-[10px] font-bold hover:underline decoration-indigo-500/50 break-all"
+                                            >
+                                              {title}
+                                            </a>
+                                          ) : (
+                                            <span className="text-[10px] font-medium">{c}</span>
+                                          )}
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
                           </div>
                         )}
                       </div>
-                    )}
-
-                    {/* Citations / Sources */}
-                    {m.citations && (
-                      <div className="mt-3 pt-3 border-t border-zinc-800/50">
-                        <p className="text-[9px] font-black uppercase tracking-widest text-zinc-500 mb-2">Sources:</p>
-                        <div className="flex flex-wrap gap-2">
-                          {m.citations.map((c: string, ci: number) => (
-                            <span key={ci} className="px-2 py-0.5 rounded bg-zinc-800 text-[9px] font-mono text-zinc-400 border border-zinc-700/50">
-                              {c}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                ))}
+                    );
+                  })
+                )}
               </div>
 
-              <div className="p-6 border-t border-zinc-800 bg-zinc-900/40 flex flex-col gap-3">
+              <div className="p-5 border-t border-[var(--glass-border)] bg-[var(--bg-surface)]/60 backdrop-blur-md flex flex-col gap-3">
                 <div className="flex items-center gap-3">
                   {selectedSession.status === 'draft' || selectedSession.status === 'paused' || selectedSession.status === 'stopped' ? (
                     <button 
                       onClick={() => updateStatus(selectedSession.id, 'running')}
-                      className="flex-1 rounded-xl bg-emerald-600 py-2.5 text-xs font-bold hover:bg-emerald-500 transition-all"
+                      className="flex-1 rounded-2xl bg-emerald-600 py-3 text-xs font-black text-white hover:bg-emerald-500 transition-all shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2"
                     >
-                      Başlat / Devam Et
+                      <FiPlay /> Deneyi Başlat
                     </button>
                   ) : (
                     <>
@@ -359,16 +568,13 @@ export default function AiLabPage() {
                             body: JSON.stringify({ action: 'step' })
                           });
                           if (res.ok) {
-                            const updated = await fetch(`/api/admin/ai-lab/sessions/${selectedSession.id}`, {
-                              headers: { 'x-aillame-admin-token': token }
-                            });
-                            if (updated.ok) setSelectedSession(await updated.json());
+                            refreshSession(selectedSession.id);
                             fetchSessions(token);
                           }
                         }}
-                        className="flex-1 rounded-xl bg-blue-600/10 border border-blue-500/30 text-blue-400 py-2.5 text-[10px] font-bold hover:bg-blue-500/20 transition-all"
+                        className="flex-1 rounded-2xl bg-[var(--bg-main)] border border-[var(--glass-border)] text-[var(--text-main)] py-3 text-[10px] font-black hover:bg-[var(--bg-surface)] transition-all flex items-center justify-center gap-2"
                       >
-                        Tek Adım
+                        <FiArrowRight /> Tek Adım
                       </button>
                       <button 
                         onClick={async () => {
@@ -382,33 +588,38 @@ export default function AiLabPage() {
                             body: JSON.stringify({ action: 'run_controlled', steps: 3 })
                           });
                           if (res.ok) {
-                            const updated = await fetch(`/api/admin/ai-lab/sessions/${selectedSession.id}`, {
-                              headers: { 'x-aillame-admin-token': token }
-                            });
-                            if (updated.ok) setSelectedSession(await updated.json());
+                            refreshSession(selectedSession.id);
                             fetchSessions(token);
                           }
                         }}
-                        className="flex-1 rounded-xl bg-blue-600 py-2.5 text-[10px] font-bold hover:bg-blue-500 transition-all shadow-lg shadow-blue-500/20"
+                        className="flex-1 rounded-2xl bg-indigo-600 py-3 text-[10px] font-black text-white hover:bg-indigo-500 transition-all shadow-xl shadow-indigo-500/20 flex items-center justify-center gap-2"
                       >
-                        Kontrollü Çalıştır
+                        <FiTerminal /> Kontrollü Döngü (3)
                       </button>
                       <button 
                         onClick={() => updateStatus(selectedSession.id, 'paused')}
-                        className="px-4 rounded-xl bg-amber-600 py-2.5 text-[10px] font-bold hover:bg-amber-500 transition-all"
+                        className="px-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400 py-3 text-[10px] font-black hover:bg-amber-500/20 transition-all"
                       >
-                        Duraklat
+                        <FiPause />
                       </button>
                     </>
                   )}
                 </div>
                 <button 
                   onClick={() => updateStatus(selectedSession.id, 'stopped')}
-                  className="w-full rounded-xl bg-rose-600/20 border border-rose-500/30 text-rose-400 py-2 text-[10px] font-bold hover:bg-rose-500/20 transition-all"
+                  className="w-full rounded-2xl bg-rose-500/5 border border-rose-500/10 text-rose-500/60 py-2.5 text-[10px] font-black hover:bg-rose-500/10 hover:text-rose-500 transition-all flex items-center justify-center gap-2"
                 >
-                  Durdur
+                  <FiStopCircle /> Oturumu Sonlandır
                 </button>
               </div>
+            </div>
+          ) : (
+            <div className="lg:col-span-3 glass-card rounded-3xl flex flex-col items-center justify-center p-12 text-center opacity-40 animate-pulse">
+              <div className="w-20 h-20 rounded-full bg-indigo-500/10 flex items-center justify-center text-indigo-500 mb-6">
+                <FiActivity size={40} />
+              </div>
+              <h3 className="text-xl font-black uppercase tracking-[0.2em]">Oturum Seçilmedi</h3>
+              <p className="text-sm font-medium mt-3 max-w-xs">Sol taraftaki listeden bir deney seçerek detayları ve model konuşmalarını görüntüleyebilirsiniz.</p>
             </div>
           )}
         </section>

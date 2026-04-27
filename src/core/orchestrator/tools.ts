@@ -40,8 +40,8 @@ const webSearchTool: Tool = {
         body: JSON.stringify({ query, llmMode: 'hybrid' }),
       });
       const data = await res.json();
-      const output = typeof data === 'string' ? data : data?.result ?? JSON.stringify(data);
-      return { tool: 'web_search', success: true, output, metadata: { query } };
+      const output = typeof data === 'string' ? data : data?.summary ?? JSON.stringify(data);
+      return { tool: 'web_search', success: true, output, metadata: { query, sources: data?.sources ?? [] } };
     } catch (e: any) {
       return { tool: 'web_search', success: false, output: `Web arama hatası: ${e.message}` };
     }
@@ -157,7 +157,7 @@ export function detectTools(input: string): ToolCall[] {
   const calls: ToolCall[] = [];
 
   // Web araması tespiti
-  if (/araştır|search|web'?de|internette|güncel|haber|nedir|kimdir|ne zaman/i.test(lower)) {
+  if (/araştır|search|web'?de|internette|güncel|haber/i.test(lower)) {
     calls.push({
       tool: 'web_search',
       params: { query: input },

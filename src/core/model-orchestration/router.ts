@@ -8,7 +8,7 @@ export function routeRequest(prompt: string): OrchestrationPlan {
     return {
       intent: 'image_generation',
       selectedTarget: 'sdxl',
-      executionMode: 'planning_only', // SDXL not fully connected in this version
+      executionMode: 'active',
       reason: 'User requested image generation.',
       safetyFlags: []
     };
@@ -19,7 +19,7 @@ export function routeRequest(prompt: string): OrchestrationPlan {
     return {
       intent: 'web_research',
       selectedTarget: 'web_search',
-      executionMode: 'planning_only', // Web Search tool available but not auto-triggered in chat yet
+      executionMode: 'active',
       reason: 'User requested real-time information or research.',
       safetyFlags: []
     };

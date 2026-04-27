@@ -35,10 +35,31 @@ export default function ChatInput({
     },
   });
 
+  const justSubmittedRef = useRef(false);
+
+  const focusTextarea = () => {
+    textareaRef.current?.focus();
+  };
+
+  const handleSend = () => {
+    onSend();
+    if (!disabled) {
+      justSubmittedRef.current = true;
+      setTimeout(focusTextarea, 0);
+    }
+  };
+
+  useEffect(() => {
+    if (justSubmittedRef.current && !disabled) {
+      focusTextarea();
+      justSubmittedRef.current = false;
+    }
+  }, [disabled]);
+
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      onSend();
+      handleSend();
     }
   };
 
@@ -170,7 +191,7 @@ export default function ChatInput({
             <button
               id="send-message-btn"
               type="button"
-              onClick={onSend}
+              onClick={handleSend}
               disabled={disabled || isEmpty || voiceState === 'listening'}
               className="send-btn w-12 h-12 flex items-center justify-center rounded-2xl bg-indigo-600 text-white disabled:opacity-20 disabled:grayscale shadow-xl shadow-indigo-600/20 relative group/send overflow-hidden"
               title="Gönder (Enter)"

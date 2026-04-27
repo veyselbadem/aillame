@@ -12,17 +12,32 @@ function ensureDir() {
 }
 
 export async function saveSessions(sessions: LabSession[]): Promise<void> {
-  ensureDir();
-  fs.writeFileSync(STORE_FILE, JSON.stringify(sessions, null, 2));
+  try {
+    ensureDir();
+    const data = JSON.stringify(sessions, null, 2);
+    // Atomic-like write: write to temp first then rename if possible, but for simple MVP:
+    fs.writeFileSync(STORE_FILE, data, 'utf8');
+  } catch (e) {
+    console.error('AI Lab Save Error:', e);
+    throw new Error('Failed to save laboratory data.');
+  }
 }
 
 export async function loadSessions(): Promise<LabSession[]> {
-  if (!fs.existsSync(STORE_FILE)) return [];
+  if (!fs.existsSync(STORE_FILE)) {
+    ensureDir();
+    return [];
+  }
+  
   try {
     const data = fs.readFileSync(STORE_FILE, 'utf8');
-    return JSON.parse(data);
+    if (!data.trim()) return [];
+    
+    const parsed = JSON.parse(data);
+    return Array.isArray(parsed) ? parsed : [];
   } catch (e) {
-    console.error('AI Lab Load Error:', e);
+    console.error('AI Lab Load Error (Corrupt JSON):', e);
+    // Return empty array to prevent crash, but log it
     return [];
   }
 }
