@@ -5,6 +5,12 @@ export type NanoTaskType =
   | 'current_research'
   | 'code_help'
   | 'image_generation'
+  | 'image_analysis'
+  | 'list_examples'
+  | 'compare'
+  | 'explain_more'
+  | 'continue_context'
+  | 'tool_error'
   | 'ai_lab_reflection'
   | 'learning_candidate'
   | 'unknown';
@@ -15,6 +21,8 @@ export type NanoToolTarget =
   | 'Qwen'
   | 'Web Search'
   | 'SDXL'
+  | 'Gemma'
+  | 'Ollama'
   | 'safeFallback';
 
 export interface NanoCognitivePlan {
@@ -33,7 +41,7 @@ export interface NanoLearningSuggestion {
   confidenceScore: number;
   riskLevel: 'low' | 'medium' | 'high';
   reason: string;
-  source: 'ai_lab' | 'chat' | 'qwen' | 'web_search';
+  source: 'ai_lab' | 'chat' | 'qwen' | 'web_search' | 'gemma' | 'ollama' | 'web_search+gemma' | 'web_search+ollama';
 }
 
 export interface NanoReflection {

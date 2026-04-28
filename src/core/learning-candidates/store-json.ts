@@ -35,7 +35,7 @@ export const jsonLearningCandidateStore = {
       id: existingIndex >= 0 ? candidates[existingIndex].id : generateId(),
       type: input.type,
       status: existingIndex >= 0 ? candidates[existingIndex].status : 'pending',
-      source: 'feedback',
+      source: input.source || 'feedback',
       sourceFeedbackId: input.sourceFeedbackId,
       messageId: input.messageId,
       conversationId: input.conversationId,

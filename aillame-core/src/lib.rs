@@ -175,18 +175,24 @@ impl AillameEngine {
         
         if let Some(trainer) = &*trainer_lock {
             let mut current_ids: Vec<u32> = input_ids.to_vec();
+            if current_ids.is_empty() {
+                return Err(Error::from_reason("Input IDs cannot be empty for generation.".to_string()));
+            }
             let mut rng = thread_rng();
             
             for _ in 0..max_len {
                 let seq_len = current_ids.len();
+                if seq_len == 0 {
+                    return Err(Error::from_reason("Sequence length is zero before forward pass.".to_string()));
+                }
+                
                 let input = Tensor::from_vec(current_ids.clone(), (1, seq_len), &device)
                     .map_err(|e| Error::from_reason(e.to_string()))?;
                 
                 let logits = trainer.model.forward(&input)
                     .map_err(|e| Error::from_reason(format!("Forward error at step: {}", e)))?;
                 
-                // Last logit
-                let logits = logits.i((0, seq_len - 1))
+                let logits = logits.i((0, seq_len.saturating_sub(1)))
                     .map_err(|e| Error::from_reason(format!("Index error: {}", e)))?
                     .to_dtype(candle_core::DType::F32)
                     .map_err(|e| Error::from_reason(format!("DType error: {}", e)))?;

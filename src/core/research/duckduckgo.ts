@@ -6,6 +6,12 @@ type DuckDuckGoResponse = {
   RelatedTopics?: Array<any>;
 };
 
+function getSearchTimeoutMs(): number {
+  return process.env.AILLAME_WEB_SEARCH_TIMEOUT_MS
+    ? parseInt(process.env.AILLAME_WEB_SEARCH_TIMEOUT_MS)
+    : 8000;
+}
+
 function parseRelatedTopics(topics: Array<any>): ResearchSource[] {
   const sources: ResearchSource[] = [];
 
@@ -67,6 +73,7 @@ async function searchDuckDuckGoJson(query: string): Promise<ResearchSource[]> {
       Accept: 'application/json',
       'User-Agent': 'Mozilla/5.0 (compatible; Aillame/1.0; +https://aillame.local)',
     },
+    signal: AbortSignal.timeout(getSearchTimeoutMs()),
   });
 
   if (!res.ok) {
@@ -100,6 +107,7 @@ async function searchDuckDuckGoHtml(query: string): Promise<ResearchSource[]> {
       Accept: 'text/html',
       'User-Agent': 'Mozilla/5.0 (compatible; Aillame/1.0; +https://aillame.local)',
     },
+    signal: AbortSignal.timeout(getSearchTimeoutMs()),
   });
 
   if (!res.ok) {

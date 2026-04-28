@@ -173,6 +173,7 @@ export function useChat(conversationId?: string, runtimeSettings?: UseChatRuntim
         llmMode,
         tier,
         attachments: outgoingAttachments,
+        messages,
         signal,
         onToken: (token) => {
           if (signal.aborted) return;

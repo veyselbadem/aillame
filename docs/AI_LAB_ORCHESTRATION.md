@@ -7,7 +7,8 @@ Aillame, farklı yapay zeka modellerinin (Nano, Qwen, SDXL, Gemini) ve araçlar�
 Kullanıcı ana sayfada sadece Aillame Nano ile konuşur. Ancak arka planda Nano, isteğin türünü analiz ederek en uygun modele yönlendirme yapar.
 
 - **Simple Chat:** Nano (Local) cevap verir.
-- **Text/Code/Analysis:** Qwen veya Gemini planlanır.
+- **Fast Analysis:** Gemma 4 E4B (GGUF veya Transformers) planlanır.
+- **Deep Vision/Analysis:** Qwen3-VL 8B (Ağır Model) manuel isteklerde planlanır.
 - **Image Generation:** SDXL planlanır.
 - **Web Research:** Web Search araçları planlanır.
 
@@ -23,8 +24,10 @@ Yöneticiler için özel olarak tasarlanan AI Lab, modeller arası kontrollü ta
 - **Safety Loop:** Sonsuz döngü engellenmiştir. `maxTurns` dolduğunda veya admin `stop` dediğinde sistem durur.
 - **Error Handling:** Bir model hata verirse `errorCount` artar; kritik eşik (3 hata) aşılırsa oturum otomatik durdurulur.
 - **Cross-Model Discussion:** Birden fazla modelin aynı konu üzerinde fikir teatisi yapması.
+- **Görev Odaklı Çalışma (Goals):** Her oturum belirli bir amaca hizmet eder (`explain`, `research`, `create_learning_candidate`, `debug_error` vb.).
 - **Learning Loop:** AI Lab çıktıları, Nano'nun eğitimi için `Learning Candidate` olarak sisteme beslenebilir.
-- **Nano Cognitive Reflection:** Nano artık AI Lab'de sadece bir katılımcı değil, bir gözlemcidir. Her adımda tartışmayı analiz eder, özetler ve bir sonraki mantıklı adımı önerir.
+- **Nano Cognitive Reflection:** Nano artık AI Lab'de Orkestratör ve Kalite Kontrol (QC) rolündedir. Her adımda modeli okur, hata olup olmadığını (timeout, degraded, fetch failed) teşhis eder ve hatalı içeriklerden asla öğrenme adayı üretmez.
+- **Gemma Integration:** Gemma 4 E4B, AI Lab'de hızlı analiz katılımcısı olarak yer alır. GGUF formatında çalıştırılması (llama.cpp) hız için önerilir. Qwen'in ağır ve yavaş kaldığı durumlarda süreci hızlandırmak için tasarlanmıştır.
 
 
 ## 3. Öğrenme Güvenliği
@@ -36,7 +39,9 @@ AI Lab çıktıları doğrudan eğitime girmez. Şu aşamalardan geçer:
 
 ## 4. Mevcut Durum (MVP+)
 - **Nano:** Active (Local)
-- **Qwen:** Active (Python Runtime)
+- **Gemma 4 E4B:** Active (Fast Local - GGUF / Transformers)
+- **Qwen3-VL 8B:** Optional / Active (Deep Vision Analysis - Heavy Python Runtime)
+- **Qwen3-VL 4B:** Planned (Gelecekteki hafif fast-vision adayı, henüz indirilmedi)
 - **SDXL:** Active (Python Diffusers / Planning Fallback)
 - **Gemini:** Planning Only / Planned
 

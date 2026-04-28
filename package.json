@@ -6,7 +6,7 @@
                     "dev":  "next dev --webpack",
                     "build":  "next build --webpack",
                     "start":  "next start",
-                    "lint":  "next lint",
+                    "lint":  "tsc --noEmit",
                     "core:build":  "napi build --platform --release --cargo-cwd aillame-core",
                     "core:dev":  "napi build --cargo-cwd aillame-core",
                     "core:train":  "npx tsx src/core/engine/supervisor.ts",

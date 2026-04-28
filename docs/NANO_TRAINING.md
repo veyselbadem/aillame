@@ -47,6 +47,7 @@ Eğitim sisteminin doğrulanması için "Smoke Training" fazı uygulanmıştır.
 ### Yeni Strateji: Cognitive Layer (Atom Karınca)
 Nano modelini ham metin üretmeye zorlamak yerine, önce "Görev Zekâsı" (Cognitive Layer) ile güçlendirilmiştir:
 1.  **Nano Ham Çıktı Güvenliği:** Nano'nun ham çıktıları gibberish (anlamsız) ise asla kullanıcıya gösterilmez; bunun yerine akıllı fallback veya Qwen/Pro cevabı devreye girer.
-2.  **Merkezi Orkestratör:** Nano, gelen isteği anlayıp Web Search, SDXL veya Qwen modüllerine yönlendiren bir trafik polisi gibi çalışır.
+2.  **Merkezi Orkestratör (Intent Detection):** Nano, gelen isteği anlar. `social_chat`, `definition`, `list_examples`, `compare`, `research`, `continue_context` gibi niyetleri ayırt ederek doğru modüle (Web Search, SDXL, Qwen) paslar.
 3.  **AI Lab Katılımı:** Nano artık AI Lab'de diyalogları yorumlar ve "öğrenme adayı" önerir, ancak ham model çıktısı doğrudan tartışmaya girmez.
+4.  **Güvenli Öğrenme Adayı (Candidate Guard):** Nano; hata mesajlarından (timeout, degraded, fetch failed), çok kısa yanıtlardan veya bozuk JSON çıktılarından kesinlikle öğrenme adayı türetmez. Adaylar en az 40 karakter uzunluğunda ve temiz bilgi içermelidir.
 4.  **Kontrollü Eğitim:** Gerçek Nano checkpoint iyileştirmesi (tokenizer/decode/dataset) ayrı ve kontrollü bir fazda, admin onayıyla yapılacaktır.

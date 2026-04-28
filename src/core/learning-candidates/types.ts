@@ -35,5 +35,6 @@ export type CreateLearningCandidateInput = {
   optionalComment?: string;
   taskId?: string;
   metadata?: FeedbackRouterMetadata;
+  source?: LearningCandidateSource;
   reason: string;
 };

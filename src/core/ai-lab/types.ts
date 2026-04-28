@@ -1,6 +1,6 @@
-export type LabParticipant = 'nano' | 'qwen' | 'sdxl' | 'gemini' | 'web_search' | 'system';
+export type LabParticipant = 'nano' | 'gemma' | 'ollama' | 'qwen' | 'sdxl' | 'web_search' | 'system';
 
-export type SessionStatus = 'draft' | 'running' | 'paused' | 'stopped' | 'completed' | 'failed';
+export type SessionStatus = 'draft' | 'running' | 'paused' | 'stopped' | 'completed' | 'failed' | 'degraded';
 
 export type LabSessionMode = 'free' | 'focused' | 'research' | 'training_dataset' | 'image_prompt';
 
@@ -9,7 +9,7 @@ export interface LabMessage {
   sessionId: string;
   model: LabParticipant;
   content: string;
-  outputType?: 'text' | 'image' | 'research' | 'planning' | 'error';
+  outputType?: 'text' | 'image' | 'research' | 'planning' | 'error' | 'degraded' | 'skipped';
   imageUrl?: string;
   imagePath?: string;
   prompt?: string;
@@ -25,6 +25,7 @@ export interface LabMessage {
 export interface LabSession {
   id: string;
   topic: string;
+  goal?: string;
   topicMode: 'manual' | 'random';
   mode: LabSessionMode;
   participants: LabParticipant[];
@@ -44,6 +45,7 @@ export interface LabSession {
 
 export interface CreateSessionInput {
   topic: string;
+  goal?: string;
   topicMode: 'manual' | 'random';
   mode: LabSessionMode;
   participants: LabParticipant[];

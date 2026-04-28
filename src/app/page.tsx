@@ -43,8 +43,7 @@ export default function HomePage() {
         {/* ── Chat Workspace Area ── */}
         <section
           aria-label="Aillame AI Sohbet Alanı"
-          className="glass-card rounded-[32px] overflow-hidden flex flex-col shadow-2xl border border-white/5 backdrop-blur-3xl"
-          style={{ minHeight: '600px' }}
+          className="glass-card rounded-[32px] overflow-hidden flex flex-col shadow-2xl border border-white/5 backdrop-blur-3xl h-[700px] relative z-10"
         >
           {conversationId ? (
             <ChatShell key={conversationId} conversationId={conversationId} />

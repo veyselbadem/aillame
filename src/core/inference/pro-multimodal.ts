@@ -8,6 +8,7 @@ export type ProChatRequest = {
   images?: ImageAttachment[];
   maxTokens?: number;
   temperature?: number;
+  timeout?: number;
 };
 
 type PythonQwenResponse = {
@@ -40,6 +41,7 @@ export async function generateProMultimodalResponse({
   images = [],
   maxTokens = 512,
   temperature = 0.7,
+  timeout,
 }: ProChatRequest): Promise<string> {
   const model = getModel(PRO_CHAT_MODEL_ID);
   validateImages(images);
@@ -65,7 +67,7 @@ export async function generateProMultimodalResponse({
       getScriptPath('inference', 'scripts', 'qwen3_vl_infer.py'),
       [],
       runnerInput,
-      images.length > 0 ? 3 * 60 * 1000 : 90 * 1000
+      timeout || (images.length > 0 ? 3 * 60 * 1000 : 90 * 1000)
     );
     const parsed = parsePythonJson<PythonQwenResponse>(result);
     return parsed.response;

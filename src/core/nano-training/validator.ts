@@ -22,7 +22,7 @@ const UNSAFE_PATTERNS = [
  * Nano Training Veri Doğrulayıcı (MVP)
  * Gerçek eğitime girmeden önce veriyi kurallara göre denetler.
  */
-export function validateNanoTrainingRecord(record: NanoTrainingRecord): ValidationResult {
+export function validateNanoTrainingRecord(record: NanoTrainingRecord, options: { isCandidate?: boolean } = {}): ValidationResult {
   const result: ValidationResult = {
     valid: true,
     warnings: [],
@@ -43,7 +43,7 @@ export function validateNanoTrainingRecord(record: NanoTrainingRecord): Validati
     result.blockedReasons.push('Yüksek risk seviyeli kayıtlar otomatik bloklanır.');
   }
 
-  if (!record.approved) {
+  if (!record.approved && !options.isCandidate) {
     result.blockedReasons.push('Onaylanmamış kayıt.');
   }
 

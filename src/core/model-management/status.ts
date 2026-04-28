@@ -7,6 +7,44 @@ import { MODEL_REGISTRY } from '../models/registry';
 const execAsync = promisify(exec);
 const homeDir = process.env.USERPROFILE || process.env.HOME || '';
 
+export async function getOllamaReadiness(): Promise<ModelStatusReport> {
+  const baseUrl = process.env.AILLAME_OLLAMA_BASE_URL || 'http://127.0.0.1:11434';
+  const modelId = process.env.AILLAME_OLLAMA_TEXT_MODEL || 'gemma:2b';
+
+  const report: ModelStatusReport = {
+    modelId: modelId,
+    isReady: false,
+    status: 'planning_only',
+    details: { pythonFound: true, packagesInstalled: true, modelCached: false, cudaAvailable: true }
+  };
+
+  if (process.env.AILLAME_OLLAMA_ENABLED === 'false') {
+    report.status = 'error';
+    report.details.error = 'Ollama is disabled in .env';
+    return report;
+  }
+
+  try {
+    const res = await fetch(`${baseUrl}/api/tags`, { signal: AbortSignal.timeout(2000) });
+    if (!res.ok) throw new Error('Server returned non-200');
+    const data = await res.json();
+
+    const hasModel = data.models?.some((m: any) => m.name === modelId || m.name.startsWith(modelId));
+    if (hasModel) {
+      report.isReady = true;
+      report.status = 'active';
+      report.message = 'Active / Ollama Server Up';
+    } else {
+      report.status = 'planning_only';
+      report.message = `Model missing. Please run: ollama run ${modelId}`;
+    }
+  } catch (e: any) {
+    report.status = 'error';
+    report.details.error = 'Ollama server offline or unreachable.';
+  }
+  return report;
+}
+
 export interface ModelStatusReport {
   modelId: string;
   isReady: boolean;
@@ -34,6 +72,13 @@ export async function getSdxlReadiness(): Promise<ModelStatusReport> {
       cudaAvailable: false,
     }
   };
+
+  if (process.env.AILLAME_SDXL_ENABLED !== 'true') {
+    report.status = 'planning_only';
+    report.message = 'SDXL is optional and disabled.';
+    report.details.error = 'Set AILLAME_SDXL_ENABLED=true only for image generation runs.';
+    return report;
+  }
 
   try {
     // 1. Python Check
@@ -97,6 +142,13 @@ export async function getQwenReadiness(): Promise<ModelStatusReport> {
     }
   };
 
+  if (process.env.AILLAME_QWEN_ENABLED !== 'true') {
+    report.status = 'planning_only';
+    report.message = 'Qwen is optional/heavy and disabled.';
+    report.details.error = 'Set AILLAME_QWEN_ENABLED=true only when deep analysis is needed.';
+    return report;
+  }
+
   try {
     // 1. Python Check
     if (fs.existsSync(pythonPath) || pythonPath === 'python') {
@@ -145,11 +197,106 @@ export async function getQwenReadiness(): Promise<ModelStatusReport> {
   return report;
 }
 
+export async function getGemmaReadiness(): Promise<ModelStatusReport> {
+  const pythonPath = process.env.AILLAME_PYTHON || 'python';
+  const runtime = process.env.AILLAME_GEMMA_RUNTIME || 'gguf';
+  const gemmaModelId = process.env.AILLAME_GEMMA_MODEL_ID || 'google/gemma-4-E4B-it';
+  const ggufFile = process.env.AILLAME_GEMMA_GGUF_FILE || 'gemma-4-E4B-it-Q4_K_M.gguf';
+
+  const report: ModelStatusReport = {
+    modelId: gemmaModelId,
+    isReady: false,
+    status: 'planning_only',
+    details: {
+      pythonFound: false,
+      packagesInstalled: false,
+      modelCached: false,
+      cudaAvailable: false,
+    }
+  };
+
+  if (process.env.AILLAME_GEMMA_ENABLED !== 'true') {
+    report.status = 'planning_only';
+    report.message = 'Gemma is optional and disabled.';
+    report.details.error = 'Set AILLAME_GEMMA_ENABLED=true when the local Gemma server/runtime is ready.';
+    return report;
+  }
+
+  try {
+    if (runtime === 'gguf') {
+      // GGUF Check: Support absolute paths or default relative location
+      const ggufPath = path.isAbsolute(ggufFile)
+        ? ggufFile
+        : path.join(process.cwd(), 'data', 'models', 'gguf', ggufFile);
+      const fileExists = fs.existsSync(ggufPath);
+
+      report.details.modelCached = fileExists;
+
+      // Llama Server Check (Optional, but good for status)
+      const serverUrl = process.env.AILLAME_GEMMA_SERVER_URL || 'http://127.0.0.1:8080';
+      let serverUp = false;
+      try {
+        const res = await fetch(`${serverUrl}/health`, { signal: AbortSignal.timeout(2000) });
+        serverUp = res.ok;
+      } catch (e) {}
+
+      if (fileExists) {
+        report.isReady = true; // For GGUF, file exists = ready (server might need start)
+        report.status = 'active';
+        report.message = serverUp ? 'Active / GGUF Server Up' : 'Active / GGUF File Ready (Start server to use)';
+      } else {
+        report.status = 'planning_only';
+        report.message = 'GGUF model file missing.';
+        report.details.error = `Place ${ggufFile} in data/models/gguf/`;
+      }
+      return report;
+    }
+
+    // Transformers Runtime Check
+    if (fs.existsSync(pythonPath) || pythonPath === 'python') {
+      report.details.pythonFound = true;
+    }
+
+    try {
+      const { stdout } = await execAsync(`& "${pythonPath}" -c "import torch, transformers; print('OK'); print(torch.cuda.is_available())"`, { shell: 'powershell.exe' });
+      if (stdout.includes('OK')) {
+        report.details.packagesInstalled = true;
+        report.details.cudaAvailable = stdout.includes('True');
+      }
+    } catch (e: any) {
+      report.status = 'planning_only';
+      report.details.error = `Gemma dependencies missing: ${e.message}`;
+      return report;
+    }
+
+    const folderName = `models--${gemmaModelId.replace(/\//g, '--')}`;
+    const cacheDir = path.join(homeDir, '.cache', 'huggingface', 'hub', folderName);
+    if (fs.existsSync(cacheDir)) {
+      report.details.modelCached = true;
+    }
+
+    if (report.details.pythonFound && report.details.packagesInstalled && report.details.modelCached) {
+      report.isReady = true;
+      report.status = 'active';
+      report.message = report.details.cudaAvailable ? 'Active / GPU Accelerated' : 'Active / CPU Mode';
+    } else {
+      report.status = 'planning_only';
+      report.message = 'Model download required (Transformers).';
+    }
+
+  } catch (err: any) {
+    report.status = 'error';
+    report.details.error = err.message;
+  }
+
+  return report;
+}
+
 export function getAllModelInstallStatuses() {
   return Object.values(MODEL_REGISTRY).map(model => {
     let installed = false;
     let cachePath = '';
-    
+
     if (model.builtIn) {
       installed = true;
     } else if (model.repoId) {
@@ -160,7 +307,7 @@ export function getAllModelInstallStatuses() {
         cachePath = fullPath;
       }
     }
-    
+
     return {
       ...model,
       installed,

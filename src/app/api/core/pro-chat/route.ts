@@ -19,6 +19,13 @@ export async function POST(req: NextRequest) {
       });
     }
 
+    if (process.env.AILLAME_QWEN_ENABLED !== 'true') {
+      return NextResponse.json(
+        { error: 'Qwen provider is disabled. Enable AILLAME_QWEN_ENABLED=true for this optional heavy model.' },
+        { status: 403 }
+      );
+    }
+
     const response = await generateProMultimodalResponse({
       prompt,
       images,

@@ -99,7 +99,7 @@ export default function ChatShell({ conversationId }: ChatShellProps) {
 
   return (
     <div
-      className="flex flex-col h-[70vh] w-full neural-grid rounded-[inherit] overflow-hidden relative"
+      className="flex flex-col h-full w-full neural-grid rounded-[inherit] overflow-hidden relative"
       {...dragHandlers}
     >
       {/* Drag overlay */}

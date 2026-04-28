@@ -1,5 +1,6 @@
 import { AillameLocalProvider } from './aillame-provider';
 import { ProLocalProvider } from './pro-provider';
+import { GemmaProvider } from './gemma-provider';
 import { RemoteApiLLMProvider } from './remote-api';
 import type { LLMProvider } from './base';
 
@@ -7,6 +8,7 @@ export type LLMProviderType = 'local' | 'cloud' | 'hybrid';
 
 const localProvider = new AillameLocalProvider();
 const proProvider = new ProLocalProvider();
+const gemmaProvider = new GemmaProvider();
 const remoteProvider = new RemoteApiLLMProvider();
 
 export function getLLMProvider(type: LLMProviderType): LLMProvider {
@@ -34,6 +36,10 @@ export function getLLMProvider(type: LLMProviderType): LLMProvider {
 
 export function getProLLMProvider(): LLMProvider {
   return proProvider;
+}
+
+export function getGemmaLLMProvider(): LLMProvider {
+  return gemmaProvider;
 }
 
 export function getAvailableProviders(): LLMProviderType[] {

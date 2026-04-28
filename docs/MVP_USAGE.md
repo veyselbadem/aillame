@@ -144,4 +144,23 @@ Aillame Nano, sadece bir metin üreticisi değil, sistemin akıllı orkestratör
 
 ## 12. AI Lab (Modeller Arası Sohbet)
 
-Admin panelindeki AI Lab, farklı modellerin (Nano, Qwen, Gemini) bir konu üzerinde tartışabildiği bir ortamdır. Bu tartışmalardan elde edilen veriler, Nano'nun "uzmanlaşması" için eğitim verisi adayı olarak kullanılır.
+Admin panelindeki AI Lab, farklı modellerin (Nano, Gemma, Qwen, Gemini) bir konu üzerinde tartışabildiği bir ortamdır. 
+
+- **Gemma 4 E4B (Fast Analysis):** AI Lab oturumlarında hızlı analiz ve diyalog için Gemma 4 E4B desteği eklenmiştir. GGUF formatı ile llama.cpp üzerinden çalıştırılması tavsiye edilir.
+
+### Gemma 4 E4B Kurulumu (GGUF - Önerilen):
+1. `data/models/gguf/` klasörünü oluşturun.
+2. Hugging Face üzerinden `gemma-4-E4B-it-Q4_K_M.gguf` dosyasını indirin ve bu klasöre koyun.
+3. `llama-server` (llama.cpp) uygulamasını 8080 portunda bu modelle başlatın.
+4. `.env` dosyasında `AILLAME_GEMMA_ENABLED=true` ve `AILLAME_GEMMA_RUNTIME=gguf` yapın.
+
+### Gemma 4 E4B Kurulumu (Transformers):
+1. `huggingface-cli login` ile giriş yapın (Model erişim izni gerekebilir).
+2. `huggingface-cli download google/gemma-4-E4B-it` komutunu çalıştırın.
+3. `.env` dosyasında `AILLAME_GEMMA_RUNTIME=transformers` olarak ayarlayın.
+
+### Qwen3-VL 8B (Opsiyonel Ağır Model)
+Qwen modeli sistemde yüklü kalsa da, varsayılan akışlardan tamamen izole edilmiştir.
+Sadece manuel derin görsel analiz isteklerinde (AI Lab üzerinden bilinçli seçilirse) devreye girer. Yüksek RAM tüketimi nedeniyle otomatik çağrılmaz. Gelecekte hafif görsel işlemler için Qwen3-VL 4B adayı sisteme eklenecektir.
+
+Tartışmalardan elde edilen veriler, Nano'nun "uzmanlaşması" için eğitim verisi adayı olarak kullanılır.

@@ -7,10 +7,13 @@ import type { ImageAttachment } from '@apptypes/attachments';
 import type { AillameTier, LLMMode } from '@apptypes/settings';
 import type { ResearchSource } from '@apptypes/research';
 
+import { Message } from '@apptypes/message';
+
 export interface OrchestratorOptions {
   llmMode?: LLMMode;
   tier?: AillameTier;
   attachments?: ImageAttachment[];
+  messages?: Message[];
   onToken?: (token: string) => void;
   onToolCall?: (call: ToolCall) => void;
   onToolResult?: (result: ToolResult) => void;
@@ -123,7 +126,10 @@ export async function orchestrateChat(
     : analyzed.content;
 
   if ('generate' in provider) {
-    return provider.generate(enrichedInput, options?.onToken, signal, { images: attachments }) as Promise<string>;
+    return provider.generate(enrichedInput, options?.onToken, signal, { 
+        images: attachments,
+        messages: options?.messages 
+    }) as Promise<string>;
   }
 
   if ('analyze' in provider) {

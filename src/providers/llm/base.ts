@@ -1,7 +1,9 @@
+import { Message } from '@apptypes/message';
 import type { ImageAttachment } from '@apptypes/attachments';
 
 export interface LLMGenerateOptions {
   images?: ImageAttachment[];
+  messages?: Message[];
 }
 
 export interface LLMProvider {

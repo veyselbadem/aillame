@@ -2,23 +2,25 @@ import { LabMessage } from './types';
 import { validateNanoTrainingRecord } from '../nano-training/validator';
 import { createLearningCandidate } from '../learning-candidates/service';
 
+import { NanoLearningSuggestion } from '../nano-cognitive/types';
+
 /**
  * AI Lab mesajından bir eğitim adayı (training candidate) oluşturur.
  * Doğrudan eğitime girmez, önce validator'dan geçer ve admin onayı bekler.
  */
-export async function createTrainingCandidateFromAiLabMessage(message: LabMessage, topic: string) {
+export async function createTrainingCandidateFromAiLabMessage(message: LabMessage, topic: string, suggestion?: NanoLearningSuggestion) {
   // 1. Validator kontrolü
   const validation = validateNanoTrainingRecord({
     id: `lab_${message.id}`,
-    instruction: `Explain ${topic}`,
-    input: '',
-    output: message.content,
+    instruction: suggestion?.instruction || `Explain ${topic}`,
+    input: suggestion?.input || '',
+    output: suggestion?.output || message.content,
     source: 'ai_lab',
     sourceId: message.id,
-    riskLevel: 'low',
+    riskLevel: suggestion?.riskLevel || 'low',
     approved: false,
     createdAt: Date.now()
-  });
+  }, { isCandidate: true });
 
   if (!validation.valid) {
     return {
@@ -34,8 +36,10 @@ export async function createTrainingCandidateFromAiLabMessage(message: LabMessag
     messageId: message.id,
     conversationId: message.sessionId,
     type: 'positive_learning_candidate',
+    source: 'ai_lab',
     selectedFeedback: 'like',
-    reason: `AI Lab discussion on topic: ${topic}`,
+    reason: `AI Lab learning candidate: ${suggestion?.instruction || topic}`,
+    optionalComment: `instruction: ${suggestion?.instruction || `Explain ${topic}`}\noutput: ${suggestion?.output || message.content}\nsource: ${suggestion?.source || 'ai_lab'}\nriskLevel: ${suggestion?.riskLevel || 'low'}`,
     metadata: {
       sessionId: message.sessionId,
       messageId: message.id

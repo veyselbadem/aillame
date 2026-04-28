@@ -90,3 +90,8 @@ target_alt/
 target_isolated/
 aillame-core/target*/
 target*/
+
+# Additional runtime logs
+external-api-request-log.json
+memory-write-log.json
+training_log.txt

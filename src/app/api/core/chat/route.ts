@@ -3,8 +3,6 @@ import { getSharedCore } from '@/lib/aillame-engine';
 import { routeRequest } from '@/core/model-orchestration/router';
 import { webSearch } from '@/core/research/search';
 import { summarizeResearch } from '@/core/research/summarize';
-import { ProServerProvider } from '@/providers/llm/pro-server-provider';
-import { generateProMultimodalResponse } from '@/core/inference/pro-multimodal';
 
 import { 
   getQuickResponse, 
@@ -14,42 +12,25 @@ import {
   classifyTask
 } from '@/core/nano-cognitive/service';
 
-const GENERAL_KNOWLEDGE_PROMPTS = [
-  'ekonomi nedir',
-  'yapay zeka nedir',
-  'javascript nedir',
-  'psikoloji nedir',
-  'hukuk nedir',
-  'enflasyon nedir',
-  'arz ve talep nedir',
-  'api nedir',
-  'algoritma nedir',
-  'web sitesi nedir',
-];
 
-async function getProAnswer(prompt: string): Promise<string | null> {
-  try {
-    const response = await generateProMultimodalResponse({
-      prompt,
-      maxTokens: 100,
-      temperature: 0.7
-    });
-    
-    if (!response || looksMalformedNanoText(response)) return null;
-    return response;
-  } catch (error) {
-    console.error('getProAnswer error:', error);
-    return null;
-  }
-}
 
 
 export async function POST(req: NextRequest) {
     let prompt = '';
+    let messages: any[] = [];
     try {
         const body = await req.json();
         prompt = typeof body?.prompt === 'string' ? body.prompt : '';
+        messages = Array.isArray(body?.messages) ? body.messages : [];
         const { maxTokens = 100, temperature = 0.8 } = body;
+
+        // If prompt is empty but messages exist, use the last user message
+        if (!prompt && messages.length > 0) {
+            const lastUserMsg = [...messages].reverse().find(m => m.role === 'user');
+            if (lastUserMsg) {
+                prompt = lastUserMsg.content;
+            }
+        }
 
         if (prompt === 'PING') {
             return NextResponse.json({ status: 'ready' });
@@ -61,7 +42,7 @@ export async function POST(req: NextRequest) {
 
         // 2. Handle Social Chat / Quick Response
         if (cognitivePlan.taskType === 'social_chat') {
-            const quickResponse = getQuickResponse(prompt);
+            const quickResponse = getQuickResponse(prompt, messages);
             if (quickResponse) {
                 return NextResponse.json({ 
                     response: quickResponse, 
@@ -75,14 +56,7 @@ export async function POST(req: NextRequest) {
         if (cognitivePlan.taskType === 'general_knowledge') {
             const generalKnowledge = getGeneralKnowledgeResponse(prompt);
             if (generalKnowledge) {
-                const proResponse = await getProAnswer(prompt);
-                if (proResponse) {
-                    return NextResponse.json({
-                        response: proResponse,
-                        modelId: 'aillame-pro-v1',
-                        plan: { ...plan, cognitivePlan }
-                    });
-                }
+                // Return local General Knowledge immediately for performance
                 return NextResponse.json({
                     response: generalKnowledge,
                     modelId: 'aillame-nano-v1-cognitive-gk',
@@ -120,15 +94,28 @@ export async function POST(req: NextRequest) {
         if (plan.selectedTarget === 'web_search' || cognitivePlan.taskType === 'current_research') {
             try {
                 const sources = await webSearch(prompt);
-                const provider = new ProServerProvider();
-                await provider.loadModel();
-                let summary = await summarizeResearch(provider, sources);
                 
-                if (!summary || looksMalformedNanoText(summary)) {
-                    // Fallback: Format sources manually
+                let summary = '';
+                const isOllamaEnabled = process.env.AILLAME_OLLAMA_ENABLED !== 'false';
+                
+                if (isOllamaEnabled) {
+                    const context = sources.map((s, i) => `[${i + 1}] ${s.title}: ${s.snippet}`).join('\n');
+                    const ollamaPrompt = `Aşağıdaki güncel web sonuçlarını kullanarak "${prompt}" konusunu Türkçe olarak özetle:\n\n${context}`;
+                    try {
+                        const { generateOllamaResponse } = await import('@/core/inference/ollama');
+                        summary = await generateOllamaResponse({ prompt: ollamaPrompt, maxTokens: 300, temperature: 0.6 });
+                    } catch (e) {
+                        console.warn('Ollama search summarize timeout/error', e);
+                    }
+                }
+                
+                if (!summary) {
+                    // Fallback: Skip heavy Qwen cold-start, format manually
                     summary = `Araştırma tamamlandı. İşte bazı kaynaklar:\n\n` + 
                              sources.map((s, i) => `[${i+1}] ${s.title}\n${s.url}`).join('\n\n');
-                } else {
+                }
+                
+                if (summary && !looksMalformedNanoText(summary)) {
                     // Nano Cognitive Commentary
                     summary = `Aillame Nano: Güncel kaynakları taradım ve şu sonuçlara ulaştım:\n\n${summary}\n\nBu bilgi konunun güncel durumunu yansıtıyor.`;
                 }
@@ -158,7 +145,7 @@ export async function POST(req: NextRequest) {
         const core = await getSharedCore(requestedCheckpoint);
         if (!core) {
             return NextResponse.json({ 
-                response: safeFallback(prompt), 
+                response: safeFallback(prompt, messages), 
                 modelId: 'aillame-nano-v1-fallback',
                 plan
             });
@@ -175,7 +162,7 @@ export async function POST(req: NextRequest) {
         const rawResponse = tokenizer.decode(generatedIds.length > 0 ? generatedIds : outputIds);
         
         // 6. Kalite kontrolü ve Fallback
-        const response = looksMalformedNanoText(rawResponse) ? safeFallback(prompt) : rawResponse;
+        const response = looksMalformedNanoText(rawResponse) ? safeFallback(prompt, messages) : rawResponse;
 
         return NextResponse.json({ 
             response, 
@@ -185,7 +172,7 @@ export async function POST(req: NextRequest) {
     } catch (error: any) {
         console.error('API Chat Error:', error);
         return NextResponse.json({ 
-            response: safeFallback(prompt), 
+            response: safeFallback(prompt, messages), 
             modelId: 'aillame-nano-v1-error' 
         });
     }

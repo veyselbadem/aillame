@@ -1,4 +1,4 @@
-import { LLMProvider } from './base';
+import { LLMProvider, LLMGenerateOptions } from './base';
 
 export class AillameLocalProvider implements LLMProvider {
     private _isReady: boolean = false;
@@ -60,7 +60,7 @@ export class AillameLocalProvider implements LLMProvider {
         }
     }
 
-    async generate(prompt: string, onToken?: (token: string) => void, signal?: AbortSignal): Promise<string> {
+    async generate(prompt: string, onToken?: (token: string) => void, signal?: AbortSignal, options?: LLMGenerateOptions): Promise<string> {
         if (!this._isReady) {
             await this.loadModel();
             if (!this._isReady) {
@@ -72,7 +72,11 @@ export class AillameLocalProvider implements LLMProvider {
             const response = await this.fetchWithTimeout('/api/core/chat', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ prompt, temperature: 0.8 }),
+                body: JSON.stringify({ 
+                    prompt, 
+                    messages: options?.messages || [],
+                    temperature: 0.8 
+                }),
                 signal,
             });
 
