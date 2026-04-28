@@ -149,10 +149,81 @@ Admin panelindeki AI Lab, farklı modellerin (Nano, Gemma, Qwen, Gemini) bir kon
 - **Gemma 4 E4B (Fast Analysis):** AI Lab oturumlarında hızlı analiz ve diyalog için Gemma 4 E4B desteği eklenmiştir. GGUF formatı ile llama.cpp üzerinden çalıştırılması tavsiye edilir.
 
 ### Gemma 4 E4B Kurulumu (GGUF - Önerilen):
-1. `data/models/gguf/` klasörünü oluşturun.
-2. Hugging Face üzerinden `gemma-4-E4B-it-Q4_K_M.gguf` dosyasını indirin ve bu klasöre koyun.
-3. `llama-server` (llama.cpp) uygulamasını 8080 portunda bu modelle başlatın.
-4. `.env` dosyasında `AILLAME_GEMMA_ENABLED=true` ve `AILLAME_GEMMA_RUNTIME=gguf` yapın.
+1. GGUF dosyasını doğrulayın: `C:\aillame-models\gguf\gemma-4-E4B-it-Q4_K_M.gguf`
+2. `llama-server` uygulamasını doğrulayın: `C:\aillame-llama\llama-server.exe`
+3. Önerilen yöntem: Aillame'nin Gemma gerektiğinde server'ı otomatik başlatmasına izin verin.
+
+```env
+AILLAME_GEMMA_ENABLED=true
+AILLAME_GEMMA_AUTO_START=true
+AILLAME_GEMMA_RUNTIME=gguf
+AILLAME_GEMMA_SERVER_URL=http://127.0.0.1:8080
+AILLAME_GEMMA_MODEL_ID=gemma-4-E4B-it-Q4_K_M.gguf
+AILLAME_GEMMA_LLAMA_SERVER_EXE=C:\aillame-llama\llama-server.exe
+AILLAME_GEMMA_MODEL_PATH=C:\aillame-models\gguf\gemma-4-E4B-it-Q4_K_M.gguf
+AILLAME_GEMMA_PORT=8080
+AILLAME_GEMMA_CONTEXT_SIZE=8192
+AILLAME_GEMMA_STARTUP_TIMEOUT_MS=60000
+AILLAME_GEMMA_TIMEOUT_MS=60000
+```
+
+Runtime durumu:
+
+```powershell
+curl.exe "http://localhost:3000/api/core/gemma-runtime/status"
+```
+
+4. Manuel yöntem gerekirse server'ı ayrıca başlatın:
+
+```powershell
+cd C:\aillame-llama
+.\llama-server.exe -m "C:\aillame-models\gguf\gemma-4-E4B-it-Q4_K_M.gguf" --port 8080 -c 8192
+```
+
+CUDA offload destekleniyorsa alternatif:
+
+```powershell
+.\llama-server.exe -m "C:\aillame-models\gguf\gemma-4-E4B-it-Q4_K_M.gguf" --port 8080 -c 8192 --n-gpu-layers 999
+```
+
+5. Smoke test:
+
+```powershell
+Invoke-RestMethod http://127.0.0.1:8080/health
+Invoke-RestMethod http://127.0.0.1:8080/v1/models
+```
+
+6. Direkt llama-server chat testi için PowerShell'de JSON'u UTF-8 dosyaya yazıp `curl.exe --data-binary` kullanın. Tek satır `curl --data-raw` JSON veya `^` satır devam karakteri PowerShell'de gövdeyi bozabilir.
+
+```powershell
+$body = @{
+  model = "gemma"
+  messages = @(
+    @{ role = "system"; content = "Cevabı doğrudan ver. Düşünme sürecini yazma. Sadece final cevap ver." },
+    @{ role = "user"; content = "Türkçe eş anlamlı kelimelerden 5 örnek ver." }
+  )
+  max_tokens = 256
+  temperature = 0.4
+} | ConvertTo-Json -Compress -Depth 5
+$body | Set-Content -Path "$env:TEMP\gemma-llama-test.json" -Encoding utf8
+curl.exe -X POST "http://127.0.0.1:8080/v1/chat/completions" `
+  -H "Content-Type: application/json; charset=utf-8" `
+  --data-binary "@$env:TEMP\gemma-llama-test.json"
+```
+
+7. Aillame endpoint testi:
+
+```powershell
+$body = @{ prompt = "Türkçe eş anlamlı kelimelerden 5 örnek ver." } | ConvertTo-Json -Compress
+$body | Set-Content -Path "$env:TEMP\gemma-test.json" -Encoding utf8
+curl.exe -X POST "http://localhost:3000/api/core/gemma-chat" `
+  -H "Content-Type: application/json; charset=utf-8" `
+  --data-binary "@$env:TEMP\gemma-test.json"
+```
+
+PowerShell `Invoke-RestMethod | ConvertTo-Json` bazı terminallerde ekrana basarken Türkçe karakter görüntüsünü yanıltabilir. Karar için `curl.exe --data-binary`, Node `fetch` veya tarayıcı Network response kullanılmalıdır.
+
+Beklenen davranış: auto-start açıksa Aillame önce `/v1/models` veya `/health` ile server durumunu kontrol eder; kapalıysa `llama-server.exe` sürecini arka planda `shell:false` ile başlatır. Başlatılamazsa `runtime_start_failed`, server kapalıysa `server_offline`, timeout olursa `timeout`, boş yanıt gelirse `empty_response` kodlu structured JSON döner. AI Lab `nano + gemma` akışında hata durumunda Gemma tekrar denenmez ve Nano final summary üretir.
 
 ### Gemma 4 E4B Kurulumu (Transformers):
 1. `huggingface-cli login` ile giriş yapın (Model erişim izni gerekebilir).

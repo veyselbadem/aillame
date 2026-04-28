@@ -111,6 +111,8 @@ const FAILURE_KEYWORDS = [
   'fetch failed',
   'econnrefused',
   'server offline',
+  'model_missing',
+  'model yüklü değil',
   'sunucu açık mı',
   'çalıştırılamadı',
   'analiz hatası',
@@ -171,7 +173,7 @@ function decideNextLabAction(session: LabSession): { nextParticipant: LabPartici
   const hasCandidate = msgs.some(m => m.candidateForTraining);
 
   if (session.currentTurn >= session.maxTurns) {
-    return { nextParticipant: 'stop', reason: 'Maksimum tur sayısına ulaşıldı.' };
+    return { nextParticipant: 'stop', reason: 'Maksimum tur sayisina ulasildi.' };
   }
 
   if (lastMsg && previousMsg && lastMsg.model === previousMsg.model && lastMsg.outputType === previousMsg.outputType) {
@@ -218,7 +220,7 @@ function decideNextLabAction(session: LabSession): { nextParticipant: LabPartici
   }
 
   if (goal === 'debug_error') {
-    if (active.includes('nano') && nanoCount === 0) return { nextParticipant: 'nano', reason: 'Debug: Nano hatayı sınıflandırır.' };
+    if (active.includes('nano') && nanoCount === 0) return { nextParticipant: 'nano', reason: 'Debug: Nano hatayi siniflandirir.' };
     if (fastProvider) return { nextParticipant: fastProvider, reason: 'Debug: seçili hızlı provider tanı koyar.' };
     if (active.includes('qwen') && qwenCount === 0 && !qwenFailed) return { nextParticipant: 'qwen', reason: 'Debug: Qwen seçiliyse derin hata analizi yapar.' };
     if (active.includes('nano') && nanoCount < 2) return { nextParticipant: 'nano', reason: 'Debug: Nano final summary.' };
@@ -239,7 +241,7 @@ function decideNextLabAction(session: LabSession): { nextParticipant: LabPartici
   return { nextParticipant: 'stop', reason: 'Hedeflenen akış tamamlandı.' };
 }
 /**
- * Oturumun sÄ±radaki adÄ±mÄ±nÄ± (turn) Ã§alÄ±ÅŸtÄ±rÄ±r.
+ * Oturumun sıradaki adımını (turn) çalıştırır.
  */
 export async function executeNextStep(id: string): Promise<LabMessage> {
   const sessions = await loadSessions();
@@ -277,25 +279,25 @@ export async function executeNextStep(id: string): Promise<LabMessage> {
       outputType = 'research';
       const results = await webSearch(session.topic);
       if (results && results.length > 0) {
-        content = `Konu hakkÄ±nda araÅŸtÄ±rma yapÄ±ldÄ±: "${session.topic}".\n\nBulunan Ã–zet Bilgi:\n`;
+        content = `Konu hakkında araştırma yapıldı: "${session.topic}".\n\nBulunan Özet Bilgi:\n`;
         results.forEach((s, i) => {
           content += `\n[${i + 1}] ${s.title}: ${s.snippet}`;
           sourceUrls.push(s.url);
           citations.push(`[${i + 1}] ${s.title} (${s.url})`);
         });
-        content += `\n\nAraÅŸtÄ±rma tamamlandÄ±. ${results.length} kaynak incelendi.`;
+        content += `\n\nAraştırma tamamlandı. ${results.length} kaynak incelendi.`;
       } else {
-        content = `"${session.topic}" iÃ§in web aramasÄ± yapÄ±ldÄ± fakat sonuÃ§ bulunamadÄ±.`;
+        content = `"${session.topic}" için web araması yapıldı fakat sonuç bulunamadı.`;
       }
     } else if (currentParticipant === 'qwen') {
       outputType = 'text';
       const isConfigured = process.env.AILLAME_QWEN_ENABLED === 'true' && !!process.env.AILLAME_PYTHON;
       if (isConfigured) {
         const lastMsgs = session.messages.slice(-5).map(m => `${m.model}: ${m.content}`).join('\n');
-        const qwenPrompt = `Sen AI Lab katÄ±lÄ±mcÄ±sÄ±sÄ±n. Konu: "${session.topic}". Ã–nceki tartÄ±ÅŸma:\n${lastMsgs}\n\nLÃ¼tfen konuyu teknik ve analitik aÃ§Ä±dan deÄŸerlendir. KÄ±sa ve Ã¶z cevap ver.`;
+        const qwenPrompt = `Sen AI Lab katılımcısısın. Konu: "${session.topic}". Önceki tartışma:\n${lastMsgs}\n\nLütfen konuyu teknik ve analitik açıdan değerlendir. Kısa ve öz cevap ver.`;
 
         try {
-          // AI Lab iÃ§in timeout sÃ¼resini kÄ±saltÄ±yoruz (varsayÄ±lan 30 saniye)
+          // AI Lab için timeout süresini kısaltıyoruz (varsayılan 30 saniye)
           const labTimeout = process.env.AILLAME_AI_LAB_QWEN_TIMEOUT_MS || process.env.AILLAME_QWEN_TIMEOUT_MS
             ? parseInt(process.env.AILLAME_AI_LAB_QWEN_TIMEOUT_MS || process.env.AILLAME_QWEN_TIMEOUT_MS || '90000')
             : 90000;
@@ -309,18 +311,18 @@ export async function executeNextStep(id: string): Promise<LabMessage> {
         } catch (err: any) {
           const isTimeout = err?.message?.includes('timed out');
           if (isTimeout) {
-            content = `Qwen bu turda zaman aÅŸÄ±mÄ±na uÄŸradÄ± (Timeout). AI Lab akÄ±ÅŸÄ± kesilmeden devam ediyor.\n\nNot: Bu durum modelin karmaÅŸÄ±k bir analiz Ã¼zerinde Ã§alÄ±ÅŸtÄ±ÄŸÄ±nÄ± veya sistem kaynaklarÄ±nÄ±n yoÄŸun olduÄŸunu gÃ¶sterebilir.`;
+            content = `Qwen bu turda zaman aşımına uğradı (Timeout). AI Lab akışı kesilmeden devam ediyor.\n\nNot: Bu durum modelin karmaşık bir analiz üzerinde çalıştığını veya sistem kaynaklarının yoğun olduğunu gösterebilir.`;
             outputType = 'degraded';
-            success = true; // Timeout akÄ±ÅŸÄ± bozmamalÄ±
+            success = true; // Timeout akışı bozmamalı
           } else {
             const detail = err?.message || 'Bilinmeyen hata';
-            content = `Qwen Ã‡alÄ±ÅŸtÄ±rma HatasÄ±: ${detail}\n\nNot: Qwen ÅŸu an gerÃ§ek zamanlÄ± yanÄ±t veremediÄŸi iÃ§in planlama moduna geÃ§iliyor.`;
+            content = `Qwen Çalıştırma Hatası: ${detail}\n\nNot: Qwen şu an gerçek zamanlı yanıt veremediği için planlama moduna geçiliyor.`;
             success = true;
             outputType = 'degraded';
           }
         }
       } else {
-        content = `Qwen (Pro Model): Qwen Ã§alÄ±ÅŸma zamanÄ± yapÄ±landÄ±rÄ±lmadÄ±ÄŸÄ± iÃ§in ÅŸu an planlama modunda yanÄ±t veriyor. Konu: ${session.topic}`;
+        content = `Qwen (Pro Model): Qwen çalışma zamanı yapılandırılmadığı için şu an planlama modunda yanıt veriyor. Konu: ${session.topic}`;
         outputType = 'planning';
       }
     } else if (currentParticipant === 'ollama') {
@@ -328,25 +330,25 @@ export async function executeNextStep(id: string): Promise<LabMessage> {
       const isEnabled = process.env.AILLAME_OLLAMA_ENABLED !== 'false';
       if (isEnabled) {
         const lastMsgs = session.messages.slice(-5).map(m => `${m.model}: ${m.content}`).join('\n');
-        const prompt = `Sen AI Lab katÄ±lÄ±mcÄ±sÄ±sÄ±n (Ollama). Konu: "${session.topic}". Ã–nceki tartÄ±ÅŸma:\n${lastMsgs}\n\nLÃ¼tfen konuyu hÄ±zlÄ± ve Ã¶z bir ÅŸekilde deÄŸerlendir. 2-3 cÃ¼mleyle cevap ver.`;
+        const prompt = `Sen AI Lab katılımcısısın (Ollama). Konu: "${session.topic}". Önceki tartışma:\n${lastMsgs}\n\nLütfen konuyu hızlı ve öz bir şekilde değerlendir. 2-3 cümleyle cevap ver.`;
         try {
           const { generateOllamaResponse } = await import('@/core/inference/ollama');
           const ollamaTimeout = process.env.AILLAME_OLLAMA_TIMEOUT_MS
             ? parseInt(process.env.AILLAME_OLLAMA_TIMEOUT_MS)
             : 60000;
-          content = await generateOllamaResponse({ prompt, maxTokens: 256, temperature: 0.7, timeout: ollamaTimeout }) || 'Ollama yanÄ±t Ã¼retemedi.';
+          content = await generateOllamaResponse({ prompt, maxTokens: 256, temperature: 0.7, timeout: ollamaTimeout }) || 'Ollama yanıt üretemedi.';
         } catch (err: any) {
-          const isTimeout = err?.message?.includes('zaman aÅŸÄ±mÄ±') || err?.message?.includes('timeout');
+          const isTimeout = err?.message?.includes('zaman aşımı') || err?.message?.includes('timeout');
           if (isTimeout) {
-            content = `Ollama zaman aÅŸÄ±mÄ±na uÄŸradÄ±. HÄ±zlÄ± analiz turu atlanÄ±yor.`;
+            content = `Ollama zaman aşımına uğradı. Hızlı analiz turu atlanıyor.`;
             outputType = 'degraded';
           } else {
-            content = `Ollama Analiz HatasÄ±: ${err.message || 'Model hazÄ±r deÄŸil.'}\n\nNot: Ollama kapalÄ± veya model eksik olabilir.`;
+            content = `Ollama Analiz Hatası: ${err.message || 'Model hazır değil.'}\n\nNot: Ollama kapalıysa server_offline, model eksikse model_missing olarak işaretlenir.`;
             outputType = 'degraded';
           }
         }
       } else {
-        content = `Ollama (Fast Model) devre dÄ±ÅŸÄ±. LÃ¼tfen .env Ã¼zerinden aktif edin.`;
+        content = `Ollama (Fast Model) devre dışı. Lütfen .env üzerinden aktif edin.`;
         outputType = 'planning';
       }
     } else if (currentParticipant === 'gemma') {
@@ -354,7 +356,7 @@ export async function executeNextStep(id: string): Promise<LabMessage> {
       const isEnabled = process.env.AILLAME_GEMMA_ENABLED === 'true';
       if (isEnabled) {
         const lastMsgs = session.messages.slice(-5).map(m => `${m.model}: ${m.content}`).join('\n');
-        const gemmaPrompt = `Sen AI Lab katÄ±lÄ±mcÄ±sÄ±sÄ±n (Gemma). Konu: "${session.topic}". Ã–nceki tartÄ±ÅŸma:\n${lastMsgs}\n\nLÃ¼tfen konuyu hÄ±zlÄ± ve Ã¶z bir ÅŸekilde deÄŸerlendir. 2-3 cÃ¼mleyle cevap ver.`;
+        const gemmaPrompt = `Sen AI Lab katılımcısısın (Gemma). Konu: "${session.topic}". Önceki tartışma:\n${lastMsgs}\n\nLütfen konuyu hızlı ve öz bir şekilde değerlendir. 2-3 cümleyle cevap ver.`;
 
         try {
           const gemmaTimeout = process.env.AILLAME_GEMMA_TIMEOUT_MS
@@ -368,14 +370,17 @@ export async function executeNextStep(id: string): Promise<LabMessage> {
             temperature: 0.7,
             timeout: gemmaTimeout
           });
-          content = result || 'Gemma yanÄ±t Ã¼retemedi.';
+          content = result || 'Gemma yanıt üretemedi.';
         } catch (err: any) {
           const isTimeout = err?.message?.includes('timed out') || err?.message?.includes('timeout') || err?.name === 'TimeoutError' || err?.message?.includes('AbortError');
           if (isTimeout) {
-            content = `Gemma 4 E4B zaman aÅŸÄ±mÄ±na uÄŸradÄ± (60s). HÄ±zlÄ± analiz turu atlanÄ±yor.`;
+            content = `Gemma 4 E4B zaman aşımına uğradı (60s). Hızlı analiz turu atlanıyor.`;
             outputType = 'degraded';
           } else {
-            content = `Gemma 4 E4B Analiz HatasÄ±: ${err.message || 'Model hazÄ±r deÄŸil.'}\n\nNot: Gemma henÃ¼z kurulu olmayabilir veya GGUF sunucusu kapalÄ±dÄ±r. AI Lab Nano + Web Search ile devam ediyor.`;
+            const autoStartNote = process.env.AILLAME_GEMMA_AUTO_START === 'true'
+              ? 'Not: Gemma local server otomatik başlatılamadı. Model yolu veya llama-server.exe yolu kontrol edilmeli.'
+              : 'Not: Gemma local server kapalı. Manuel başlatma veya AILLAME_GEMMA_AUTO_START=true kullanılabilir.';
+            content = `Gemma 4 E4B Analiz Hatası: ${err.message || 'Model hazır değil.'}\n\n${autoStartNote} AI Lab Nano + Web Search ile devam ediyor.`;
             outputType = 'degraded';
           }
         }
@@ -398,13 +403,13 @@ export async function executeNextStep(id: string): Promise<LabMessage> {
             steps: 25
           });
           imageUrl = `data:${result.mimeType};base64,${result.image}`;
-          content = `SDXL GÃ¶rsel Ãœretimi TamamlandÄ±.\nPrompt: ${imagePrompt}`;
+          content = `SDXL Görsel Üretimi Tamamlandı.\nPrompt: ${imagePrompt}`;
         } catch (err) {
-          content = `SDXL Execution HatasÄ±: Model veya Ã§alÄ±ÅŸma zamanÄ± hazÄ±r deÄŸil. Fallback planÄ±na geÃ§iliyor.`;
+          content = `SDXL Execution Hatası: Model veya çalışma zamanı hazır değil. Fallback planına geçiliyor.`;
           outputType = 'planning';
         }
       } else {
-        content = `SDXL (Image Model): SDXL Ã§alÄ±ÅŸma zamanÄ± yapÄ±landÄ±rÄ±lmadÄ±ÄŸÄ± iÃ§in ÅŸu an planlama modunda yanÄ±t veriyor. Konu: ${session.topic}`;
+        content = `SDXL (Image Model): SDXL çalışma zamanı yapılandırılmadığı için şu an planlama modunda yanıt veriyor. Konu: ${session.topic}`;
         outputType = 'planning';
       }
     } else if (currentParticipant === 'nano') {
@@ -414,7 +419,7 @@ export async function executeNextStep(id: string): Promise<LabMessage> {
 
       content = `Aillame Nano (Cognitive Layer):\n\n${reflection.summary}\n\n`;
       if (reflection.suggestion) content += `Yorum: ${reflection.suggestion}\n`;
-      if (reflection.nextStep) content += `Ã–neri: ${reflection.nextStep}\n`;
+      if (reflection.nextStep) content += `Öneri: ${reflection.nextStep}\n`;
 
       const hasCandidate = session.messages.some(m => m.candidateForTraining);
       const providerHasFailed = session.messages.some(m => m.model !== 'nano' && m.model !== 'system' && isFailureMessage(m));
@@ -422,14 +427,14 @@ export async function executeNextStep(id: string): Promise<LabMessage> {
 
       if (reflection.learningCandidate && !hasCandidate && !providerHasFailed && hasSynthesis && session.goal === 'create_learning_candidate') {
         pendingLearningCandidate = reflection.learningCandidate;
-        content += `\n[Eğitim Adayı Tespit Edildi]: "${reflection.learningCandidate.instruction}" - Admin onayı bekleniyor.`;
+        content += `\n[Egitim Adayi Tespit Edildi]: "${reflection.learningCandidate.instruction}" - Admin onayi bekleniyor.`;
       }
     } else {
-      content = `${currentParticipant.toUpperCase()} (Planned Model): Bu model henÃ¼z tam entegre edilmediÄŸi iÃ§in planning modunda yanÄ±t veriyor. Konu: ${session.topic}`;
+      content = `${currentParticipant.toUpperCase()} (Planned Model): Bu model henüz tam entegre edilmediği için planning modunda yanıt veriyor. Konu: ${session.topic}`;
       outputType = 'planning';
     }
   } catch (error) {
-    content = `Hata: ${currentParticipant} Ã§alÄ±ÅŸtÄ±rÄ±lÄ±rken bir sorun oluÅŸtu.`;
+    content = `Hata: ${currentParticipant} çalıştırılırken bir sorun oluştu.`;
     console.error(error);
     success = false;
     outputType = 'error';
@@ -483,8 +488,8 @@ export async function executeNextStep(id: string): Promise<LabMessage> {
 }
 
 /**
- * Oturumu kontrollÃ¼ bir dÃ¶ngÃ¼de Ã§alÄ±ÅŸtÄ±rÄ±r.
- * Next.js API limitleri dahilinde bir seferde birkaÃ§ adÄ±m ilerler.
+ * Oturumu kontrollü bir döngüde çalıştırır.
+ * Next.js API limitleri dahilinde bir seferde birkaç adım ilerler.
  */
 export async function runControlledLoop(id: string, stepsToRun: number = 3): Promise<LabMessage[]> {
   const messages: LabMessage[] = [];
@@ -500,7 +505,7 @@ export async function runControlledLoop(id: string, stepsToRun: number = 3): Pro
     const msg = await executeNextStep(id);
     messages.push(msg);
 
-    // KÃ¼Ã§Ã¼k bir bekleme (opsiyonel)
+    // Küçük bir bekleme (opsiyonel)
     await new Promise(r => setTimeout(r, 1000));
   }
 
