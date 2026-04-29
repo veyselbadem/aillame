@@ -31,6 +31,7 @@ export default function AiLabPage() {
   const [sdxlStatus, setSdxlStatus] = useState<any>(null);
   const [gemmaStatus, setGemmaStatus] = useState<any>(null);
   const [ollamaStatus, setOllamaStatus] = useState<any>(null);
+  const [runInFlightSessionId, setRunInFlightSessionId] = useState<string | null>(null);
 
   useEffect(() => {
     const savedToken = localStorage.getItem('aillame_admin_token');
@@ -139,8 +140,8 @@ export default function AiLabPage() {
     }
   };
 
-  const updateStatus = async (id: string, status: string) => {
-    if (!token) return;
+  const updateStatus = async (id: string, status: string): Promise<boolean> => {
+    if (!token) return false;
     try {
       const res = await fetch(`/api/admin/ai-lab/sessions/${id}`, {
         method: 'PATCH',
@@ -151,11 +152,43 @@ export default function AiLabPage() {
         body: JSON.stringify({ status })
       });
       if (res.ok) {
-        refreshSession(id);
-        fetchSessions(token);
+        await refreshSession(id);
+        await fetchSessions(token);
+        return true;
       }
     } catch (e) {
       console.error(e);
+    }
+    return false;
+  };
+
+  const runControlledSession = async (id: string, steps = 3) => {
+    if (!token || runInFlightSessionId === id) return;
+    setRunInFlightSessionId(id);
+    try {
+      const res = await fetch(`/api/admin/ai-lab/sessions/${id}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-aillame-admin-token': token
+        },
+        body: JSON.stringify({ action: 'run_controlled', steps })
+      });
+      if (res.ok) {
+        await refreshSession(id);
+        await fetchSessions(token);
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setRunInFlightSessionId(null);
+    }
+  };
+
+  const startSession = async (id: string) => {
+    const started = await updateStatus(id, 'running');
+    if (started) {
+      void runControlledSession(id, 3);
     }
   };
 
@@ -197,11 +230,12 @@ export default function AiLabPage() {
   };
 
   useEffect(() => {
-    let interval: any;
+    let interval: ReturnType<typeof setInterval> | undefined;
     if (selectedSession?.status === 'running') {
+      refreshSession(selectedSession.id);
       interval = setInterval(() => {
         refreshSession(selectedSession.id);
-      }, 5000);
+      }, 1500);
     }
     return () => clearInterval(interval);
   }, [selectedSession?.id, selectedSession?.status, token]);
@@ -613,10 +647,11 @@ export default function AiLabPage() {
                 <div className="flex items-center gap-3">
                   {selectedSession.status === 'draft' || selectedSession.status === 'paused' || selectedSession.status === 'stopped' ? (
                     <button
-                      onClick={() => updateStatus(selectedSession.id, 'running')}
-                      className="flex-1 rounded-2xl bg-emerald-600 py-3 text-xs font-black text-white hover:bg-emerald-500 transition-all shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2"
+                      onClick={() => startSession(selectedSession.id)}
+                      disabled={runInFlightSessionId === selectedSession.id}
+                      className="flex-1 rounded-2xl bg-emerald-600 py-3 text-xs font-black text-white hover:bg-emerald-500 disabled:opacity-60 disabled:cursor-not-allowed transition-all shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2"
                     >
-                      <FiPlay /> Deneyi Başlat
+                      <FiPlay /> {runInFlightSessionId === selectedSession.id ? 'Başlatılıyor' : 'Deneyi Başlat'}
                     </button>
                   ) : (
                     <>
@@ -641,22 +676,9 @@ export default function AiLabPage() {
                         <FiArrowRight /> Tek Adım
                       </button>
                       <button
-                        onClick={async () => {
-                          if (!token) return;
-                          const res = await fetch(`/api/admin/ai-lab/sessions/${selectedSession.id}`, {
-                            method: 'POST',
-                            headers: {
-                              'Content-Type': 'application/json',
-                              'x-aillame-admin-token': token
-                            },
-                            body: JSON.stringify({ action: 'run_controlled', steps: 3 })
-                          });
-                          if (res.ok) {
-                            refreshSession(selectedSession.id);
-                            fetchSessions(token);
-                          }
-                        }}
-                        className="flex-1 rounded-2xl bg-indigo-600 py-3 text-[10px] font-black text-white hover:bg-indigo-500 transition-all shadow-xl shadow-indigo-500/20 flex items-center justify-center gap-2"
+                        onClick={() => runControlledSession(selectedSession.id, 3)}
+                        disabled={runInFlightSessionId === selectedSession.id}
+                        className="flex-1 rounded-2xl bg-indigo-600 py-3 text-[10px] font-black text-white hover:bg-indigo-500 disabled:opacity-60 disabled:cursor-not-allowed transition-all shadow-xl shadow-indigo-500/20 flex items-center justify-center gap-2"
                       >
                         <FiTerminal /> Kontrollü Döngü (3)
                       </button>
