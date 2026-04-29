@@ -6,6 +6,7 @@ import { generateImageWithSdxl } from '../image-generation/sdxl';
 import { reflectOnLabStep } from '../nano-cognitive/service';
 import { createTrainingCandidateFromAiLabMessage } from './training-candidate';
 import type { NanoLearningSuggestion } from '../nano-cognitive/types';
+import { buildAnswerStyleGuide, normalizeAssistantAnswer } from '../conversation/conversation-quality';
 
 
 export async function createSession(input: CreateSessionInput & { goal?: string }): Promise<LabSession> {
@@ -359,7 +360,7 @@ export async function executeNextStep(id: string): Promise<LabMessage> {
       const isConfigured = process.env.AILLAME_QWEN_ENABLED === 'true' && !!process.env.AILLAME_PYTHON;
       if (isConfigured) {
         const lastMsgs = session.messages.slice(-5).map(m => `${m.model}: ${m.content}`).join('\n');
-        const qwenPrompt = `Sen AI Lab katılımcısısın. Konu: "${session.topic}". Önceki tartışma:\n${lastMsgs}\n\nLütfen konuyu teknik ve analitik açıdan değerlendir. Kısa ve öz cevap ver.`;
+        const qwenPrompt = `Sen AI Lab katılımcısısın. Konu: "${session.topic}".\n\nKonuşma kalite kuralları:\n${buildAnswerStyleGuide('ai_lab_analysis')}\n\nÖnceki tartışma:\n${lastMsgs}\n\nKonuyu teknik ve analitik açıdan değerlendir. 2-4 net maddeyle cevap ver.`;
 
         try {
           // AI Lab için timeout süresini kısaltıyoruz (varsayılan 30 saniye)
@@ -395,7 +396,7 @@ export async function executeNextStep(id: string): Promise<LabMessage> {
       const isEnabled = process.env.AILLAME_OLLAMA_ENABLED !== 'false';
       if (isEnabled) {
         const lastMsgs = session.messages.slice(-5).map(m => `${m.model}: ${m.content}`).join('\n');
-        const prompt = `Sen AI Lab katılımcısısın (Ollama). Konu: "${session.topic}". Önceki tartışma:\n${lastMsgs}\n\nLütfen konuyu hızlı ve öz bir şekilde değerlendir. 2-3 cümleyle cevap ver.`;
+        const prompt = `Sen AI Lab katılımcısısın (Ollama). Konu: "${session.topic}".\n\nKonuşma kalite kuralları:\n${buildAnswerStyleGuide('ai_lab_analysis')}\n\nÖnceki tartışma:\n${lastMsgs}\n\nKonuyu hızlı ve öz değerlendir. 2-4 net maddeyle cevap ver.`;
         try {
           const { generateOllamaResponse } = await import('@/core/inference/ollama');
           const ollamaTimeout = process.env.AILLAME_OLLAMA_TIMEOUT_MS
@@ -421,7 +422,7 @@ export async function executeNextStep(id: string): Promise<LabMessage> {
       const isEnabled = process.env.AILLAME_GEMMA_ENABLED === 'true';
       if (isEnabled) {
         const lastMsgs = session.messages.slice(-5).map(m => `${m.model}: ${m.content}`).join('\n');
-        const gemmaPrompt = `Sen AI Lab katılımcısısın (Gemma). Konu: "${session.topic}". Önceki tartışma:\n${lastMsgs}\n\nLütfen konuyu hızlı ve öz bir şekilde değerlendir. 2-3 cümleyle cevap ver.`;
+        const gemmaPrompt = `Sen AI Lab katılımcısısın (Gemma). Konu: "${session.topic}".\n\nKonuşma kalite kuralları:\n${buildAnswerStyleGuide('ai_lab_analysis')}\n\nÖnceki tartışma:\n${lastMsgs}\n\nKonuyu hızlı ve öz değerlendir. 2-4 net maddeyle cevap ver.`;
 
         try {
           const gemmaTimeout = process.env.AILLAME_GEMMA_TIMEOUT_MS
@@ -558,6 +559,8 @@ export async function executeNextStep(id: string): Promise<LabMessage> {
     success = false;
     outputType = 'error';
   }
+
+  content = normalizeAssistantAnswer(content);
 
   const msg: LabMessage = {
     id: messageId,

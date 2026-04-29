@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { PRO_CHAT_MODEL_ID, getModel } from '@core/models/registry';
 import { getAllModelInstallStatuses } from '@core/model-management/status';
 import { generateProMultimodalResponse } from '@core/inference/pro-multimodal';
+import { enrichPromptForConversation, normalizeAssistantAnswer } from '@core/conversation/conversation-quality';
 
 export async function POST(req: NextRequest) {
   try {
@@ -27,14 +28,14 @@ export async function POST(req: NextRequest) {
     }
 
     const response = await generateProMultimodalResponse({
-      prompt,
+      prompt: enrichPromptForConversation(prompt),
       images,
       maxTokens,
       temperature,
     });
 
     return NextResponse.json({
-      response,
+      response: normalizeAssistantAnswer(response),
       modelId: model.id,
       repoId: model.repoId,
       engine: model.runtime,

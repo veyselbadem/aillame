@@ -3,6 +3,14 @@ import { getSharedCore } from '@/lib/aillame-engine';
 import { routeRequest } from '@/core/model-orchestration/router';
 import { webSearch } from '@/core/research/search';
 import { summarizeResearch } from '@/core/research/summarize';
+import {
+  buildConversationAnswer,
+  detectUserIntent,
+  enrichPromptForConversation,
+  getRecommendedMaxTokens,
+  improveAssistantAnswer,
+  normalizeAssistantAnswer,
+} from '@/core/conversation/conversation-quality';
 
 import { 
   getQuickResponse, 
@@ -22,7 +30,8 @@ export async function POST(req: NextRequest) {
         const body = await req.json();
         prompt = typeof body?.prompt === 'string' ? body.prompt : '';
         messages = Array.isArray(body?.messages) ? body.messages : [];
-        const { maxTokens = 100, temperature = 0.8 } = body;
+        const requestedMaxTokens = typeof body?.maxTokens === 'number' ? body.maxTokens : 100;
+        const { temperature = 0.8 } = body;
 
         // If prompt is empty but messages exist, use the last user message
         if (!prompt && messages.length > 0) {
@@ -39,15 +48,27 @@ export async function POST(req: NextRequest) {
         // 1. Nano Cognitive Layer - Task Classification
         const cognitivePlan = classifyTask(prompt);
         const plan = routeRequest(prompt); // Keep orchestration plan for compatibility
+        const conversationIntent = detectUserIntent(prompt);
+        const maxTokens = Math.max(requestedMaxTokens, getRecommendedMaxTokens(conversationIntent));
+        const directConversationAnswer = buildConversationAnswer(prompt, messages);
+        const shouldUseLiveResearch = conversationIntent === 'research_summary' && /güncel|haber|son dakika|bugünkü|araştır/i.test(prompt);
+
+        if (directConversationAnswer && !shouldUseLiveResearch) {
+            return NextResponse.json({
+                response: normalizeAssistantAnswer(directConversationAnswer),
+                modelId: `aillame-nano-v1-quality-${conversationIntent}`,
+                plan: { ...plan, cognitivePlan, conversationIntent }
+            });
+        }
 
         // 2. Handle Social Chat / Quick Response
         if (cognitivePlan.taskType === 'social_chat') {
             const quickResponse = getQuickResponse(prompt, messages);
             if (quickResponse) {
                 return NextResponse.json({ 
-                    response: quickResponse, 
+                    response: normalizeAssistantAnswer(quickResponse), 
                     modelId: 'aillame-nano-v1-cognitive-social',
-                    plan: { ...plan, cognitivePlan }
+                    plan: { ...plan, cognitivePlan, conversationIntent }
                 });
             }
         }
@@ -58,9 +79,9 @@ export async function POST(req: NextRequest) {
             if (generalKnowledge) {
                 // Return local General Knowledge immediately for performance
                 return NextResponse.json({
-                    response: generalKnowledge,
+                    response: improveAssistantAnswer(prompt, generalKnowledge, messages),
                     modelId: 'aillame-nano-v1-cognitive-gk',
-                    plan: { ...plan, cognitivePlan }
+                    plan: { ...plan, cognitivePlan, conversationIntent }
                 });
             }
         }
@@ -68,9 +89,9 @@ export async function POST(req: NextRequest) {
         // 4. Handle Image Generation
         if (cognitivePlan.taskType === 'image_generation' || plan.selectedTarget === 'sdxl') {
             return NextResponse.json({
-                response: 'Görsel üretim modülü (SDXL) şu an sohbet içinde doğrudan desteklenmiyor. Lütfen Görsel Üretim sayfasını kullanın veya daha sonra tekrar deneyin.',
+                response: normalizeAssistantAnswer('Görsel üretim modülü (SDXL) şu an sohbet içinde doğrudan desteklenmiyor. Lütfen Görsel Üretim sayfasını kullanın veya daha sonra tekrar deneyin.'),
                 modelId: 'aillame-nano-v1-planner',
-                plan: { ...plan, cognitivePlan }
+                plan: { ...plan, cognitivePlan, conversationIntent }
             });
         }
 
@@ -85,9 +106,9 @@ export async function POST(req: NextRequest) {
                 planningMsg += `${plan.selectedTarget} katmanı şu an planlama aşamasında.`;
             }
             return NextResponse.json({ 
-                response: planningMsg, 
+                response: improveAssistantAnswer(prompt, planningMsg, messages), 
                 modelId: 'aillame-nano-v1-planner',
-                plan 
+                plan: { ...plan, cognitivePlan, conversationIntent }
             });
         }
 
@@ -121,9 +142,9 @@ export async function POST(req: NextRequest) {
                 }
 
                 return NextResponse.json({
-                    response: summary,
+                    response: improveAssistantAnswer(prompt, summary, messages),
                     modelId: 'aillame-nano-v1-web-search',
-                    plan: { ...plan, cognitivePlan }
+                    plan: { ...plan, cognitivePlan, conversationIntent }
                 });
             } catch (error) {
 
@@ -133,9 +154,9 @@ export async function POST(req: NextRequest) {
                                      prompt + " konusuyla ilgili güncel kaynakları kontrol ediyorum.";
                 
                 return NextResponse.json({
-                    response: manualSummary,
+                    response: improveAssistantAnswer(prompt, manualSummary, messages),
                     modelId: 'aillame-nano-v1-web-search-fallback',
-                    plan
+                    plan: { ...plan, cognitivePlan, conversationIntent }
                 });
             }
         }
@@ -144,17 +165,19 @@ export async function POST(req: NextRequest) {
         const requestedCheckpoint = req.headers.get('x-aillame-checkpoint') || undefined;
         const core = await getSharedCore(requestedCheckpoint);
         if (!core) {
+            const fallback = safeFallback(prompt, messages);
             return NextResponse.json({ 
-                response: safeFallback(prompt, messages), 
+                response: improveAssistantAnswer(prompt, fallback, messages), 
                 modelId: 'aillame-nano-v1-fallback',
-                plan
+                plan: { ...plan, cognitivePlan, conversationIntent }
             });
         }
 
         const { engine, tokenizer } = core;
 
         // 5. Inference
-        const inputIds = tokenizer.encode(prompt);
+        const enrichedPrompt = enrichPromptForConversation(prompt, messages);
+        const inputIds = tokenizer.encode(enrichedPrompt);
         const outputIds = engine.generate(new Uint32Array(inputIds), maxTokens, temperature);
         
         // Sadece yeni üretilen tokenları al
@@ -162,17 +185,19 @@ export async function POST(req: NextRequest) {
         const rawResponse = tokenizer.decode(generatedIds.length > 0 ? generatedIds : outputIds);
         
         // 6. Kalite kontrolü ve Fallback
-        const response = looksMalformedNanoText(rawResponse) ? safeFallback(prompt, messages) : rawResponse;
+        const response = looksMalformedNanoText(rawResponse)
+            ? improveAssistantAnswer(prompt, safeFallback(prompt, messages), messages)
+            : improveAssistantAnswer(prompt, rawResponse, messages);
 
         return NextResponse.json({ 
             response, 
             modelId: 'aillame-nano-v1',
-            plan
+            plan: { ...plan, cognitivePlan, conversationIntent }
         });
     } catch (error: any) {
         console.error('API Chat Error:', error);
         return NextResponse.json({ 
-            response: safeFallback(prompt, messages), 
+            response: improveAssistantAnswer(prompt, safeFallback(prompt, messages), messages), 
             modelId: 'aillame-nano-v1-error' 
         });
     }

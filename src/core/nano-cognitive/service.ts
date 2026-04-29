@@ -6,6 +6,11 @@ import {
   NanoReflection,
   NanoLearningSuggestion
 } from './types';
+import {
+  buildConversationAnswer,
+  detectUserIntent,
+  normalizeAssistantAnswer,
+} from '../conversation/conversation-quality';
 
 /**
  * Nano Cognitive Layer Service
@@ -336,20 +341,20 @@ export async function reflectOnLabStep(
     return { summary, nextStep };
   }
 
-  const safeContent = lastMsg.content || '';
+  const safeContent = normalizeAssistantAnswer(lastMsg.content || '');
 
   if (hasFallbackMetadata(lastMsg) || isErrorMessage(safeContent, lastMsg.type || lastMsg.outputType)) {
     if (lastMsg.model === 'gemma') {
       return {
-        summary: 'Gemma bu turda kullanılabilir sentez üretemedi.',
-        suggestion: 'Final özet Web Search kaynak özeti ve Nano değerlendirmesiyle hazırlanmalı; Gemma fallback metni içerik kaynağı olarak kullanılmayacak.',
-        nextStep: 'Nano: Final summary üret ve oturumu tamamla.',
+        summary: 'Gemma bu turda güvenilir bir sentez üretemedi; bu çıktıyı başarılı analiz gibi kullanmıyorum.',
+        suggestion: 'Final değerlendirmeyi Web Search kaynakları, önceki Nano yorumu ve varsa sağlam provider çıktılarıyla hazırlamak daha güvenli.',
+        nextStep: 'Nano: Kısa final özet üret, degraded durumu açıkça belirt ve oturumu tamamla.',
       };
     }
 
     return {
-      summary: `${lastMsg.model} çıktısı hata/degraded/planning olarak işaretlendi; bu başarılı analiz sayılmayacak.`,
-      suggestion: 'Bu çıktıdan eğitim adayı üretilmeyecek. Nano mevcut güvenli bilgilerle final summary üretmeli.',
+      summary: `${lastMsg.model} çıktısı hata/degraded/planning olarak işaretlendi; bu yüzden içerik kanıtı olarak kullanılmayacak.`,
+      suggestion: 'Bu çıktıdan eğitim adayı üretmemek ve mevcut güvenli bilgilerle final özet hazırlamak en doğru yol.',
       nextStep: 'Nano: Final summary üret ve oturumu tamamla.',
     };
   }
@@ -375,8 +380,8 @@ export async function reflectOnLabStep(
           : 'Nano: Kaynaklardan final özet çıkar.';
 
     return {
-      summary: `Web Search ${sourceCount || 0} kaynak getirdi. Ortak içerik özeti: ${preview}...`,
-      suggestion: 'Web Search bu oturumda tamamlandı; tekrar arama önerilmiyor.',
+      summary: `Web Search ${sourceCount || 0} kaynak getirdi. İlk okuma şu ortak çerçeveyi veriyor: ${preview}...`,
+      suggestion: 'Aynı oturumda tekrar arama yapmak yerine bu kaynakları yorumlayıp senteze geçmek daha verimli.',
       nextStep,
     };
   }
@@ -407,8 +412,8 @@ export async function reflectOnLabStep(
     const providerName = lastMsg.model === 'gemma' ? 'Gemma' : 'Ollama';
     const preview = safeContent.substring(0, 220).trim();
     const reflection: NanoReflection = {
-      summary: `${providerName} hızlı sentez üretti: ${preview}...`,
-      suggestion: 'Çıktı başarılıysa Nano final kalite kontrolüne geçebilir.',
+      summary: `${providerName} kullanılabilir bir hızlı sentez üretti: ${preview}...`,
+      suggestion: 'Bu çıktı final cevaba eklenebilir; yine de Nano son turda açıklık, tekrar ve güvenlik kontrolü yapmalı.',
       nextStep: hasQwen ? 'Qwen: Seçiliyse tek tur derin analiz yap.' : 'Nano: Final summary üret.',
     };
 
@@ -436,8 +441,8 @@ export async function reflectOnLabStep(
   }
 
   return {
-    summary: `${lastMsg.model} bir katkı sundu; Nano bunu final kalite kontrolle toparlamalı.`,
-    suggestion: 'Boş kalıp cevap yerine oturumu mevcut kanıtlarla kapatıyorum.',
+    summary: `${lastMsg.model} bir katkı sundu; Nano bunu kullanıcıya anlaşılır bir final özetine dönüştürmeli.`,
+    suggestion: 'Kısa, doğal Türkçe ve kanıta dayalı bir kapanış bu oturum için yeterli.',
     nextStep: chooseAvailableNextStep(participants, goal, webSearchDone),
   };
 }
@@ -466,11 +471,19 @@ export function looksMalformedNanoText(text: string): boolean {
 }
 
 export function safeFallback(prompt: string, history: { role: string, content: string }[] = []): string {
+  const qualityAnswer = buildConversationAnswer(prompt, history);
+  if (qualityAnswer) return normalizeAssistantAnswer(qualityAnswer);
+
   const quick = getQuickResponse(prompt, history);
   if (quick) return quick;
 
   const p = prompt.toLowerCase().trim();
   if (p.length < 3) return 'Anladım. Size nasıl yardımcı olabilirim?';
 
-  return 'Aillame Nano bu konuda tam olarak ne demek istediğinizi anlayamadı. Lütfen biraz daha detay verir misiniz veya farklı bir soru sorun?';
+  const intent = detectUserIntent(prompt);
+  if (intent === 'default') {
+    return 'Bunu daha iyi yanıtlayabilmem için bağlamı biraz daraltmam gerekiyor. İstersen hedefini tek cümleyle yaz; ben de sana uygulanabilir bir cevap hazırlayayım.';
+  }
+
+  return 'Bu isteği tam karşılayacak bir model çıktısı alamadım; yine de konuyu adım adım açabilirim. İstersen biraz daha detay ver.';
 }
