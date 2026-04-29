@@ -3,6 +3,7 @@ import { promisify } from 'util';
 import fs from 'fs';
 import path from 'path';
 import { MODEL_REGISTRY } from '../models/registry';
+import { checkGeminiConfig } from '../inference/gemini';
 
 const execAsync = promisify(exec);
 const homeDir = process.env.USERPROFILE || process.env.HOME || '';
@@ -62,6 +63,9 @@ export interface ModelStatusReport {
     cudaAvailable: boolean;
     error?: string;
     availableModels?: string[];
+    apiKeyConfigured?: boolean;
+    enabled?: boolean;
+    proProvider?: string;
   };
 }
 
@@ -198,6 +202,36 @@ export async function getQwenReadiness(): Promise<ModelStatusReport> {
   } catch (err: any) {
     report.status = 'error';
     report.details.error = err.message;
+  }
+
+  return report;
+}
+
+export function getGeminiReadiness(): ModelStatusReport {
+  const config = checkGeminiConfig();
+  const report: ModelStatusReport = {
+    modelId: config.model,
+    isReady: config.enabled && config.apiKeyConfigured,
+    status: config.enabled && config.apiKeyConfigured ? 'active' : 'planning_only',
+    details: {
+      pythonFound: true,
+      packagesInstalled: true,
+      modelCached: true,
+      cudaAvailable: false,
+      apiKeyConfigured: config.apiKeyConfigured,
+      enabled: config.enabled,
+      proProvider: process.env.AILLAME_PRO_PROVIDER || (config.apiKeyConfigured ? 'gemini' : 'auto'),
+    },
+  };
+
+  if (!config.enabled) {
+    report.message = 'Gemini provider is disabled.';
+    report.details.error = 'Set AILLAME_GEMINI_ENABLED=true to use Gemini for Pro Chat.';
+  } else if (!config.apiKeyConfigured) {
+    report.message = 'Gemini API key missing.';
+    report.details.error = 'Set AILLAME_GEMINI_API_KEY or GEMINI_API_KEY.';
+  } else {
+    report.message = 'Active / Gemini API configured';
   }
 
   return report;

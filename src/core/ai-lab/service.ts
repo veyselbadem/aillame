@@ -357,8 +357,8 @@ export async function executeNextStep(id: string): Promise<LabMessage> {
       }
     } else if (currentParticipant === 'qwen') {
       outputType = 'text';
-      const isConfigured = process.env.AILLAME_QWEN_ENABLED === 'true' && !!process.env.AILLAME_PYTHON;
-      if (isConfigured) {
+      const isQwenConfigured = process.env.AILLAME_QWEN_ENABLED === 'true' && !!process.env.AILLAME_PYTHON;
+      if (isQwenConfigured && process.env.AILLAME_PRO_PROVIDER?.trim().toLowerCase() !== 'gemini') {
         const lastMsgs = session.messages.slice(-5).map(m => `${m.model}: ${m.content}`).join('\n');
         const qwenPrompt = `Sen AI Lab katılımcısısın. Konu: "${session.topic}".\n\nKonuşma kalite kuralları:\n${buildAnswerStyleGuide('ai_lab_analysis')}\n\nÖnceki tartışma:\n${lastMsgs}\n\nKonuyu teknik ve analitik açıdan değerlendir. 2-4 net maddeyle cevap ver.`;
 
@@ -388,8 +388,54 @@ export async function executeNextStep(id: string): Promise<LabMessage> {
           }
         }
       } else {
-        content = `Qwen (Pro Model): Qwen çalışma zamanı yapılandırılmadığı için şu an planlama modunda yanıt veriyor. Konu: ${session.topic}`;
-        outputType = 'planning';
+        const { checkGeminiConfig, generateGeminiResponse } = await import('../inference/gemini');
+        const geminiConfig = checkGeminiConfig();
+
+        if (geminiConfig.enabled && geminiConfig.apiKeyConfigured) {
+          const lastMsgs = session.messages.slice(-5).map(m => `${m.model}: ${m.content}`).join('\n');
+          const geminiPrompt = `Sen AI Lab Pro/Gemini katılımcısısın. Konu: "${session.topic}".
+
+Konuşma kalite kuralları:
+${buildAnswerStyleGuide('ai_lab_analysis')}
+
+Önceki tartışma:
+${lastMsgs}
+
+Konuyu teknik ve analitik açıdan değerlendir. 2-4 net maddeyle cevap ver.`;
+          const result = await generateGeminiResponse({
+            prompt: geminiPrompt,
+            maxOutputTokens: 420,
+            temperature: 0.7,
+            timeoutMs: geminiConfig.timeoutMs,
+          });
+
+          if (result.success) {
+            content = result.answer;
+            generationMetadata = {
+              status: 'completed',
+              provider: 'gemini',
+              source: 'pro_chat',
+              fallbackFrom: isQwenConfigured ? undefined : 'qwen',
+            };
+          } else {
+            content = `Gemini Pro Hatası: ${result.error}\n\nAI Lab akışı kesilmeden Nano/Web Search değerlendirmesiyle devam ediyor.`;
+            outputType = 'degraded';
+            generationMetadata = {
+              status: 'degraded',
+              provider: 'gemini',
+              source: 'pro_chat',
+              reason: result.code,
+            };
+          }
+        } else {
+          content = `Pro Chat: Qwen çalışma zamanı yapılandırılmadı ve Gemini API key tanımlı değil. Konu: ${session.topic}`;
+          outputType = 'planning';
+          generationMetadata = {
+            status: 'degraded',
+            source: 'pro_chat',
+            reason: geminiConfig.enabled ? 'api_key_missing' : 'provider_disabled',
+          };
+        }
       }
     } else if (currentParticipant === 'ollama') {
       outputType = 'text';
