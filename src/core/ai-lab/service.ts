@@ -108,6 +108,8 @@ const FAILURE_KEYWORDS = [
   'timeout',
   'timed out',
   'zaman aşımı',
+  'context size has been exceeded',
+  'context_exceeded',
   'fetch failed',
   'econnrefused',
   'server offline',
@@ -116,17 +118,77 @@ const FAILURE_KEYWORDS = [
   'sunucu açık mı',
   'çalıştırılamadı',
   'analiz hatası',
+  'gemma yanıtı tamamlayamadı',
+  'kısa cevap tekrar denenebilir',
+  'kullanılabilir sentez üretemedi',
   'qwen çalıştırma hatası',
   'gguf server returned',
   'python runner timed out',
 ];
 
+const HTML_ENTITY_MAP: Record<string, string> = {
+  '&quot;': '"',
+  '&#34;': '"',
+  '&#x22;': '"',
+  '&#x27;': "'",
+  '&#39;': "'",
+  '&amp;': '&',
+  '&lt;': '<',
+  '&gt;': '>',
+};
+
 function normalizeForGuard(value: string): string {
   return value.toLocaleLowerCase('tr-TR');
 }
 
+function decodeBasicHtmlEntities(value: string): string {
+  return value.replace(/&quot;|&#34;|&#x22;|&#x27;|&#39;|&amp;|&lt;|&gt;/gi, (entity) => {
+    return HTML_ENTITY_MAP[entity.toLowerCase()] || entity;
+  });
+}
+
+function sanitizeLabText(value?: string): string {
+  return decodeBasicHtmlEntities(value || '').replace(/\s+/g, ' ').trim();
+}
+
+function isGemmaFallbackText(value?: string): boolean {
+  const trimmed = (value || '').trim();
+  if (!trimmed) return true;
+  const normalized = normalizeForGuard(trimmed);
+  if (normalized.includes('gemma yanıtı tamamlayamadı')) return true;
+  if (normalized.includes('kısa cevap tekrar denenebilir')) return true;
+  if (normalized.includes('kullanılabilir sentez üretemedi')) return true;
+  if (trimmed.length < 32 && /yanıt|cevap|tekrar|denenebilir/i.test(normalized)) return true;
+  return false;
+}
+
+function buildCompactGemmaRetryPrompt(session: LabSession): string {
+  const latestResearch = [...session.messages].reverse().find((message) => message.model === 'web_search' || message.outputType === 'research');
+  const sourceLines = (latestResearch?.content || '')
+    .split('\n')
+    .map((line) => sanitizeLabText(line))
+    .filter((line) => /^\[\d+\]/.test(line))
+    .slice(0, 5);
+
+  const sources = sourceLines.length > 0
+    ? sourceLines.join('\n')
+    : sanitizeLabText(latestResearch?.content || session.topic).slice(0, 1200);
+
+  return [
+    'Aşağıdaki kaynak özetlerini 5 kısa madde halinde Türkçe sentezle.',
+    'Gerekçe/akıl yürütme yazma, sadece sonuç ver.',
+    '',
+    `Konu: ${sanitizeLabText(session.topic)}`,
+    '',
+    'Kaynaklar:',
+    sources,
+  ].join('\n');
+}
+
 function isFailureMessage(message?: LabMessage): boolean {
   if (!message) return false;
+  const metadata = message.generationMetadata as any;
+  if (metadata?.isFallback || metadata?.status === 'degraded' || metadata?.status === 'failed') return true;
   if (FAILURE_OUTPUT_TYPES.has(message.outputType)) return true;
   const content = normalizeForGuard(message.content || '');
   return FAILURE_KEYWORDS.some((keyword) => content.includes(normalizeForGuard(keyword)));
@@ -273,6 +335,7 @@ export async function executeNextStep(id: string): Promise<LabMessage> {
   let imagePrompt: string | undefined;
   let success = true;
   let pendingLearningCandidate: NanoLearningSuggestion | undefined;
+  let generationMetadata: any;
 
   try {
     if (currentParticipant === 'web_search') {
@@ -281,9 +344,11 @@ export async function executeNextStep(id: string): Promise<LabMessage> {
       if (results && results.length > 0) {
         content = `Konu hakkında araştırma yapıldı: "${session.topic}".\n\nBulunan Özet Bilgi:\n`;
         results.forEach((s, i) => {
-          content += `\n[${i + 1}] ${s.title}: ${s.snippet}`;
+          const title = sanitizeLabText(s.title);
+          const snippet = sanitizeLabText(s.snippet);
+          content += `\n[${i + 1}] ${title}: ${snippet}`;
           sourceUrls.push(s.url);
-          citations.push(`[${i + 1}] ${s.title} (${s.url})`);
+          citations.push(`[${i + 1}] ${title} (${s.url})`);
         });
         content += `\n\nAraştırma tamamlandı. ${results.length} kaynak incelendi.`;
       } else {
@@ -371,22 +436,76 @@ export async function executeNextStep(id: string): Promise<LabMessage> {
             timeout: gemmaTimeout
           });
           content = result || 'Gemma yanıt üretemedi.';
+
+          if (isGemmaFallbackText(content)) {
+            generationMetadata = {
+              status: 'degraded',
+              isFallback: true,
+              source: 'gemma',
+              reason: 'reasoning_only',
+              retryAttempted: true,
+            };
+
+            const retryResult = await generateGemmaResponse({
+              prompt: buildCompactGemmaRetryPrompt(session),
+              maxTokens: 220,
+              temperature: 0.3,
+              timeout: gemmaTimeout
+            });
+
+            if (isGemmaFallbackText(retryResult)) {
+              content = 'Gemma bu turda kullanılabilir sentez üretemedi; final özet Web Search ve Nano değerlendirmesiyle hazırlanacak.';
+              outputType = 'degraded';
+            } else {
+              content = retryResult;
+              generationMetadata = {
+                status: 'completed',
+                isFallback: false,
+                source: 'gemma',
+                retryAttempted: true,
+              };
+            }
+          } else {
+            generationMetadata = {
+              status: 'completed',
+              isFallback: false,
+              source: 'gemma',
+            };
+          }
         } catch (err: any) {
           const isTimeout = err?.message?.includes('timed out') || err?.message?.includes('timeout') || err?.name === 'TimeoutError' || err?.message?.includes('AbortError');
           if (isTimeout) {
             content = `Gemma 4 E4B zaman aşımına uğradı (60s). Hızlı analiz turu atlanıyor.`;
             outputType = 'degraded';
+            generationMetadata = {
+              status: 'degraded',
+              isFallback: true,
+              source: 'gemma',
+              reason: 'timeout',
+            };
           } else {
             const autoStartNote = process.env.AILLAME_GEMMA_AUTO_START === 'true'
               ? 'Not: Gemma local server otomatik başlatılamadı. Model yolu veya llama-server.exe yolu kontrol edilmeli.'
               : 'Not: Gemma local server kapalı. Manuel başlatma veya AILLAME_GEMMA_AUTO_START=true kullanılabilir.';
             content = `Gemma 4 E4B Analiz Hatası: ${err.message || 'Model hazır değil.'}\n\n${autoStartNote} AI Lab Nano + Web Search ile devam ediyor.`;
             outputType = 'degraded';
+            generationMetadata = {
+              status: 'failed',
+              isFallback: true,
+              source: 'gemma',
+              reason: err?.code || 'unknown_error',
+            };
           }
         }
       } else {
         content = `Gemma 4 E4B (Fast Model) devre dışı veya yapılandırılmadı. AI Lab Nano/Web Search ile güvenli devam ediyor.`;
         outputType = 'planning';
+        generationMetadata = {
+          status: 'degraded',
+          isFallback: true,
+          source: 'gemma',
+          reason: 'disabled',
+        };
       }
     } else if (currentParticipant === 'sdxl') {
       outputType = 'image';
@@ -449,6 +568,7 @@ export async function executeNextStep(id: string): Promise<LabMessage> {
     imageUrl,
     imagePath,
     prompt: imagePrompt,
+    generationMetadata,
     sourceUrls: sourceUrls.length > 0 ? sourceUrls : undefined,
     citations: citations.length > 0 ? citations : undefined,
     candidateForTraining: isCandidateCreated,
@@ -503,7 +623,9 @@ export async function runControlledLoop(id: string, stepsToRun: number = 3): Pro
     }
 
     const msg = await executeNextStep(id);
-    messages.push(msg);
+    if (!messages.some((existing) => existing.id === msg.id)) {
+      messages.push(msg);
+    }
 
     // Küçük bir bekleme (opsiyonel)
     await new Promise(r => setTimeout(r, 1000));

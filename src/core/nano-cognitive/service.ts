@@ -9,7 +9,7 @@ import {
 
 /**
  * Nano Cognitive Layer Service
- * Nano'nun "Atom KarÄ±nca" gÃ¶rev zekasÄ±nÄ± yÃ¶neten merkez modÃ¼l.
+ * Nano'nun "Atom Karınca" görev zekasını yöneten merkez modül.
  */
 
 export function classifyTask(prompt: string): NanoCognitivePlan {
@@ -18,11 +18,11 @@ export function classifyTask(prompt: string): NanoCognitivePlan {
   // 1. Social Chat & Dialogue Continuation
   if (
     matchesPhrase(p, [
-      'selam', 'merhaba', 'nasÄ±lsÄ±n', 'adÄ±n ne', 'kimsin', 'teÅŸekkÃ¼r', 'bay bay', 'gÃ¶rÃ¼ÅŸÃ¼rÃ¼z',
-      'iyiyim', 'bende iyiyim', 'ben de iyiyim', 'iyi', 'fena deÄŸil', 'idare eder',
-      'tamam', 'peki', 'anladÄ±m', 'olur', 'evet', 'hayÄ±r', 'gÃ¼zel', 'harika',
-      'devam et', 'baÅŸla', 'dur', 'tekrar dene',
-      'detaylandÄ±r', 'biraz aÃ§', 'aÃ§Ä±kla', 'kÄ±saca'
+      'selam', 'merhaba', 'nasılsın', 'adın ne', 'kimsin', 'teşekkür', 'bay bay', 'görüşürüz',
+      'iyiyim', 'bende iyiyim', 'ben de iyiyim', 'iyi', 'fena değil', 'idare eder',
+      'tamam', 'peki', 'anladım', 'olur', 'evet', 'hayır', 'güzel', 'harika',
+      'devam et', 'başla', 'dur', 'tekrar dene',
+      'detaylandır', 'biraz aç', 'açıkla', 'kısaca'
     ]) || p.length < 5
   ) {
     return {
@@ -34,7 +34,7 @@ export function classifyTask(prompt: string): NanoCognitivePlan {
   }
 
   // 2. Image Generation
-  if (p.includes('resim oluÅŸtur') || p.includes('Ã§iz') || p.includes('gÃ¶rsel Ã¼ret') || p.includes('logo tasarla')) {
+  if (p.includes('resim oluştur') || p.includes('çiz') || p.includes('görsel üret') || p.includes('logo tasarla')) {
     return {
       taskType: 'image_generation',
       toolTarget: 'SDXL',
@@ -44,7 +44,7 @@ export function classifyTask(prompt: string): NanoCognitivePlan {
   }
 
   // 1.5 Image Analysis
-  if (p.includes('resmi analiz et') || p.includes('bu gÃ¶rseli incele') || p.includes('resme bak')) {
+  if (p.includes('resmi analiz et') || p.includes('bu görseli incele') || p.includes('resme bak')) {
     return {
       taskType: 'image_analysis',
       toolTarget: 'Qwen',
@@ -54,7 +54,7 @@ export function classifyTask(prompt: string): NanoCognitivePlan {
   }
 
   // 1.6 List Examples
-  if (matchesPhrase(p, ['listele', 'Ã¶rnek ver', 'tane Ã¶rnek', 'sÄ±rala', 'maddeler halinde', 'Ã¶rnekler misin', 'tane yaz'])) {
+  if (matchesPhrase(p, ['listele', 'örnek ver', 'tane örnek', 'sırala', 'maddeler halinde', 'örnekler misin', 'tane yaz'])) {
     return {
       taskType: 'list_examples',
       toolTarget: 'GeneralKnowledge',
@@ -64,7 +64,7 @@ export function classifyTask(prompt: string): NanoCognitivePlan {
   }
 
   // 1.7 Compare
-  if (p.includes('fark nedir') || p.includes('karÅŸÄ±laÅŸtÄ±r') || p.includes('kÄ±yasla') || p.includes('arasÄ±ndaki fark')) {
+  if (p.includes('fark nedir') || p.includes('karşılaştır') || p.includes('kıyasla') || p.includes('arasındaki fark')) {
     return {
       taskType: 'compare',
       toolTarget: 'GeneralKnowledge',
@@ -74,7 +74,7 @@ export function classifyTask(prompt: string): NanoCognitivePlan {
   }
 
   // 1.8 Explain More
-  if (matchesPhrase(p, ['daha aÃ§Ä±kla', 'detaylandÄ±r', 'anlamadÄ±m', 'biraz daha aÃ§', 'ne demek istedin'])) {
+  if (matchesPhrase(p, ['daha açıkla', 'detaylandır', 'anlamadım', 'biraz daha aç', 'ne demek istedin'])) {
     return {
       taskType: 'explain_more',
       toolTarget: 'safeFallback',
@@ -84,7 +84,7 @@ export function classifyTask(prompt: string): NanoCognitivePlan {
   }
 
   // 1.9 Continue Context
-  if (matchesPhrase(p, ['devam et', 'kaldÄ±ÄŸÄ±n yerden', 'sonra', 'baÅŸka'])) {
+  if (matchesPhrase(p, ['devam et', 'kaldığın yerden', 'sonra', 'başka'])) {
     return {
       taskType: 'continue_context',
       toolTarget: 'safeFallback',
@@ -104,7 +104,7 @@ export function classifyTask(prompt: string): NanoCognitivePlan {
   }
 
   // 4. Current Research
-  if (p.includes('gÃ¼ncel') || p.includes('haber') || p.includes('son dakika') || p.includes('araÅŸtÄ±r') || p.includes('bugÃ¼nkÃ¼')) {
+  if (p.includes('güncel') || p.includes('haber') || p.includes('son dakika') || p.includes('araştır') || p.includes('bugünkü')) {
     return {
       taskType: 'current_research',
       toolTarget: 'Web Search',
@@ -114,7 +114,7 @@ export function classifyTask(prompt: string): NanoCognitivePlan {
   }
 
   // 5. Code Help
-  if (p.includes('kod') || p.includes('yazÄ±lÄ±m') || p.includes('javascript') || p.includes('python') || p.includes('hata')) {
+  if (p.includes('kod') || p.includes('yazılım') || p.includes('javascript') || p.includes('python') || p.includes('hata')) {
     return {
       taskType: 'code_help',
       toolTarget: 'Qwen',
@@ -137,7 +137,7 @@ function matchesPhrase(prompt: string, phrases: string[]): boolean {
     if (phrase.includes(' ')) {
         return prompt.includes(phrase);
     }
-    // Kelime bazlÄ± eÅŸleÅŸme iÃ§in boÅŸluk kontrolÃ¼ (opsiyonel ama daha gÃ¼venli)
+    // Kelime bazlı eşleşme için boşluk kontrolü (opsiyonel ama daha güvenli)
     return prompt === phrase || prompt.includes(` ${phrase} `) || prompt.startsWith(`${phrase} `) || prompt.endsWith(` ${phrase}`);
   });
 }
@@ -159,68 +159,68 @@ export function getQuickResponse(prompt: string, history: { role: string, conten
 
   // Greet
   if (matchesPhrase(p, ['selam', 'selamlar', 'slm'])) {
-    return 'Selam! Sana nasÄ±l yardÄ±mcÄ± olabilirim?';
+    return 'Selam! Sana nasıl yardımcı olabilirim?';
   }
   if (matchesPhrase(p, ['merhaba', 'merhabalar', 'mrb'])) {
-    return 'Merhaba! Ben Aillame Nano. Size nasÄ±l yardÄ±mcÄ± olabilirim?';
+    return 'Merhaba! Ben Aillame Nano. Size nasıl yardımcı olabilirim?';
   }
 
-  // Status Check (NasÄ±lsÄ±n?)
-  if (matchesPhrase(p, ['nasÄ±lsÄ±n', 'nasilsin', 'ne haber'])) {
-    return 'Ä°yiyim, teÅŸekkÃ¼r ederim. Siz nasÄ±lsÄ±nÄ±z?';
+  // Status Check (Nasılsın?)
+  if (matchesPhrase(p, ['nasılsın', 'nasilsin', 'ne haber'])) {
+    return 'İyiyim, teşekkür ederim. Siz nasılsınız?';
   }
 
   // Status Response (Bende iyiyim)
-  if (matchesPhrase(p, ['iyiyim', 'bende iyiyim', 'ben de iyiyim', 'iyi', 'fena deÄŸil', 'idare eder'])) {
-    if (lastAssistantMsg.includes('nasÄ±lsÄ±n')) {
-        return 'Buna Ã§ok sevindim! ğŸ˜Š Size bugÃ¼n nasÄ±l yardÄ±mcÄ± olabilirim?';
+  if (matchesPhrase(p, ['iyiyim', 'bende iyiyim', 'ben de iyiyim', 'iyi', 'fena değil', 'idare eder'])) {
+    if (lastAssistantMsg.includes('nasılsın')) {
+        return 'Buna çok sevindim! Size bugün nasıl yardımcı olabilirim?';
     }
-    return 'Buna sevindim. Size bugÃ¼n hangi konuda destek olabilirim?';
+    return 'Buna sevindim. Size bugün hangi konuda destek olabilirim?';
   }
 
   // Identity
-  if (matchesPhrase(p, ['adÄ±n ne', 'senin adÄ±n ne'])) {
-    return 'Benim adÄ±m Aillame Nano. Aillame sisteminin ana sohbet asistanÄ±yÄ±m.';
+  if (matchesPhrase(p, ['adın ne', 'senin adın ne'])) {
+    return 'Benim adım Aillame Nano. Aillame sisteminin ana sohbet asistanıyım.';
   }
-  if (matchesPhrase(p, ['kimsin', 'sen kimsin', 'peki sen kimsin', 'kendini tanÄ±t'])) {
-    return 'Ben Aillame Nano. SorularÄ±nÄ± yanÄ±tlamak ve gerektiÄŸinde Aillameâ€™nin diÄŸer modÃ¼llerine yÃ¶nlendirmek iÃ§in buradayÄ±m.';
+  if (matchesPhrase(p, ['kimsin', 'sen kimsin', 'peki sen kimsin', 'kendini tanıt'])) {
+    return 'Ben Aillame Nano. Sorularını yanıtlamak ve gerektiğinde Aillame’nin diğer modüllerine yönlendirmek için buradayım.';
   }
 
   // Gratitude
-  if (matchesPhrase(p, ['teÅŸekkÃ¼rler', 'teÅŸekkÃ¼r ederim', 'saÄŸ ol', 'saÄŸol'])) {
-    return 'Rica ederim. YardÄ±mcÄ± olabildiysem ne mutlu. BaÅŸka bir isteÄŸiniz var mÄ±?';
+  if (matchesPhrase(p, ['teşekkürler', 'teşekkür ederim', 'sağ ol', 'sağol'])) {
+    return 'Rica ederim. Yardımcı olabildiysem ne mutlu. Başka bir isteğiniz var mı?';
   }
 
   // Confirmation / Agreement
-  if (matchesPhrase(p, ['tamam', 'peki', 'anladÄ±m', 'olur', 'evet', 'gÃ¼zel', 'harika'])) {
-    return 'TamamdÄ±r, anladÄ±m. Devam edelim, yapmak istediÄŸiniz baÅŸka bir ÅŸey var mÄ±?';
+  if (matchesPhrase(p, ['tamam', 'peki', 'anladım', 'olur', 'evet', 'güzel', 'harika'])) {
+    return 'Tamamdır, anladım. Devam edelim, yapmak istediğiniz başka bir şey var mı?';
   }
-  if (matchesPhrase(p, ['hayÄ±r', 'istemiyorum', 'kalsÄ±n'])) {
-    return 'Tamam, anlaÅŸÄ±ldÄ±. Yeni bir ÅŸey sormak isterseniz buradayÄ±m.';
+  if (matchesPhrase(p, ['hayır', 'istemiyorum', 'kalsın'])) {
+    return 'Tamam, anlaşıldı. Yeni bir şey sormak isterseniz buradayım.';
   }
 
   // Flow Commands
-  if (matchesPhrase(p, ['devam et', 'baÅŸla'])) {
-    return 'Tamam, devam ediyorum. LÃ¼tfen kaldÄ±ÄŸÄ±nÄ±z noktadan ilerlemem iÃ§in bir detay verin.';
+  if (matchesPhrase(p, ['devam et', 'başla'])) {
+    return 'Tamam, devam ediyorum. Lütfen kaldığınız noktadan ilerlemem için bir detay verin.';
   }
   if (matchesPhrase(p, ['dur', 'bekle', 'durdur'])) {
-    return 'Tamam, durdurdum. HazÄ±r olduÄŸunuzda devam edebiliriz.';
+    return 'Tamam, durdurdum. Hazır olduğunuzda devam edebiliriz.';
   }
   if (matchesPhrase(p, ['tekrar dene', 'yeniden dene'])) {
-    return 'Tabii, hemen tekrar deniyorum. LÃ¼tfen bekleyin.';
+    return 'Tabii, hemen tekrar deniyorum. Lütfen bekleyin.';
   }
 
   // Elaboration Requests
-  if (matchesPhrase(p, ['detaylandÄ±r', 'biraz aÃ§', 'aÃ§Ä±kla', 'daha fazla bilgi'])) {
-    return 'Elbette, bu konuyu biraz daha detaylandÄ±rabilirim. Hangi kÄ±sÄ±mla ilgileniyorsunuz?';
+  if (matchesPhrase(p, ['detaylandır', 'biraz aç', 'açıkla', 'daha fazla bilgi'])) {
+    return 'Elbette, bu konuyu biraz daha detaylandırabilirim. Hangi kısımla ilgileniyorsunuz?';
   }
-  if (matchesPhrase(p, ['kÄ±saca', 'Ã¶zetle', 'daha kÄ±sa anlat'])) {
-    return 'Tabii, Ã¶zetleyeyim. Ä°ÅŸte en Ã¶nemli noktalar:';
+  if (matchesPhrase(p, ['kısaca', 'özetle', 'daha kısa anlat'])) {
+    return 'Tabii, özetleyeyim. İşte en önemli noktalar:';
   }
 
   // Goodbye
-  if (matchesPhrase(p, ['gÃ¼le gÃ¼le', 'hoÅŸÃ§a kal', 'bay bay', 'gÃ¶rÃ¼ÅŸÃ¼rÃ¼z'])) {
-    return 'GÃ¶rÃ¼ÅŸmek Ã¼zere! Kendinize iyi bakÄ±n.';
+  if (matchesPhrase(p, ['güle güle', 'hoşça kal', 'bay bay', 'görüşürüz'])) {
+    return 'Görüşmek üzere! Kendinize iyi bakın.';
   }
 
   return null;
@@ -229,16 +229,16 @@ export function getQuickResponse(prompt: string, history: { role: string, conten
 export function getGeneralKnowledgeResponse(prompt: string): string | null {
   const p = prompt.trim().toLowerCase();
 
-  if (p.includes('ekonomi nedir')) return 'Ekonomi, kaynaklarÄ±n sÄ±nÄ±rlÄ± olduÄŸu bir ortamda insanlarÄ±n ihtiyaÃ§larÄ±nÄ± karÅŸÄ±lamak iÃ§in Ã¼retilen mal ve hizmetlerin daÄŸÄ±tÄ±mÄ± ile ilgilenen bir bilim dalÄ±dÄ±r.';
-  if (p.includes('yapay zeka nedir')) return 'Yapay zeka, bilgisayarlarÄ±n insan benzeri dÃ¼ÅŸÃ¼nme, Ã¶ÄŸrenme ve problem Ã§Ã¶zme yetenekleri gÃ¶stermesini saÄŸlayan bir teknoloji alanÄ±dÄ±r.';
-  if (p.includes('javascript nedir')) return 'JavaScript, web sayfalarÄ±na etkileÅŸim ve dinamik davranÄ±ÅŸ kazandÄ±rmak iÃ§in kullanÄ±lan bir programlama dilidir.';
-  if (p.includes('psikoloji nedir')) return 'Psikoloji, insan davranÄ±ÅŸlarÄ±nÄ± ve zihinsel sÃ¼reÃ§leri inceleyen bir bilim dalÄ±dÄ±r.';
-  if (p.includes('hukuk nedir')) return 'Hukuk, toplumda dÃ¼zeni saÄŸlamak iÃ§in kurallar koyan ve bunlarÄ± uygulayan sistemler bÃ¼tÃ¼nÃ¼dÃ¼r.';
-  if (p.includes('enflasyon nedir')) return 'Enflasyon, fiyatlarÄ±n genel olarak yÃ¼kselmesi ve paranÄ±n satÄ±n alma gÃ¼cÃ¼nÃ¼n azalmasÄ±dÄ±r.';
-  if (p.includes('arz ve talep nedir')) return 'Arz ve talep, bir pazarda satÄ±cÄ±larÄ±n sunduÄŸu miktar ile alÄ±cÄ±larÄ±n talep ettiÄŸi miktar arasÄ±ndaki iliÅŸkiyi aÃ§Ä±klar.';
-  if (p.includes('api nedir')) return 'API, farklÄ± yazÄ±lÄ±mlarÄ±n birbirleriyle gÃ¼venli ve standart bir ÅŸekilde iletiÅŸim kurmasÄ±nÄ± saÄŸlayan arayÃ¼zdÃ¼r.';
-  if (p.includes('algoritma nedir')) return 'Algoritma, belirli bir problemi Ã§Ã¶zmek iÃ§in izlenen adÄ±m adÄ±m talimatlar dizisidir.';
-  if (p.includes('web sitesi nedir')) return 'Web sitesi, internet Ã¼zerinde yayÄ±nlanan ve ziyaretÃ§ilere bilgi ve iÃ§erik sunan dijital sayfalar bÃ¼tÃ¼nÃ¼dÃ¼r.';
+  if (p.includes('ekonomi nedir')) return 'Ekonomi, kaynakların sınırlı olduğu bir ortamda insanların ihtiyaçlarını karşılamak için üretilen mal ve hizmetlerin dağıtımı ile ilgilenen bir bilim dalıdır.';
+  if (p.includes('yapay zeka nedir')) return 'Yapay zeka, bilgisayarların insan benzeri düşünme, öğrenme ve problem çözme yetenekleri göstermesini sağlayan bir teknoloji alanıdır.';
+  if (p.includes('javascript nedir')) return 'JavaScript, web sayfalarına etkileşim ve dinamik davranış kazandırmak için kullanılan bir programlama dilidir.';
+  if (p.includes('psikoloji nedir')) return 'Psikoloji, insan davranışlarını ve zihinsel süreçleri inceleyen bir bilim dalıdır.';
+  if (p.includes('hukuk nedir')) return 'Hukuk, toplumda düzeni sağlamak için kurallar koyan ve bunları uygulayan sistemler bütünüdür.';
+  if (p.includes('enflasyon nedir')) return 'Enflasyon, fiyatların genel olarak yükselmesi ve paranın satın alma gücünün azalmasıdır.';
+  if (p.includes('arz ve talep nedir')) return 'Arz ve talep, bir pazarda satıcıların sunduğu miktar ile alıcıların talep ettiği miktar arasındaki ilişkiyi açıklar.';
+  if (p.includes('api nedir')) return 'API, farklı yazılımların birbirleriyle güvenli ve standart bir şekilde iletişim kurmasını sağlayan arayüzdür.';
+  if (p.includes('algoritma nedir')) return 'Algoritma, belirli bir problemi çözmek için izlenen adım adım talimatlar dizisidir.';
+  if (p.includes('web sitesi nedir')) return 'Web sitesi, internet üzerinde yayınlanan ve ziyaretçilere bilgi ve içerik sunan dijital sayfalar bütünüdür.';
 
   return null;
 }
@@ -247,18 +247,25 @@ function isErrorMessage(text: string, outputType?: string): boolean {
   if (outputType === 'error' || outputType === 'planning' || outputType === 'degraded' || outputType === 'skipped') return true;
   const lowerText = text.toLowerCase();
   const errorKeywords = [
-    'analiz hatasÄ±', 'hata', 'fetch failed', 'sunucu aÃ§Ä±k mÄ±',
-    'henÃ¼z kurulu olmayabilir', 'gguf', 'degraded', 'skipped',
-    'timeout', 'timed out', 'zaman aÅŸÄ±mÄ±', 'zaman aÅŸÄ±mÄ±na',
-    'yanÄ±t veremedi', 'Ã§alÄ±ÅŸtÄ±rÄ±lamadÄ±', 'server kapalÄ±',
-    'connection refused', 'econnrefused'
+    'analiz hatası', 'hata', 'fetch failed', 'sunucu açık mı',
+    'henüz kurulu olmayabilir', 'gguf', 'degraded', 'skipped',
+    'timeout', 'timed out', 'zaman aşımı', 'zaman aşımına',
+    'yanıt veremedi', 'çalıştırılamadı', 'server kapalı',
+    'connection refused', 'econnrefused',
+    'gemma yanıtı tamamlayamadı', 'kısa cevap tekrar denenebilir',
+    'kullanılabilir sentez üretemedi', 'context size has been exceeded'
   ];
   return errorKeywords.some(keyword => lowerText.includes(keyword));
 }
 
+function hasFallbackMetadata(message?: { generationMetadata?: any }): boolean {
+  const metadata = message?.generationMetadata;
+  return Boolean(metadata?.isFallback || metadata?.status === 'degraded' || metadata?.status === 'failed');
+}
+
 /**
- * Nano'nun AI Lab'deki turn'Ã¼nÃ¼ yÃ¶netir.
- * Gelen mesajlarÄ± analiz eder ve yorum yapar.
+ * Nano'nun AI Lab'deki turn'ünü yönetir.
+ * Gelen mesajları analiz eder ve yorum yapar.
  */
 function countWebSources(text: string): number {
   const verifiedSection = text.match(/Verified Sources:\s*([\s\S]+)/i);
@@ -275,7 +282,7 @@ function chooseAvailableNextStep(activeParticipants: Set<string>, goal?: string,
   if (activeParticipants.has('ollama')) return 'Ollama: Hızlı sentez üret.';
   if (activeParticipants.has('qwen')) return 'Qwen: Derin analiz yap; ağır model olduğu için tek deneme yeterli.';
   if (goal === 'image_generation_plan' && activeParticipants.has('sdxl')) return 'SDXL: Görsel üretim planını uygula.';
-  if (activeParticipants.has('web_search') && !webSearchDone) return 'Web Search: Kaynakları bir kez topla.';
+  if (activeParticipants.has('web_search') && !webSearchDone) return 'Web Search: Kaynaklari bir kez topla.';
   return 'Nano: Final summary üret ve oturumu tamamla.';
 }
 
@@ -286,7 +293,7 @@ function isValidCandidateText(text: string): boolean {
   if (isErrorMessage(trimmed)) return false;
   if (looksMalformedNanoText(trimmed)) return false;
   const lower = trimmed.toLowerCase();
-  if (lower.includes('tartışma sağlıklı ilerliyor') || lower.includes('son katılımcı')) return false;
+  if (lower.includes('tartisma saglikli ilerliyor') || lower.includes('son katilimci')) return false;
   return true;
 }
 
@@ -296,7 +303,7 @@ function isValidCandidateText(text: string): boolean {
  */
 export async function reflectOnLabStep(
   topic: string,
-  lastMessages: { model: string, content: string, type?: string, outputType?: string }[],
+  lastMessages: { model: string, content: string, type?: string, outputType?: string, generationMetadata?: any }[],
   goal?: string,
   activeParticipants: string[] = []
 ): Promise<NanoReflection> {
@@ -315,8 +322,8 @@ export async function reflectOnLabStep(
 
     if (t.includes('listele') || t.includes('örnek') || t.includes('tane') || t.includes('madde') || t.includes('sırala')) {
       summary += 'Kullanıcı listeleme veya örnek istiyor; kısa, doğrudan ve maddeli cevap hedeflenmeli.';
-    } else if (t.includes('karşılaştır') || t.includes('fark')) {
-      summary += 'Kullanıcı karşılaştırma istiyor; benzerlikler ve farklar ayrılmalı.';
+    } else if (t.includes('karsilastir') || t.includes('fark')) {
+      summary += 'Kullanici karsilastirma istiyor; benzerlikler ve farklar ayrilmali.';
     } else if (t.includes('araştır') || t.includes('haber') || t.includes('güncel')) {
       summary += webSearchDone ? 'Web Search zaten çalışmış; tekrar arama önermiyorum.' : 'Güncel araştırma isteği var; Web Search seçiliyse bir kez kaynak toplanmalı.';
     } else if (t.includes('resim') || t.includes('çiz') || t.includes('görsel')) {
@@ -331,7 +338,15 @@ export async function reflectOnLabStep(
 
   const safeContent = lastMsg.content || '';
 
-  if (isErrorMessage(safeContent, lastMsg.type || lastMsg.outputType)) {
+  if (hasFallbackMetadata(lastMsg) || isErrorMessage(safeContent, lastMsg.type || lastMsg.outputType)) {
+    if (lastMsg.model === 'gemma') {
+      return {
+        summary: 'Gemma bu turda kullanılabilir sentez üretemedi.',
+        suggestion: 'Final özet Web Search kaynak özeti ve Nano değerlendirmesiyle hazırlanmalı; Gemma fallback metni içerik kaynağı olarak kullanılmayacak.',
+        nextStep: 'Nano: Final summary üret ve oturumu tamamla.',
+      };
+    }
+
     return {
       summary: `${lastMsg.model} çıktısı hata/degraded/planning olarak işaretlendi; bu başarılı analiz sayılmayacak.`,
       suggestion: 'Bu çıktıdan eğitim adayı üretilmeyecek. Nano mevcut güvenli bilgilerle final summary üretmeli.',
@@ -368,7 +383,7 @@ export async function reflectOnLabStep(
 
   if (lastMsg.model === 'qwen') {
     const reflection: NanoReflection = {
-      summary: 'Qwen derin analiz katkısı sundu.',
+      summary: 'Qwen derin analiz katkisi sundu.',
       suggestion: 'Qwen ağır model olduğu için bu oturumda tekrar denenmemeli; final kalite kontrol yeterli.',
       nextStep: hasSdxl ? 'SDXL: Görsel üretim planını uygula.' : 'Nano: Final summary üret.',
     };
@@ -431,17 +446,17 @@ export function looksMalformedNanoText(text: string): boolean {
   if (trimmed.length < 1) return true;
 
   const lowerText = trimmed.toLowerCase();
-  if (lowerText.includes('iÅŸlem durduruldu') || lowerText.includes('islem durduruldu')) return true;
+  if (lowerText.includes('işlem durduruldu') || lowerText.includes('islem durduruldu')) return true;
   if (lowerText.includes('pro modunu deneyin') || lowerText.includes('pro modu')) return true;
-  if (lowerText.includes('yerel model') || lowerText.includes('hazÄ±r deÄŸil')) return true;
+  if (lowerText.includes('yerel model') || lowerText.includes('hazır değil')) return true;
   if (lowerText.includes('[web search]') || lowerText.includes('json') || trimmed.startsWith('{') || trimmed.startsWith('[')) return true;
 
   const replacementCount = (trimmed.match(/\ufffd/g) || []).length;
   if (replacementCount > 0) return true;
 
   const visible = trimmed.replace(/\s/g, '').length || 1;
-  const letters = (trimmed.match(/[a-zA-ZÄŸÃ¼ÅŸÃ¶Ã§Ä±Ä°ÄÃœÅÃ–Ã‡0-9]/g) || []).length;
-  // KÄ±sa ama geÃ§erli cevaplara izin ver (Ã¶rneÄŸin "Tamam.")
+  const letters = (trimmed.match(/[a-zA-ZğüşöçıİĞÜŞÖÇ0-9]/g) || []).length;
+  // Kısa ama geçerli cevaplara izin ver (örneğin "Tamam.")
   if (trimmed.length > 2 && letters / visible < 0.25) return true;
 
   const punctuationCount = (trimmed.match(/[\W_]/g) || []).length;
@@ -455,7 +470,7 @@ export function safeFallback(prompt: string, history: { role: string, content: s
   if (quick) return quick;
 
   const p = prompt.toLowerCase().trim();
-  if (p.length < 3) return 'AnladÄ±m. Size nasÄ±l yardÄ±mcÄ± olabilirim?';
+  if (p.length < 3) return 'Anladım. Size nasıl yardımcı olabilirim?';
 
-  return 'Aillame Nano bu konuda tam olarak ne demek istediÄŸinizi anlayamadÄ±. LÃ¼tfen biraz daha detay verir misiniz veya farklÄ± bir soru sorun?';
+  return 'Aillame Nano bu konuda tam olarak ne demek istediğinizi anlayamadı. Lütfen biraz daha detay verir misiniz veya farklı bir soru sorun?';
 }

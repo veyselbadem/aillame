@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { GemmaProviderError, generateGemmaResponse } from '@/core/inference/gemma';
+import { GemmaProviderError, generateGemmaResponse, isGemmaFallbackResponse } from '@/core/inference/gemma';
 
 export const runtime = 'nodejs';
 
@@ -27,6 +27,19 @@ export async function POST(req: NextRequest) {
         ? parseInt(process.env.AILLAME_GEMMA_TIMEOUT_MS) 
         : 60000
     });
+
+    if (isGemmaFallbackResponse(response)) {
+      return NextResponse.json({
+        success: false,
+        provider: 'gemma',
+        code: 'reasoning_only',
+        error: response,
+        answer: response,
+        response,
+        model,
+        isFallback: true,
+      }, { status: 200 });
+    }
 
     return NextResponse.json({ success: true, provider: 'gemma', answer: response, response, model });
   } catch (error: any) {

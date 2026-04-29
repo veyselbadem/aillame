@@ -50,6 +50,18 @@ type GgufChatCompletion = {
   response?: string;
 };
 
+export const GEMMA_SAFE_FALLBACK_MESSAGE = 'Gemma yanıtı tamamlayamadı; kısa cevap tekrar denenebilir.';
+
+export function isGemmaFallbackResponse(value?: string): boolean {
+  const trimmed = (value || '').trim();
+  if (!trimmed) return true;
+  const normalized = trimmed.toLocaleLowerCase('tr-TR');
+  if (normalized.includes('gemma yanıtı tamamlayamadı')) return true;
+  if (normalized.includes('kısa cevap tekrar denenebilir')) return true;
+  if (normalized.includes('kullanılabilir sentez üretemedi')) return true;
+  return trimmed.length < 32 && /yanıt|cevap|tekrar|denenebilir/i.test(normalized);
+}
+
 function buildChatMessages(prompt: string, messages: any[]): any[] {
   const systemMessage = {
     role: 'system',
@@ -88,7 +100,7 @@ function extractGemmaText(data: GgufChatCompletion): string {
 
   const reasoning = cleanText(choice?.message?.reasoning_content);
   if (reasoning) {
-    return 'Gemma yanıtı tamamlayamadı; kısa cevap tekrar denenebilir.';
+    return GEMMA_SAFE_FALLBACK_MESSAGE;
   }
 
   const text = cleanText(choice?.text);
