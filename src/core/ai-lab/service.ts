@@ -125,6 +125,13 @@ const FAILURE_KEYWORDS = [
   'qwen çalıştırma hatası',
   'gguf server returned',
   'python runner timed out',
+  'lütfen özetlenecek',
+  'özetlenecek metin yok',
+  'lütfen metni',
+  'metni gönder',
+  'metni paylaş',
+  'yeterli bilgi yok',
+  'bilgi veremem',
 ];
 
 const HTML_ENTITY_MAP: Record<string, string> = {
@@ -152,15 +159,63 @@ function sanitizeLabText(value?: string): string {
   return decodeBasicHtmlEntities(value || '').replace(/\s+/g, ' ').trim();
 }
 
-function isGemmaFallbackText(value?: string): boolean {
-  const trimmed = (value || '').trim();
-  if (!trimmed) return true;
+export type GemmaOutputIssueReason =
+  | 'reasoning_only'
+  | 'instructional_placeholder'
+  | 'invalid_short_output';
+
+export type GemmaOutputQualityIssue = {
+  reason: GemmaOutputIssueReason;
+};
+
+const GEMMA_INSTRUCTIONAL_PLACEHOLDER_PATTERNS = [
+  /lütfen\s+özetlenecek/i,
+  /özetlenecek\s+(metin|içerik).*(yok|bulunamadı)?/i,
+  /lütfen\s+(metni|içeriği|konuyu).*(gönder|paylaş|sağla|ver)/i,
+  /(metni|içeriği|konuyu).*(gönderin|paylaşın|sağlayın|verin)/i,
+  /yeterli\s+bilgi\s+yok/i,
+  /bu\s+konuda\s+bilgi\s+veremem/i,
+  /bilgi\s+veremem/i,
+  /ek\s+(metin|içerik|bilgi)\s+(gerekli|lazım|gerekiyor)/i,
+];
+
+function countWords(value: string): number {
+  return (value.match(/[a-zA-Z0-9çğıöşüÇĞİÖŞÜ]+/g) || []).length;
+}
+
+function hasTopicSignal(value: string, topic?: string): boolean {
+  const normalized = normalizeForGuard(value);
+  const tokens = (topic || '')
+    .toLocaleLowerCase('tr-TR')
+    .match(/[a-z0-9çğıöşü]{4,}/g) || [];
+
+  return tokens.some((token) => normalized.includes(token));
+}
+
+export function getGemmaOutputQualityIssue(value?: string, topic?: string): GemmaOutputQualityIssue | null {
+  const trimmed = sanitizeLabText(value);
+  if (!trimmed) return { reason: 'reasoning_only' };
+
   const normalized = normalizeForGuard(trimmed);
-  if (normalized.includes('gemma yanıtı tamamlayamadı')) return true;
-  if (normalized.includes('kısa cevap tekrar denenebilir')) return true;
-  if (normalized.includes('kullanılabilir sentez üretemedi')) return true;
-  if (trimmed.length < 32 && /yanıt|cevap|tekrar|denenebilir/i.test(normalized)) return true;
-  return false;
+  if (normalized.includes('gemma yanıtı tamamlayamadı')) return { reason: 'reasoning_only' };
+  if (normalized.includes('kısa cevap tekrar denenebilir')) return { reason: 'reasoning_only' };
+  if (normalized.includes('kullanılabilir sentez üretemedi')) return { reason: 'reasoning_only' };
+
+  if (GEMMA_INSTRUCTIONAL_PLACEHOLDER_PATTERNS.some((pattern) => pattern.test(trimmed))) {
+    return { reason: 'instructional_placeholder' };
+  }
+
+  const wordCount = countWords(trimmed);
+  if (wordCount < 5) return { reason: 'invalid_short_output' };
+  if (wordCount <= 10 && !hasTopicSignal(trimmed, topic)) {
+    return { reason: 'invalid_short_output' };
+  }
+
+  if (trimmed.length < 32 && /yanıt|cevap|tekrar|denenebilir/i.test(normalized)) {
+    return { reason: 'invalid_short_output' };
+  }
+
+  return null;
 }
 
 function buildCompactGemmaRetryPrompt(session: LabSession): string {
@@ -176,12 +231,12 @@ function buildCompactGemmaRetryPrompt(session: LabSession): string {
     : sanitizeLabText(latestResearch?.content || session.topic).slice(0, 1200);
 
   return [
-    'Aşağıdaki kaynak özetlerini 5 kısa madde halinde Türkçe sentezle.',
-    'Gerekçe/akıl yürütme yazma, sadece sonuç ver.',
+    `Konu: ${sanitizeLabText(session.topic)}.`,
+    '5 maddelik kısa Türkçe sentez üret.',
+    'Kullanıcıdan ek metin isteme.',
+    'Sadece sonuç yaz.',
     '',
-    `Konu: ${sanitizeLabText(session.topic)}`,
-    '',
-    'Kaynaklar:',
+    'Varsa kullanabileceğin kaynak notları:',
     sources,
   ].join('\n');
 }
@@ -484,12 +539,13 @@ Konuyu teknik ve analitik açıdan değerlendir. 2-4 net maddeyle cevap ver.`;
           });
           content = result || 'Gemma yanıt üretemedi.';
 
-          if (isGemmaFallbackText(content)) {
+          const initialGemmaIssue = getGemmaOutputQualityIssue(content, session.topic);
+          if (initialGemmaIssue) {
             generationMetadata = {
               status: 'degraded',
               isFallback: true,
               source: 'gemma',
-              reason: 'reasoning_only',
+              reason: initialGemmaIssue.reason,
               retryAttempted: true,
             };
 
@@ -500,9 +556,18 @@ Konuyu teknik ve analitik açıdan değerlendir. 2-4 net maddeyle cevap ver.`;
               timeout: gemmaTimeout
             });
 
-            if (isGemmaFallbackText(retryResult)) {
+            const retryGemmaIssue = getGemmaOutputQualityIssue(retryResult, session.topic);
+            if (retryGemmaIssue) {
               content = 'Gemma bu turda kullanılabilir sentez üretemedi; final özet Web Search ve Nano değerlendirmesiyle hazırlanacak.';
               outputType = 'degraded';
+              generationMetadata = {
+                status: 'degraded',
+                isFallback: true,
+                source: 'gemma',
+                reason: retryGemmaIssue.reason,
+                initialReason: initialGemmaIssue.reason,
+                retryAttempted: true,
+              };
             } else {
               content = retryResult;
               generationMetadata = {

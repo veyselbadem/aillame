@@ -248,8 +248,46 @@ export function getGeneralKnowledgeResponse(prompt: string): string | null {
   return null;
 }
 
+const INSTRUCTIONAL_PLACEHOLDER_PATTERNS = [
+  /lütfen\s+özetlenecek/i,
+  /özetlenecek\s+(metin|içerik).*(yok|bulunamadı)?/i,
+  /lütfen\s+(metni|içeriği|konuyu).*(gönder|paylaş|sağla|ver)/i,
+  /(metni|içeriği|konuyu).*(gönderin|paylaşın|sağlayın|verin)/i,
+  /yeterli\s+bilgi\s+yok/i,
+  /bu\s+konuda\s+bilgi\s+veremem/i,
+  /bilgi\s+veremem/i,
+  /ek\s+(metin|içerik|bilgi)\s+(gerekli|lazım|gerekiyor)/i,
+];
+
+function isInstructionalPlaceholder(text: string): boolean {
+  const trimmed = normalizeAssistantAnswer(text || '');
+  if (!trimmed) return true;
+  return INSTRUCTIONAL_PLACEHOLDER_PATTERNS.some((pattern) => pattern.test(trimmed));
+}
+
+function countWords(text: string): number {
+  return (text.match(/[a-zA-Z0-9çğıöşüÇĞİÖŞÜ]+/g) || []).length;
+}
+
+function hasTopicSignal(text: string, topic: string): boolean {
+  const normalized = text.toLocaleLowerCase('tr-TR');
+  const tokens = (topic || '').toLocaleLowerCase('tr-TR').match(/[a-z0-9çğıöşü]{4,}/g) || [];
+  return tokens.some((token) => normalized.includes(token));
+}
+
+function isInvalidShortProviderOutput(text: string, topic: string): boolean {
+  const trimmed = normalizeAssistantAnswer(text || '');
+  if (!trimmed) return true;
+  if (isInstructionalPlaceholder(trimmed)) return true;
+
+  const words = countWords(trimmed);
+  if (words < 5) return true;
+  return words <= 10 && !hasTopicSignal(trimmed, topic);
+}
+
 function isErrorMessage(text: string, outputType?: string): boolean {
   if (outputType === 'error' || outputType === 'planning' || outputType === 'degraded' || outputType === 'skipped') return true;
+  if (isInstructionalPlaceholder(text)) return true;
   const lowerText = text.toLowerCase();
   const errorKeywords = [
     'analiz hatası', 'hata', 'fetch failed', 'sunucu açık mı',
@@ -258,7 +296,9 @@ function isErrorMessage(text: string, outputType?: string): boolean {
     'yanıt veremedi', 'çalıştırılamadı', 'server kapalı',
     'connection refused', 'econnrefused',
     'gemma yanıtı tamamlayamadı', 'kısa cevap tekrar denenebilir',
-    'kullanılabilir sentez üretemedi', 'context size has been exceeded'
+    'kullanılabilir sentez üretemedi', 'context size has been exceeded',
+    'lütfen özetlenecek', 'özetlenecek metin yok', 'lütfen metni',
+    'metni gönder', 'metni paylaş', 'yeterli bilgi yok', 'bilgi veremem'
   ];
   return errorKeywords.some(keyword => lowerText.includes(keyword));
 }
@@ -343,7 +383,9 @@ export async function reflectOnLabStep(
 
   const safeContent = normalizeAssistantAnswer(lastMsg.content || '');
 
-  if (hasFallbackMetadata(lastMsg) || isErrorMessage(safeContent, lastMsg.type || lastMsg.outputType)) {
+  const gemmaInvalidShortOutput = lastMsg.model === 'gemma' && isInvalidShortProviderOutput(safeContent, topic);
+
+  if (hasFallbackMetadata(lastMsg) || isErrorMessage(safeContent, lastMsg.type || lastMsg.outputType) || gemmaInvalidShortOutput) {
     if (lastMsg.model === 'gemma') {
       return {
         summary: 'Gemma bu turda güvenilir bir sentez üretemedi; bu çıktıyı başarılı analiz gibi kullanmıyorum.',
