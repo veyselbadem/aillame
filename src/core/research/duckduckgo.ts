@@ -40,7 +40,10 @@ function decodeHtml(html: string): string {
     .replaceAll('&lt;', '<')
     .replaceAll('&gt;', '>')
     .replaceAll('&quot;', '"')
-    .replaceAll('&#39;', "'");
+    .replaceAll('&#34;', '"')
+    .replaceAll('&#x22;', '"')
+    .replaceAll('&#39;', "'")
+    .replaceAll('&#x27;', "'");
 }
 
 function cleanUrl(url: string): string {

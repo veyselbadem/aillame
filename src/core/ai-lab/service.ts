@@ -474,9 +474,19 @@ export async function executeNextStep(id: string): Promise<LabMessage> {
             };
           }
         } catch (err: any) {
-          const isTimeout = err?.message?.includes('timed out') || err?.message?.includes('timeout') || err?.name === 'TimeoutError' || err?.message?.includes('AbortError');
+          const errorMessage = err?.message || '';
+          const errorCode = typeof err?.code === 'string' ? err.code.toLowerCase() : '';
+          const isTimeout =
+            errorCode === 'timeout' ||
+            errorMessage.includes('timed out') ||
+            errorMessage.includes('timeout') ||
+            errorMessage.includes('yanıt süresi doldu') ||
+            errorMessage.includes('zaman aşımı') ||
+            err?.name === 'TimeoutError' ||
+            errorMessage.includes('AbortError');
           if (isTimeout) {
-            content = `Gemma 4 E4B zaman aşımına uğradı (60s). Hızlı analiz turu atlanıyor.`;
+            const timeoutSeconds = Math.round((process.env.AILLAME_GEMMA_TIMEOUT_MS ? parseInt(process.env.AILLAME_GEMMA_TIMEOUT_MS) : 60000) / 1000);
+            content = `Gemma 4 E4B zaman aşımına uğradı (${timeoutSeconds}s). Hızlı analiz turu atlanıyor; AI Lab Nano + Web Search ile devam ediyor.`;
             outputType = 'degraded';
             generationMetadata = {
               status: 'degraded',
