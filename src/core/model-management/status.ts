@@ -8,7 +8,9 @@ const execAsync = promisify(exec);
 const homeDir = process.env.USERPROFILE || process.env.HOME || '';
 
 export async function getOllamaReadiness(): Promise<ModelStatusReport> {
-  const baseUrl = process.env.AILLAME_OLLAMA_BASE_URL || 'http://127.0.0.1:11434';
+  const baseUrl = (process.env.AILLAME_OLLAMA_BASE_URL || 'http://127.0.0.1:11434')
+    .replace(/\/+$/, '')
+    .replace(/\/api$/i, '');
   const modelId = process.env.AILLAME_OLLAMA_TEXT_MODEL || 'gemma:2b';
 
   const report: ModelStatusReport = {
@@ -29,14 +31,17 @@ export async function getOllamaReadiness(): Promise<ModelStatusReport> {
     if (!res.ok) throw new Error('Server returned non-200');
     const data = await res.json();
 
-    const hasModel = data.models?.some((m: any) => m.name === modelId || m.name.startsWith(modelId));
+    const availableModels = Array.isArray(data.models) ? data.models.map((m: any) => m.name).filter(Boolean) : [];
+    const hasModel = availableModels.some((name: string) => name === modelId || name.startsWith(modelId));
     if (hasModel) {
       report.isReady = true;
       report.status = 'active';
       report.message = 'Active / Ollama Server Up';
     } else {
       report.status = 'planning_only';
-      report.message = `Model missing. Please run: ollama run ${modelId}`;
+      report.message = `Ollama çalışıyor ancak seçili model yüklü değil: ${modelId}. Mevcut modeller: ${availableModels.length ? availableModels.join(', ') : 'bulunamadı'}.`;
+      report.details.error = `Set AILLAME_OLLAMA_TEXT_MODEL to an installed model or run: ollama pull ${modelId}`;
+      report.details.availableModels = availableModels;
     }
   } catch (e: any) {
     report.status = 'error';
@@ -56,6 +61,7 @@ export interface ModelStatusReport {
     modelCached: boolean;
     cudaAvailable: boolean;
     error?: string;
+    availableModels?: string[];
   };
 }
 
