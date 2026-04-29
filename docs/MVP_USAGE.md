@@ -156,6 +156,7 @@ Admin panelindeki AI Lab, farklı modellerin (Nano, Gemma, Qwen, Gemini) bir kon
 ```env
 AILLAME_GEMMA_ENABLED=true
 AILLAME_GEMMA_AUTO_START=true
+AILLAME_GEMMA_START_ON_APP_BOOT=true
 AILLAME_GEMMA_RUNTIME=gguf
 AILLAME_GEMMA_SERVER_URL=http://127.0.0.1:8080
 AILLAME_GEMMA_MODEL_ID=gemma-4-E4B-it-Q4_K_M.gguf

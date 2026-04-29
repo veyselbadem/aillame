@@ -41,6 +41,7 @@ Otomatik başlatma için `.env` ayarları:
 ```env
 AILLAME_GEMMA_ENABLED=true
 AILLAME_GEMMA_AUTO_START=true
+AILLAME_GEMMA_START_ON_APP_BOOT=true
 AILLAME_GEMMA_SERVER_URL=http://127.0.0.1:8080
 AILLAME_GEMMA_LLAMA_SERVER_EXE=C:\aillame-llama\llama-server.exe
 AILLAME_GEMMA_MODEL_PATH=C:\aillame-models\gguf\gemma-4-E4B-it-Q4_K_M.gguf

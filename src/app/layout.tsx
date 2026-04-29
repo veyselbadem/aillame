@@ -45,12 +45,14 @@ export const viewport: Viewport = {
 };
 
 import MainLayout from '@components/MainLayout';
+import GemmaWarmupOnBoot from '@components/GemmaWarmupOnBoot';
 import { ChatProvider } from '@providers/ChatProvider';
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="tr" className={`${outfit.variable} ${jetbrainsMono.variable}`}>
       <body className="min-h-screen transition-colors duration-500 font-sans antialiased text-gray-200">
+        <GemmaWarmupOnBoot />
         <ChatProvider>
           <MainLayout>
             {children}
