@@ -6,14 +6,14 @@ import StatusBadge from '@/components/ui/StatusBadge';
 import { FiRefreshCw, FiArrowRight, FiActivity, FiSearch, FiImage, FiCpu, FiPlus, FiTerminal, FiPause, FiPlay, FiStopCircle, FiX, FiStar, FiMessageSquare, FiTrash2 } from 'react-icons/fi';
 
 const RANDOM_TOPICS = [
-  'Kuantum BilgisayarlarÄ±n GeleceÄŸi',
-  'Yapay Zeka EtiÄŸi ve RegÃ¼lasyonlar',
+  'Kuantum Bilgisayarların Geleceği',
+  'Yapay Zeka Etiği ve Regülasyonlar',
   'Mars Kolonizasyonu: Teknik Zorluklar',
-  'Web3 ve Merkeziyetsiz FinansÄ±n Etkisi',
-  'Yenilenebilir Enerji Depolama Ã‡Ã¶zÃ¼mleri',
+  'Web3 ve Merkeziyetsiz Finansın Etkisi',
+  'Yenilenebilir Enerji Depolama Çözümleri',
   'Biyoteknolojide CRISPR Devrimi',
-  'Otonom AraÃ§larÄ±n Åehir PlanlamasÄ±na Etkisi',
-  'Metaverse ve Sosyal EtkileÅŸimin DÃ¶nÃ¼ÅŸÃ¼mÃ¼'
+  'Otonom Araçların Şehir Planlamasına Etkisi',
+  'Metaverse ve Sosyal Etkileşimin Dönüşümü'
 ];
 
 export default function AiLabPage() {
@@ -160,7 +160,7 @@ export default function AiLabPage() {
   };
 
   const handleDeleteSession = async (id: string) => {
-    if (!token || !confirm('Bu deneyi silmek istediÄŸinize emin misiniz?')) return;
+    if (!token || !confirm('Bu deneyi silmek istediğinize emin misiniz?')) return;
 
     try {
       const res = await fetch(`/api/admin/ai-lab/sessions/${id}`, {
@@ -223,7 +223,7 @@ export default function AiLabPage() {
   if (loading) return <div className="p-8 text-[var(--text-main)] bg-[var(--bg-main)] min-h-screen flex items-center justify-center">
     <div className="flex flex-col items-center gap-4">
       <FiActivity className="w-12 h-12 text-indigo-500 animate-pulse" />
-      <span className="text-sm font-bold uppercase tracking-widest opacity-50">AI Lab YÃ¼kleniyor...</span>
+      <span className="text-sm font-bold uppercase tracking-widest opacity-50">AI Lab Yükleniyor...</span>
     </div>
   </div>;
 
@@ -238,7 +238,7 @@ export default function AiLabPage() {
         <header className="mb-8 flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-black tracking-tight text-gradient">AI Laboratory</h1>
-            <p className="text-[var(--text-muted)] mt-1 font-medium">Modeller arasÄ± orkestrasyon ve kontrollÃ¼ eÄŸitim ortamÄ±.</p>
+            <p className="text-[var(--text-muted)] mt-1 font-medium">Modeller arası orkestrasyon ve kontrollü eğitim ortamı.</p>
           </div>
           <div className="flex items-center gap-3">
             <StatusBadge variant="protected" label="Orchestrator v1.3" />
@@ -400,7 +400,7 @@ export default function AiLabPage() {
             <div className="space-y-3">
               {sessions.length === 0 ? (
                 <div className="glass-card rounded-2xl border-dashed p-12 text-center text-[var(--text-muted)] font-bold italic opacity-50">
-                  HenÃ¼z bir laboratuvar oturumu bulunmuyor.
+                  Henüz bir laboratuvar oturumu bulunmuyor.
                 </div>
               ) : (
                 sessions.map((s: any) => (
@@ -482,7 +482,7 @@ export default function AiLabPage() {
                 {selectedSession.messages.length === 0 ? (
                   <div className="h-full flex flex-col items-center justify-center opacity-30 italic py-20">
                     <FiMessageSquare size={32} className="mb-3" />
-                    <p className="text-xs font-bold uppercase tracking-widest">HenÃ¼z mesaj yok. Deneyi baÅŸlatÄ±n.</p>
+                    <p className="text-xs font-bold uppercase tracking-widest">Henüz mesaj yok. Deneyi başlatın.</p>
                   </div>
                 ) : (
                   selectedSession.messages.map((m: any, idx: number) => {
@@ -532,7 +532,7 @@ export default function AiLabPage() {
                               {m.candidateForTraining && (
                                 <div className="absolute -top-3 -right-2 flex items-center gap-1 bg-indigo-600 text-white px-2 py-1 rounded-lg shadow-xl shadow-indigo-500/40 animate-pulse border border-indigo-400/50">
                                   <FiStar size={10} className="text-yellow-300 fill-yellow-300" />
-                                  <span className="text-[8px] font-black uppercase tracking-widest">Admin OnayÄ± Bekliyor</span>
+                                  <span className="text-[8px] font-black uppercase tracking-widest">Admin Onayı Bekliyor</span>
                                 </div>
                               )}
 
@@ -616,7 +616,7 @@ export default function AiLabPage() {
                       onClick={() => updateStatus(selectedSession.id, 'running')}
                       className="flex-1 rounded-2xl bg-emerald-600 py-3 text-xs font-black text-white hover:bg-emerald-500 transition-all shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2"
                     >
-                      <FiPlay /> Deneyi BaÅŸlat
+                      <FiPlay /> Deneyi Başlat
                     </button>
                   ) : (
                     <>
@@ -638,7 +638,7 @@ export default function AiLabPage() {
                         }}
                         className="flex-1 rounded-2xl bg-[var(--bg-main)] border border-[var(--glass-border)] text-[var(--text-main)] py-3 text-[10px] font-black hover:bg-[var(--bg-surface)] transition-all flex items-center justify-center gap-2"
                       >
-                        <FiArrowRight /> Tek AdÄ±m
+                        <FiArrowRight /> Tek Adım
                       </button>
                       <button
                         onClick={async () => {
@@ -658,7 +658,7 @@ export default function AiLabPage() {
                         }}
                         className="flex-1 rounded-2xl bg-indigo-600 py-3 text-[10px] font-black text-white hover:bg-indigo-500 transition-all shadow-xl shadow-indigo-500/20 flex items-center justify-center gap-2"
                       >
-                        <FiTerminal /> KontrollÃ¼ DÃ¶ngÃ¼ (3)
+                        <FiTerminal /> Kontrollü Döngü (3)
                       </button>
                       <button
                         onClick={() => updateStatus(selectedSession.id, 'paused')}
@@ -673,7 +673,7 @@ export default function AiLabPage() {
                   onClick={() => updateStatus(selectedSession.id, 'stopped')}
                   className="w-full rounded-2xl bg-rose-500/5 border border-rose-500/10 text-rose-500/60 py-2.5 text-[10px] font-black hover:bg-rose-500/10 hover:text-rose-500 transition-all flex items-center justify-center gap-2"
                 >
-                  <FiStopCircle /> Oturumu SonlandÄ±r
+                  <FiStopCircle /> Oturumu Sonlandır
                 </button>
               </div>
             </div>
@@ -682,8 +682,8 @@ export default function AiLabPage() {
               <div className="w-20 h-20 rounded-full bg-indigo-500/10 flex items-center justify-center text-indigo-500 mb-6">
                 <FiActivity size={40} />
               </div>
-              <h3 className="text-xl font-black uppercase tracking-[0.2em]">Oturum SeÃ§ilmedi</h3>
-              <p className="text-sm font-medium mt-3 max-w-xs">Sol taraftaki listeden bir deney seÃ§erek detaylarÄ± ve model konuÅŸmalarÄ±nÄ± gÃ¶rÃ¼ntÃ¼leyebilirsiniz.</p>
+              <h3 className="text-xl font-black uppercase tracking-[0.2em]">Oturum Seçilmedi</h3>
+              <p className="text-sm font-medium mt-3 max-w-xs">Sol taraftaki listeden bir deney seçerek detayları ve model konuşmalarını görüntüleyebilirsiniz.</p>
             </div>
           )}
         </section>
