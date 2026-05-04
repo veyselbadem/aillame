@@ -1,13 +1,20 @@
 import { readFile, writeFile } from 'fs/promises';
 import path from 'path';
-import type { FeedbackRecord, FeedbackStore, FeedbackPayload } from './types';
+import type { FeedbackListOptions, FeedbackRecord, FeedbackStore, FeedbackPayload } from './types';
+import { normalizeFeedbackPayload } from './mappers';
 
 const FEEDBACK_STORE_PATH = path.join(process.cwd(), 'feedback-store.json');
 
 async function readFeedbackFile(): Promise<FeedbackRecord[]> {
   try {
     const raw = await readFile(FEEDBACK_STORE_PATH, 'utf-8');
-    return JSON.parse(raw) as FeedbackRecord[];
+    const normalizedRaw = raw.replace(/^\uFEFF/, '');
+    const parsed = JSON.parse(normalizedRaw) as unknown[];
+    if (!Array.isArray(parsed)) {
+      return [];
+    }
+
+    return parsed.map((item) => normalizeFeedbackPayload(item, 'unknown'));
   } catch (error) {
     if (error instanceof Error && 'code' in error && (error as { code: string }).code === 'ENOENT') {
       return [];
@@ -21,14 +28,18 @@ async function writeFeedbackFile(records: FeedbackRecord[]): Promise<void> {
 }
 
 export const jsonFeedbackStore: FeedbackStore = {
-  async saveFeedback(feedback: FeedbackPayload) {
+  async saveFeedback(feedback: FeedbackPayload | FeedbackRecord) {
     const records = await readFeedbackFile();
+    const normalized = normalizeFeedbackPayload(feedback, 'unknown');
     const existingIndex = records.findIndex(
-      (record) => record.conversationId === feedback.conversationId && record.messageId === feedback.messageId
+      (record) =>
+        record.id === normalized.id ||
+        (record.conversationId === normalized.conversationId && record.messageId === normalized.messageId)
     );
     const record: FeedbackRecord = {
-      ...feedback,
-      createdAt: Date.now(),
+      ...normalized,
+      id: existingIndex >= 0 ? records[existingIndex].id : normalized.id,
+      createdAt: existingIndex >= 0 ? records[existingIndex].createdAt : normalized.createdAt,
     };
 
     if (existingIndex >= 0) {
@@ -41,7 +52,12 @@ export const jsonFeedbackStore: FeedbackStore = {
     return record;
   },
 
-  async listFeedback() {
-    return readFeedbackFile();
+  async listFeedback(options?: FeedbackListOptions) {
+    const records = await readFeedbackFile();
+    if (!options?.projectId) {
+      return records;
+    }
+
+    return records.filter((record) => record.projectId === options.projectId);
   },
 };

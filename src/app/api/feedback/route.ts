@@ -5,11 +5,11 @@ export async function POST(req: NextRequest) {
   try {
     const payload = await req.json();
 
-    if (!payload?.messageId || !payload?.conversationId || !payload?.selectedFeedback) {
+    if (!payload?.selectedFeedback && !payload?.rating) {
       return NextResponse.json({ error: 'Geçersiz geri bildirim verisi.' }, { status: 400 });
     }
 
-    const saved = await saveFeedback(payload);
+    const saved = await saveFeedback(payload, 'legacy_feedback_api');
     return NextResponse.json({ success: true, feedback: saved });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Geri bildirim kaydedilemedi.';
@@ -17,9 +17,10 @@ export async function POST(req: NextRequest) {
   }
 }
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
-    const feedback = await listFeedback();
+    const projectId = req.nextUrl.searchParams.get('projectId') ?? undefined;
+    const feedback = await listFeedback({ projectId });
     return NextResponse.json({ success: true, feedback });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Geri bildirimler alınamadı.';
