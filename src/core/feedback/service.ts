@@ -1,5 +1,4 @@
 import { jsonFeedbackStore } from './store-json';
-import { createOrUpdateCandidateFromFeedback } from '@core/learning-candidates/service';
 import type { FeedbackListOptions, FeedbackPayload, FeedbackRecord } from './types';
 import { normalizeFeedbackPayload } from './mappers';
 import { exportFeedbackJsonl, type FeedbackExportOptions } from './export-jsonl';
@@ -9,11 +8,7 @@ export async function saveFeedback(payload: unknown, source: FeedbackSource = 'l
   const normalized = normalizeFeedbackPayload(payload, source);
   const saved = await jsonFeedbackStore.saveFeedback(normalized);
 
-  try {
-    await createOrUpdateCandidateFromFeedback(saved);
-  } catch (error) {
-    console.error('[Learning Candidate] candidate üretilirken hata oluştu:', error);
-  }
+  // FAZ 4F: learning candidate creation is now admin-controlled via bridge endpoint.
 
   return saved;
 }

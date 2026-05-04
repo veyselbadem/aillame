@@ -10,6 +10,16 @@ export type LearningCandidate = {
   status: LearningCandidateStatus;
   source: LearningCandidateSource;
   sourceFeedbackId: string;
+  projectId?: string;
+  mode?: string;
+  task?: string;
+  responseId?: string;
+  modelId?: string;
+  rating?: 'positive' | 'negative';
+  instruction?: string;
+  input?: string;
+  expectedOutput?: string;
+  tags?: string[];
   messageId: string;
   conversationId: string;
   selectedFeedback: FeedbackType;
@@ -28,6 +38,16 @@ export type LearningCandidate = {
 
 export type CreateLearningCandidateInput = {
   sourceFeedbackId: string;
+  projectId?: string;
+  mode?: string;
+  task?: string;
+  responseId?: string;
+  modelId?: string;
+  rating?: 'positive' | 'negative';
+  instruction?: string;
+  input?: string;
+  expectedOutput?: string;
+  tags?: string[];
   messageId: string;
   conversationId: string;
   type: LearningCandidateType;

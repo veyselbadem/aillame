@@ -1,6 +1,11 @@
 import { jsonLearningCandidateStore } from './store-json';
 import type { CreateLearningCandidateInput, LearningCandidate, LearningCandidateStatus } from './types';
-import type { FeedbackPayload } from '@core/feedback/types';
+import type { FeedbackPayload, FeedbackRecord } from '@core/feedback/types';
+import { getFeedbackLearningCandidateEligibility } from '@core/feedback/bridge-rules';
+
+function toSelectedFeedback(rating: FeedbackRecord['rating']): FeedbackPayload['selectedFeedback'] {
+  return rating === 'negative' ? 'dislike' : 'like';
+}
 
 export async function createOrUpdateCandidateFromFeedback(feedback: FeedbackPayload): Promise<LearningCandidate> {
   const sourceFeedbackId = `${feedback.conversationId}:${feedback.messageId}`;
@@ -27,6 +32,55 @@ export async function createOrUpdateCandidateFromFeedback(feedback: FeedbackPayl
 
 export async function createLearningCandidate(input: CreateLearningCandidateInput): Promise<LearningCandidate> {
   return jsonLearningCandidateStore.upsertCandidate(input);
+}
+
+export async function findLearningCandidateBySourceFeedbackId(sourceFeedbackId: string): Promise<LearningCandidate | undefined> {
+  const candidates = await listLearningCandidates();
+  return candidates.find((candidate) => candidate.sourceFeedbackId === sourceFeedbackId);
+}
+
+export async function createLearningCandidateFromFeedbackBridge(
+  feedback: FeedbackRecord,
+  options: { includeSensitive?: boolean; reason?: string } = {}
+): Promise<LearningCandidate> {
+  const eligibility = getFeedbackLearningCandidateEligibility(feedback, {
+    includeSensitive: options.includeSensitive,
+  });
+
+  if (!eligibility.eligible || !eligibility.type || !eligibility.expectedOutput) {
+    throw new Error('Feedback kaydı learning candidate için uygun değil.');
+  }
+
+  return createLearningCandidate({
+    source: 'feedback',
+    sourceFeedbackId: feedback.id,
+    projectId: feedback.projectId,
+    mode: feedback.mode,
+    task: feedback.task,
+    responseId: feedback.responseId,
+    modelId: feedback.modelId,
+    rating: feedback.rating,
+    instruction: eligibility.instruction,
+    input: eligibility.input,
+    expectedOutput: eligibility.expectedOutput,
+    tags: feedback.tags,
+    messageId: feedback.messageId,
+    conversationId: feedback.conversationId,
+    type: eligibility.type,
+    selectedFeedback: toSelectedFeedback(feedback.rating),
+    optionalComment: feedback.feedbackText ?? feedback.optionalComment,
+    taskId: feedback.task,
+    metadata: {
+      primaryMode: feedback.mode as any,
+      intent: feedback.task as any,
+      messageId: feedback.messageId,
+    },
+    reason:
+      options.reason ||
+      (feedback.rating === 'negative'
+        ? 'Negative feedback with corrected answer selected by admin bridge.'
+        : 'Positive feedback snapshot selected by admin bridge.'),
+  });
 }
 
 export async function listLearningCandidates(): Promise<LearningCandidate[]> {

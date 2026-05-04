@@ -12,12 +12,19 @@ import {
   FiDatabase,
 } from 'react-icons/fi';
 import type { FeedbackRecord } from '@core/feedback/types';
+import { getFeedbackLearningCandidateEligibility } from '@core/feedback/bridge-rules';
 
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
 type RatingFilter = 'all' | 'positive' | 'negative';
 type BoolFilter = 'all' | 'yes' | 'no';
+type LearningBridgeStatus = 'idle' | 'loading' | 'success' | 'duplicate' | 'error';
+
+type LearningBridgeState = {
+  status: LearningBridgeStatus;
+  message?: string;
+};
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -43,10 +50,21 @@ function buildExportUrl(projectId: string, includeSensitive: boolean): string {
 // ---------------------------------------------------------------------------
 // FeedbackCard
 // ---------------------------------------------------------------------------
-function FeedbackCard({ item }: { item: FeedbackRecord }) {
+function FeedbackCard({
+  item,
+  onCreateLearningCandidate,
+  learningBridgeState,
+}: {
+  item: FeedbackRecord;
+  onCreateLearningCandidate: (item: FeedbackRecord) => Promise<void>;
+  learningBridgeState?: LearningBridgeState;
+}) {
   const [showSnapshot, setShowSnapshot] = useState(false);
   const isNegative = item.rating === 'negative';
   const hasSnapshot = Boolean(item.promptSnapshot ?? item.answerSnapshot);
+  const learningEligibility = getFeedbackLearningCandidateEligibility(item);
+  const bridgeStatus = learningBridgeState?.status ?? 'idle';
+  const bridgeMessage = learningBridgeState?.message;
 
   return (
     <div
@@ -71,13 +89,13 @@ function FeedbackCard({ item }: { item: FeedbackRecord }) {
                 Dataset ✓
               </span>
             ) : (
-              <span className="inline-flex items-center rounded-full bg-white/5 px-3 py-1 text-[10px] font-black uppercase tracking-[0.2em] text-gray-500">
+              <span className="inline-flex items-center rounded-full bg-white/5 px-3 py-1 text-[10px] font-black uppercase tracking-[0.2em] text-gray-300">
                 Dataset ✗
               </span>
             )}
             {item.sensitive && (
               <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 px-3 py-1 text-[10px] font-black uppercase tracking-[0.2em] text-amber-300">
-                <FiAlertTriangle size={10} /> Sensitive
+                <FiAlertTriangle size={10} /> Hassas
               </span>
             )}
             {hasSnapshot && (
@@ -86,7 +104,7 @@ function FeedbackCard({ item }: { item: FeedbackRecord }) {
               </span>
             )}
             {item.source && (
-              <span className="inline-flex items-center rounded-full bg-white/5 px-2 py-1 text-[10px] font-mono text-gray-500">
+              <span className="inline-flex items-center rounded-full bg-white/5 px-2 py-1 text-[10px] font-mono text-gray-300">
                 {item.source}
               </span>
             )}
@@ -95,12 +113,12 @@ function FeedbackCard({ item }: { item: FeedbackRecord }) {
           {/* feedbackText */}
           {item.feedbackText ? (
             <p className="max-w-2xl whitespace-pre-wrap break-words text-sm text-gray-300">
-              <span className="mr-2 text-[10px] uppercase tracking-widest text-gray-500">Feedback:</span>
+              <span className="mr-2 text-[10px] uppercase tracking-widest text-gray-400">Geri Bildirim:</span>
               {item.feedbackText}
             </p>
           ) : item.optionalComment ? (
             <p className="max-w-2xl whitespace-pre-wrap break-words text-sm text-gray-400">
-              <span className="mr-2 text-[10px] uppercase tracking-widest text-gray-500">Yorum:</span>
+              <span className="mr-2 text-[10px] uppercase tracking-widest text-gray-400">Yorum:</span>
               {item.optionalComment}
             </p>
           ) : null}
@@ -115,7 +133,7 @@ function FeedbackCard({ item }: { item: FeedbackRecord }) {
         </div>
 
         {/* Right meta */}
-        <div className="shrink-0 space-y-1 text-right font-mono text-xs text-gray-500">
+        <div className="shrink-0 space-y-1 text-right font-mono text-xs text-gray-400">
           <div>{formatDate(item.createdAt)}</div>
           <div>id: {shortId(item.id)}</div>
           {item.projectId && <div>proj: {item.projectId}</div>}
@@ -137,21 +155,50 @@ function FeedbackCard({ item }: { item: FeedbackRecord }) {
           {showSnapshot && (
             <div className="mt-3 space-y-3">
               {item.promptSnapshot && (
-                <div className="rounded-2xl border border-violet-500/20 bg-violet-500/5 p-3">
-                  <p className="mb-1 text-[10px] uppercase tracking-widest text-violet-400">Prompt Snapshot</p>
-                  <p className="whitespace-pre-wrap break-words text-xs text-gray-300">{item.promptSnapshot}</p>
+                <div className="rounded-2xl border border-white/10 bg-black/20 p-3">
+                  <p className="mb-1 text-[10px] uppercase tracking-widest text-violet-300">Prompt Snapshot</p>
+                  <p className="whitespace-pre-wrap break-words text-xs text-gray-100">{item.promptSnapshot}</p>
                 </div>
               )}
               {item.answerSnapshot && (
-                <div className="rounded-2xl border border-violet-500/20 bg-violet-500/5 p-3">
-                  <p className="mb-1 text-[10px] uppercase tracking-widest text-violet-400">Answer Snapshot</p>
-                  <p className="whitespace-pre-wrap break-words text-xs text-gray-300">{item.answerSnapshot}</p>
+                <div className="rounded-2xl border border-white/10 bg-black/20 p-3">
+                  <p className="mb-1 text-[10px] uppercase tracking-widest text-violet-300">Answer Snapshot</p>
+                  <p className="whitespace-pre-wrap break-words text-xs text-gray-100">{item.answerSnapshot}</p>
                 </div>
               )}
             </div>
           )}
         </div>
       )}
+
+      <div className="mt-4 space-y-2">
+        <button
+          type="button"
+          onClick={() => { void onCreateLearningCandidate(item); }}
+          disabled={!learningEligibility.eligible || bridgeStatus === 'loading'}
+          className="rounded-2xl border border-indigo-500/30 bg-indigo-500/10 px-4 py-2 text-xs font-bold text-indigo-100 transition-all hover:bg-indigo-500/20 disabled:cursor-not-allowed disabled:border-white/20 disabled:bg-white/5 disabled:text-gray-300 disabled:opacity-70"
+        >
+          {bridgeStatus === 'loading' ? 'Gönderiliyor...' : 'Learning Candidate’a Gönder'}
+        </button>
+
+        {!learningEligibility.eligible && (
+          <p className="text-[11px] text-amber-200">
+            {item.sensitive
+              ? 'Hassas kayıtlar bu fazda manuel bridge dışında tutulur.'
+              : 'Bu kayıt learning candidate kurallarını karşılamıyor.'}
+          </p>
+        )}
+
+        {bridgeStatus === 'success' && (
+          <p className="text-[11px] text-emerald-200">Learning Candidate oluşturuldu.</p>
+        )}
+        {bridgeStatus === 'duplicate' && (
+          <p className="text-[11px] text-amber-200">Zaten candidate oluşturulmuş.</p>
+        )}
+        {bridgeStatus === 'error' && bridgeMessage && (
+          <p className="text-[11px] text-rose-200">{bridgeMessage}</p>
+        )}
+      </div>
     </div>
   );
 }
@@ -182,6 +229,7 @@ export default function AdminFeedbackPage() {
   const [exportPreviewLoading, setExportPreviewLoading] = useState(false);
   const [exportDownloadLoading, setExportDownloadLoading] = useState(false);
   const [exportError, setExportError] = useState<string | null>(null);
+  const [learningBridgeMap, setLearningBridgeMap] = useState<Record<string, LearningBridgeState>>({});
 
   useEffect(() => {
     const auth = localStorage.getItem('admin_auth');
@@ -316,6 +364,72 @@ export default function AdminFeedbackPage() {
     }
   };
 
+  const handleCreateLearningCandidate = async (feedback: FeedbackRecord) => {
+    const eligibility = getFeedbackLearningCandidateEligibility(feedback);
+    if (!eligibility.eligible) {
+      setLearningBridgeMap((current) => ({
+        ...current,
+        [feedback.id]: {
+          status: 'error',
+          message: feedback.sensitive
+            ? 'Hassas kayıtlar bu fazda includeSensitive olmadan dönüştürülemez.'
+            : 'Bu feedback kaydı learning candidate için uygun değil.',
+        },
+      }));
+      return;
+    }
+
+    const token = getAdminToken();
+    if (!token) return;
+
+    setLearningBridgeMap((current) => ({
+      ...current,
+      [feedback.id]: { status: 'loading' },
+    }));
+
+    try {
+      const response = await fetch('/api/admin/feedback/bridge/learning-candidate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-aillame-admin-token': token,
+        },
+        body: JSON.stringify({
+          feedbackId: feedback.id,
+          includeSensitive: false,
+          reason: 'Admin selected this feedback as learning candidate.',
+        }),
+      });
+
+      const result = await response.json() as { error?: string };
+
+      if (response.status === 409) {
+        setLearningBridgeMap((current) => ({
+          ...current,
+          [feedback.id]: { status: 'duplicate' },
+        }));
+        return;
+      }
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Learning candidate oluşturulamadı.');
+      }
+
+      setLearningBridgeMap((current) => ({
+        ...current,
+        [feedback.id]: { status: 'success' },
+      }));
+    } catch (err) {
+      setLearningBridgeMap((current) => ({
+        ...current,
+        [feedback.id]: {
+          status: 'error',
+          message: err instanceof Error ? err.message : 'Learning candidate oluşturulurken hata oluştu.',
+        },
+      }));
+    }
+  };
+
   if (!authorized) return null;
 
   return (
@@ -328,10 +442,10 @@ export default function AdminFeedbackPage() {
             <div className="w-6 h-6 rounded-lg bg-emerald-500/20 flex items-center justify-center">
               <FiThumbsUp size={12} className="text-emerald-400" />
             </div>
-            <p className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-500">Admin · Feedback Dataset</p>
+            <p className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-300">Admin · Feedback Dataset</p>
           </div>
           <h1 className="text-4xl font-black tracking-tight text-white">Feedback Dataset Yönetimi</h1>
-          <p className="text-sm text-slate-400 mt-2 max-w-2xl font-medium">
+          <p className="text-sm text-gray-300 mt-2 max-w-2xl font-medium">
             v2 feedback kayıtlarını inceleyin, filtreleyin ve dataset export işlemlerini yönetin.
           </p>
         </div>
@@ -368,7 +482,7 @@ export default function AdminFeedbackPage() {
           { label: 'Positive', value: summary.positive, color: 'text-emerald-400' },
           { label: 'Negative', value: summary.negative, color: 'text-rose-400' },
           { label: 'Dataset Eligible', value: summary.eligible, color: 'text-sky-400' },
-          { label: 'Sensitive', value: summary.sensitive, color: 'text-amber-400' },
+          { label: 'Hassas', value: summary.sensitive, color: 'text-amber-300' },
         ] as const).map((card) => (
           <div key={card.label} className="rounded-3xl border border-white/10 bg-white/5 p-5">
             <p className="text-[10px] uppercase tracking-[0.3em] text-gray-400 mb-2">{card.label}</p>
@@ -404,7 +518,7 @@ export default function AdminFeedbackPage() {
           </select>
         </div>
         <div className="rounded-3xl border border-white/10 bg-white/5 p-4">
-          <p className="text-[10px] uppercase tracking-[0.3em] text-gray-400 mb-2">Sensitive</p>
+          <p className="text-[10px] uppercase tracking-[0.3em] text-gray-400 mb-2">Hassas</p>
           <select
             value={sensitiveFilter}
             onChange={(e) => setSensitiveFilter(e.target.value as BoolFilter)}
@@ -461,11 +575,16 @@ export default function AdminFeedbackPage() {
         </div>
       ) : (
         <div className="mb-12 space-y-4">
-          <p className="mb-2 text-xs text-gray-500">
+          <p className="mb-2 text-xs text-gray-400">
             {filteredFeedbacks.length} / {feedbacks.length} kayıt gösteriliyor
           </p>
           {filteredFeedbacks.map((item) => (
-            <FeedbackCard key={item.id} item={item} />
+            <FeedbackCard
+              key={item.id}
+              item={item}
+              onCreateLearningCandidate={handleCreateLearningCandidate}
+              learningBridgeState={learningBridgeMap[item.id]}
+            />
           ))}
         </div>
       )}
@@ -506,7 +625,7 @@ export default function AdminFeedbackPage() {
               className="h-4 w-4 rounded accent-amber-400"
             />
             <label htmlFor="includeSensitive" className="cursor-pointer text-xs text-gray-300">
-              Sensitive kayıtları dahil et
+              Hassas kayıtları dahil et
               <span className="ml-1 text-[10px] text-amber-400">(varsayılan: kapalı)</span>
             </label>
           </div>
@@ -551,7 +670,7 @@ export default function AdminFeedbackPage() {
                 className="w-full resize-none rounded-2xl border border-white/10 bg-black/20 px-4 py-3 font-mono text-xs text-gray-300 whitespace-pre"
               />
             ) : (
-              <div className="rounded-2xl border border-white/10 bg-black/10 p-4 text-xs text-gray-500">
+              <div className="rounded-2xl border border-white/10 bg-black/10 p-4 text-xs text-gray-300">
                 Export boş. datasetEligible=true ve output alanı dolu kayıt bulunamadı.
               </div>
             )}
