@@ -2,29 +2,26 @@ import { getAillameEngine, RustEngine } from '@core/engine/rust-core';
 import { AillameTokenizer } from '@core/engine/tokenizer';
 import * as path from 'path';
 import * as fs from 'fs';
+import { modelLoader } from '@core/engine/model-loader';
+import { NANO_V1_CONFIG } from '@core/engine/train-rust';
 
 // Global singletons
-let globalEngine: RustEngine | null = null;
+let globalEngineV1: RustEngine | null = null;
+let globalEngineV2: RustEngine | null = null;
 let globalTokenizer: AillameTokenizer | null = null;
-let currentCheckpoint: string | null = null;
 
 let initializationPromise: Promise<{ engine: RustEngine, tokenizer: AillameTokenizer } | null> | null = null;
 
-export async function getSharedCore(checkpointName: string = 'aillame_rust_tuned.safetensors') {
-    if (globalEngine && globalTokenizer && currentCheckpoint === checkpointName) {
-        return { engine: globalEngine, tokenizer: globalTokenizer };
-    }
-
+export async function getSharedCore(version: 'v1' | 'v2' = 'v1') {
     if (!initializationPromise) {
         initializationPromise = (async () => {
-            const engine = getAillameEngine();
-            if (!engine) return null;
+            const engineV1 = getAillameEngine();
+            if (!engineV1) return null;
 
             const tokenizer = new AillameTokenizer();
             const rootPath = process.cwd();
             const dataPath = path.join(rootPath, 'src', 'core', 'engine', 'data', 'input.txt');
             const vocabPath = path.join(rootPath, 'src', 'core', 'engine', 'data', 'vocab.json');
-            const checkpointPath = path.join(rootPath, 'src', 'core', 'engine', 'checkpoints', checkpointName);
 
             let text = '';
             if (fs.existsSync(dataPath)) {
@@ -38,41 +35,54 @@ export async function getSharedCore(checkpointName: string = 'aillame_rust_tuned
                 }
             }
             
-            // Rust core still needs the raw text to match the same vocab generation logic 
-            // since it has its own internal tokenizer.
             if (text) {
-                engine.trainTokenizer(text);
+                engineV1.trainTokenizer(text);
             }
             
-            const vocabSize = 256;
-            engine.initTrainer(vocabSize, 256, 8, 0.0003); // Optimized Pro Specs
-
-            if (fs.existsSync(checkpointPath)) {
-                engine.loadCheckpoint(checkpointPath);
+            // V1 Engine Hazırla
+            engineV1.initTrainer(NANO_V1_CONFIG.vocabSize, NANO_V1_CONFIG.nEmbd, NANO_V1_CONFIG.nLayer, 0.0003);
+            const v1Path = path.join(rootPath, NANO_V1_CONFIG.checkpointPath);
+            if (fs.existsSync(v1Path)) {
+                engineV1.loadCheckpoint(v1Path);
             }
 
-            globalEngine = engine;
+            globalEngineV1 = engineV1;
             globalTokenizer = tokenizer;
-            currentCheckpoint = checkpointName;
 
-            return { engine: globalEngine, tokenizer: globalTokenizer };
+            // [NANO-F5] modelLoader entegrasyonu (V1 her zaman hazır)
+            modelLoader.setEngine(globalEngineV1);
+            // V1 yüklü olarak işaretle (içeride setEngine yapıldığı için v1 için engineV1 kullanılacak)
+            
+            return { engine: globalEngineV1, tokenizer: globalTokenizer };
         })();
-    } else if (currentCheckpoint !== checkpointName) {
-        // If already initialized but with a different checkpoint, reload it
-        const rootPath = process.cwd();
-        const checkpointPath = path.join(rootPath, 'src', 'core', 'engine', 'checkpoints', checkpointName);
-        if (fs.existsSync(checkpointPath) && globalEngine) {
-            globalEngine.loadCheckpoint(checkpointPath);
-            currentCheckpoint = checkpointName;
-        }
     }
 
-    return initializationPromise;
+    const core = await initializationPromise;
+    if (!core) return null;
+
+    if (version === 'v2') {
+        if (!globalEngineV2) {
+            // V2 için AYRI bir engine instance'ı oluştur (VarMap çakışmasını önlemek için)
+            const engineV2 = getAillameEngine();
+            if (engineV2) {
+                globalEngineV2 = engineV2;
+                // V2 tokenizer eğitimi (karakter bazlı fallback için gerekebilir)
+                const dataPath = path.join(process.cwd(), 'src', 'core', 'engine', 'data', 'input.txt');
+                if (fs.existsSync(dataPath)) {
+                    const text = fs.readFileSync(dataPath, 'utf8');
+                    globalEngineV2.trainTokenizer(text);
+                }
+            }
+        }
+        return { engine: globalEngineV2!, tokenizer: core.tokenizer };
+    }
+
+    return { engine: globalEngineV1!, tokenizer: core.tokenizer };
 }
 
 /**
  * Belirli bir checkpoint ile core motorunu alır (Test amaçlı)
  */
 export async function getCoreWithCheckpoint(checkpointName: string) {
-    return getSharedCore(checkpointName);
+    return getSharedCore('v1'); // Legacy support
 }

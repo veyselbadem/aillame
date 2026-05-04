@@ -8,6 +8,38 @@ import { AillameTokenizer } from './tokenizer';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// [NANO-F4B] Dual-config sistemi
+export const NANO_V1_CONFIG = {
+  nEmbd: 256,
+  nLayer: 8,
+  vocabSize: 256,
+  checkpointPath: 'src/core/engine/checkpoints/aillame_rust_tuned.safetensors',
+} as const;
+
+export const NANO_V2_CONFIG = {
+  nEmbd: 512,
+  nLayer: 12,
+  vocabSize: 8192,
+  checkpointPath: 'src/core/engine/checkpoints/aillame_nano_v2.safetensors',
+} as const;
+
+export const NANO_V3_CONFIG = {
+  nEmbd: 768,
+  nLayer: 16,
+  vocabSize: 16384,
+  checkpointPath: 'src/core/engine/checkpoints/aillame_nano_v3.safetensors',
+} as const;
+
+// Env kontrolü — varsayılan her zaman V1
+export const NANO_VERSION = (process.env.NANO_VERSION ?? 'v1').trim();
+export const ACTIVE_NANO_CONFIG =
+  NANO_VERSION === 'v3'
+    ? NANO_V3_CONFIG
+    : (NANO_VERSION === 'v2' ? NANO_V2_CONFIG : NANO_V1_CONFIG);
+
+// Başlangıçta hangi config aktif olduğunu logla
+console.log(`[NANO-F4B] Aktif config: ${NANO_VERSION}`, ACTIVE_NANO_CONFIG);
+
 /**
  * Aillame Turbo Maraton v2 (RUST POWERED - Optimized)
  */
@@ -40,7 +72,9 @@ async function startRustTraining() {
 
     // Parametre veya env ile gelen dosya yolları
     const dataPath = inputEnv ? path.resolve(process.cwd(), inputEnv) : defaultInput;
-    const checkpointPath = outputEnv ? path.resolve(process.cwd(), outputEnv) : defaultOutput;
+    const checkpointPath = outputEnv 
+        ? path.resolve(process.cwd(), outputEnv) 
+        : path.resolve(process.cwd(), ACTIVE_NANO_CONFIG.checkpointPath);
 
     console.log('Input file (resolved):', dataPath);
     console.log('Output checkpoint (resolved):', checkpointPath);
@@ -117,9 +151,17 @@ async function startRustTraining() {
         process.exit(8);
     }
 
-    const fixedVocabSize = 256; 
+    const fixedVocabSize = ACTIVE_NANO_CONFIG.vocabSize; 
     engine.trainTokenizer(text);
-    engine.initTrainer(fixedVocabSize, 256, 8, 0.0003); // PRO ARCHITECTURE: 256 embd, 8 layers
+    
+    // [NANO-F4B] V2/V3 seçiliyse yeni init fonksiyonunu kullan
+    if (NANO_VERSION === 'v3' && engine.initNanoV3) {
+        engine.initNanoV3();
+    } else if (NANO_VERSION === 'v2' && engine.initNanoV2) {
+        engine.initNanoV2();
+    } else {
+        engine.initTrainer(fixedVocabSize, ACTIVE_NANO_CONFIG.nEmbd, ACTIVE_NANO_CONFIG.nLayer, 0.0003);
+    }
 
     // Varsa eski checkpoint'i yükle
     if (fs.existsSync(checkpointPath)) {
@@ -198,7 +240,9 @@ async function startRustTraining() {
     console.log('✅ Eğitim Tamamlandı!');
 }
 
-startRustTraining().catch((err) => {
-    console.error('❌ Main function error:', err && err.message ? err.message : err);
-    process.exit(9);
-});
+if (import.meta.url === `file:///${path.join(process.cwd(), 'src/core/engine/train-rust.ts').replace(/\\/g, '/')}`) {
+  startRustTraining().catch((err) => {
+      console.error('❌ Main function error:', err && err.message ? err.message : err);
+      process.exit(9);
+  });
+}
