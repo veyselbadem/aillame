@@ -11,6 +11,14 @@ import {
   detectUserIntent,
   normalizeAssistantAnswer,
 } from '../conversation/conversation-quality';
+import {
+  buildIntentAwareNanoAnswer,
+  buildNanoInitialReflection,
+  buildNanoProviderSuccessReflection,
+  buildNanoWebSearchReflection,
+  buildProviderFailureComment,
+  enrichNanoAnswer,
+} from './nano-response-builder';
 
 /**
  * Nano Cognitive Layer Service
@@ -19,6 +27,22 @@ import {
 
 export function classifyTask(prompt: string): NanoCognitivePlan {
   const p = prompt.toLowerCase().trim();
+
+  // [NANO-F2] Skor tabanlı görev ağırlık katmanı
+  const taskScore = { // [NANO-F2]
+    complexity: 0, // [NANO-F2]
+    research: 0, // [NANO-F2]
+    code: 0, // [NANO-F2]
+    creative: 0, // [NANO-F2]
+  }; // [NANO-F2]
+  if (p.length > 200) taskScore.complexity += 1; // [NANO-F2]
+  if (p.length > 500) taskScore.complexity += 1; // [NANO-F2]
+  if ((p.match(/\?/g) || []).length > 2) taskScore.research += 1; // [NANO-F2]
+  if (/```|function|const |import |class |def |örnek/i.test(p)) taskScore.code += 2; // [NANO-F2]
+  if (/yaz|oluştur|üret|hikaye|şiir|makale/i.test(p)) taskScore.creative += 1; // [NANO-F2]
+  if (/araştır|kaynak|neden|nasıl çalışır|açıkla|karşılaştır|fark|nedir/i.test(p)) taskScore.research += 2; // [NANO-F2]
+  // Yüksek complexity → Pro katmanına devret
+  const shouldEscalate = taskScore.complexity >= 2 || taskScore.code >= 2 || taskScore.research >= 2; // [NANO-F2]
 
   // 1. Social Chat & Dialogue Continuation
   if (
@@ -34,7 +58,8 @@ export function classifyTask(prompt: string): NanoCognitivePlan {
       taskType: 'social_chat',
       toolTarget: 'QuickResponse',
       confidenceScore: 0.95,
-      reason: 'User is engaging in social conversation or providing a short dialogue continuation.'
+      reason: 'User is engaging in social conversation or providing a short dialogue continuation.',
+      taskScore
     };
   }
 
@@ -44,7 +69,8 @@ export function classifyTask(prompt: string): NanoCognitivePlan {
       taskType: 'image_generation',
       toolTarget: 'SDXL',
       confidenceScore: 0.9,
-      reason: 'User requested image generation.'
+      reason: 'User requested image generation.',
+      taskScore
     };
   }
 
@@ -54,7 +80,8 @@ export function classifyTask(prompt: string): NanoCognitivePlan {
       taskType: 'image_analysis',
       toolTarget: 'Qwen',
       confidenceScore: 0.9,
-      reason: 'User requested image analysis.'
+      reason: 'User requested image analysis.',
+      taskScore
     };
   }
 
@@ -64,7 +91,8 @@ export function classifyTask(prompt: string): NanoCognitivePlan {
       taskType: 'list_examples',
       toolTarget: 'GeneralKnowledge',
       confidenceScore: 0.85,
-      reason: 'User wants a list or examples.'
+      reason: 'User wants a list or examples.',
+      taskScore
     };
   }
 
@@ -74,7 +102,8 @@ export function classifyTask(prompt: string): NanoCognitivePlan {
       taskType: 'compare',
       toolTarget: 'GeneralKnowledge',
       confidenceScore: 0.85,
-      reason: 'User wants a comparison.'
+      reason: 'User wants a comparison.',
+      taskScore
     };
   }
 
@@ -84,7 +113,8 @@ export function classifyTask(prompt: string): NanoCognitivePlan {
       taskType: 'explain_more',
       toolTarget: 'safeFallback',
       confidenceScore: 0.9,
-      reason: 'User needs elaboration.'
+      reason: 'User wants more elaboration.',
+      taskScore
     };
   }
 
@@ -94,7 +124,8 @@ export function classifyTask(prompt: string): NanoCognitivePlan {
       taskType: 'continue_context',
       toolTarget: 'safeFallback',
       confidenceScore: 0.9,
-      reason: 'User wants to continue the previous context.'
+      reason: 'User wants to continue or expand.',
+      taskScore
     };
   }
 
@@ -104,7 +135,8 @@ export function classifyTask(prompt: string): NanoCognitivePlan {
       taskType: 'general_knowledge',
       toolTarget: 'GeneralKnowledge',
       confidenceScore: 0.9,
-      reason: 'Question matches known general knowledge base.'
+      reason: 'Question about current events or research.',
+      taskScore
     };
   }
 
@@ -119,12 +151,13 @@ export function classifyTask(prompt: string): NanoCognitivePlan {
   }
 
   // 5. Code Help
-  if (p.includes('kod') || p.includes('yazılım') || p.includes('javascript') || p.includes('python') || p.includes('hata')) {
+  if (shouldEscalate || p.includes('kod') || p.includes('yazılım') || p.includes('javascript') || p.includes('python') || p.includes('hata')) { // [NANO-F2]
     return {
       taskType: 'code_help',
       toolTarget: 'Qwen',
       confidenceScore: 0.8,
-      reason: 'User requested programming assistance.'
+      reason: shouldEscalate ? 'Task complexity or code patterns require Pro escalation.' : 'User requested programming assistance.',
+      taskScore
     };
   }
 
@@ -133,7 +166,8 @@ export function classifyTask(prompt: string): NanoCognitivePlan {
     taskType: 'unknown',
     toolTarget: 'safeFallback',
     confidenceScore: 0.5,
-    reason: 'Task type could not be confidently determined.'
+    reason: 'Task type could not be confidently determined.',
+    taskScore
   };
 }
 
@@ -322,6 +356,35 @@ function countWebSources(text: string): number {
   return new Set(sourceMatches).size;
 }
 
+function buildEvidenceFallbackSummary(
+  topic: string,
+  lastMessages: { model: string, content: string, type?: string, outputType?: string }[]
+): string {
+  const researchMessage = [...lastMessages]
+    .reverse()
+    .find((message) => message.model === 'web_search' || message.outputType === 'research' || message.type === 'research');
+
+  if (!researchMessage?.content) {
+    return `Güvenli kısa sonuç: "${topic}" için provider çıktısı kullanılamadığı için final yorum Nano'nun mevcut bağlam değerlendirmesiyle sınırlı tutulmalı.`;
+  }
+
+  const safeResearch = normalizeAssistantAnswer(researchMessage.content);
+  const sourceCount = countWebSources(safeResearch);
+  const snippets = safeResearch
+    .split('\n')
+    .filter((line) => /\[\d+\]/.test(line))
+    .map((line) => line.replace(/\[\d+\]/g, '').trim())
+    .filter(Boolean)
+    .slice(0, 3);
+  const preview = snippets.join(' ').slice(0, 320).trim() || safeResearch.slice(0, 320).trim();
+
+  return [
+    `Güvenli kısa sonuç: Web Search ${sourceCount || 'birkaç'} kaynakla konu için kullanılabilir bir zemin verdi.`,
+    preview ? `Kaynakların ortak çerçevesi: ${preview}` : '',
+    'Bu nedenle final değerlendirme provider placeholder/fallback metnine değil, bu kaynak zemini ve Nano yorumuna dayanmalı.',
+  ].filter(Boolean).join(' ');
+}
+
 function chooseAvailableNextStep(activeParticipants: Set<string>, goal?: string, webSearchDone = false): string {
   if (activeParticipants.has('gemma')) return 'Gemma: Hızlı sentez üret.';
   if (activeParticipants.has('ollama')) return 'Ollama: Hızlı sentez üret.';
@@ -378,7 +441,15 @@ export async function reflectOnLabStep(
       summary += 'Önce kısa bir tanım ve kalite kontrol çerçevesi kurulmalı.';
     }
 
-    return { summary, nextStep };
+    return {
+      summary: buildNanoInitialReflection({
+        topic,
+        nextStep,
+        webSearchDone,
+      }),
+      suggestion: summary,
+      nextStep,
+    };
   }
 
   const safeContent = normalizeAssistantAnswer(lastMsg.content || '');
@@ -386,18 +457,39 @@ export async function reflectOnLabStep(
   const gemmaInvalidShortOutput = lastMsg.model === 'gemma' && isInvalidShortProviderOutput(safeContent, topic);
 
   if (hasFallbackMetadata(lastMsg) || isErrorMessage(safeContent, lastMsg.type || lastMsg.outputType) || gemmaInvalidShortOutput) {
+    const failureReason = gemmaInvalidShortOutput
+      ? 'invalid_short_output'
+      : lastMsg.generationMetadata?.reason || lastMsg.generationMetadata?.code || lastMsg.outputType || lastMsg.type || 'degraded';
+    const evidenceFallbackSummary = buildEvidenceFallbackSummary(topic, lastMessages);
+
     if (lastMsg.model === 'gemma') {
       return {
-        summary: 'Gemma bu turda güvenilir bir sentez üretemedi; bu çıktıyı başarılı analiz gibi kullanmıyorum.',
-        suggestion: 'Final değerlendirmeyi Web Search kaynakları, önceki Nano yorumu ve varsa sağlam provider çıktılarıyla hazırlamak daha güvenli.',
-        nextStep: 'Nano: Kısa final özet üret, degraded durumu açıkça belirt ve oturumu tamamla.',
+        summary: [
+          buildProviderFailureComment({
+            provider: 'Gemma',
+            topic,
+            reason: failureReason,
+            fallbackAvailable: webSearchDone || lastMessages.length > 1,
+          }),
+          evidenceFallbackSummary,
+        ].join('\n\n'),
+        suggestion: 'Gemma metni final cevaba kanıt gibi eklenmemeli; Nano finali Web Search, önceki güvenilir yorumlar ve sağlam provider çıktılarıyla toparlamalı.',
+        nextStep: 'Nano: Final özeti üret, degraded durumu sade dille belirt ve oturumu tamamla.',
       };
     }
 
     return {
-      summary: `${lastMsg.model} çıktısı hata/degraded/planning olarak işaretlendi; bu yüzden içerik kanıtı olarak kullanılmayacak.`,
+      summary: [
+        buildProviderFailureComment({
+          provider: lastMsg.model,
+          topic,
+          reason: failureReason,
+          fallbackAvailable: webSearchDone || lastMessages.length > 1,
+        }),
+        evidenceFallbackSummary,
+      ].join('\n\n'),
       suggestion: 'Bu çıktıdan eğitim adayı üretmemek ve mevcut güvenli bilgilerle final özet hazırlamak en doğru yol.',
-      nextStep: 'Nano: Final summary üret ve oturumu tamamla.',
+      nextStep: 'Nano: Final özeti üret ve oturumu tamamla.',
     };
   }
 
@@ -422,17 +514,27 @@ export async function reflectOnLabStep(
           : 'Nano: Kaynaklardan final özet çıkar.';
 
     return {
-      summary: `Web Search ${sourceCount || 0} kaynak getirdi. İlk okuma şu ortak çerçeveyi veriyor: ${preview}...`,
-      suggestion: 'Aynı oturumda tekrar arama yapmak yerine bu kaynakları yorumlayıp senteze geçmek daha verimli.',
+      summary: buildNanoWebSearchReflection({
+        topic,
+        sourceCount,
+        preview,
+        nextStep,
+      }),
+      suggestion: 'Aynı oturumda tekrar arama yapmak yerine bu kaynakları yorumlayıp senteze geçmek daha verimli; finalde başlık/snippet içeriği sade Türkçe ile birleştirilmeli.',
       nextStep,
     };
   }
 
   if (lastMsg.model === 'qwen') {
     const reflection: NanoReflection = {
-      summary: 'Qwen derin analiz katkisi sundu.',
-      suggestion: 'Qwen ağır model olduğu için bu oturumda tekrar denenmemeli; final kalite kontrol yeterli.',
-      nextStep: hasSdxl ? 'SDXL: Görsel üretim planını uygula.' : 'Nano: Final summary üret.',
+      summary: buildNanoProviderSuccessReflection({
+        topic,
+        provider: 'Qwen',
+        providerOutput: safeContent,
+        nextStep: hasSdxl ? 'SDXL: Görsel üretim planını uygula.' : 'Nano: Final özeti üret.',
+      }),
+      suggestion: 'Qwen ağır model olduğu için bu oturumda tekrar denenmemeli; Nano finalde açıklık, tekrar ve güvenlik kontrolü yapmalı.',
+      nextStep: hasSdxl ? 'SDXL: Görsel üretim planını uygula.' : 'Nano: Final özeti üret.',
     };
 
     if (isValidCandidateText(safeContent) && goal === 'create_learning_candidate') {
@@ -452,11 +554,16 @@ export async function reflectOnLabStep(
 
   if (lastMsg.model === 'gemma' || lastMsg.model === 'ollama') {
     const providerName = lastMsg.model === 'gemma' ? 'Gemma' : 'Ollama';
-    const preview = safeContent.substring(0, 220).trim();
+    const nextStep = hasQwen ? 'Qwen: Seçiliyse tek tur derin analiz yap.' : 'Nano: Final özeti üret.';
     const reflection: NanoReflection = {
-      summary: `${providerName} kullanılabilir bir hızlı sentez üretti: ${preview}...`,
-      suggestion: 'Bu çıktı final cevaba eklenebilir; yine de Nano son turda açıklık, tekrar ve güvenlik kontrolü yapmalı.',
-      nextStep: hasQwen ? 'Qwen: Seçiliyse tek tur derin analiz yap.' : 'Nano: Final summary üret.',
+      summary: buildNanoProviderSuccessReflection({
+        topic,
+        provider: providerName,
+        providerOutput: safeContent,
+        nextStep,
+      }),
+      suggestion: 'Bu çıktı final cevaba eklenebilir; yine de Nano son turda açıklık, tekrar, Türkçe karakter ve raw reasoning kontrolü yapmalı.',
+      nextStep,
     };
 
     if (isValidCandidateText(safeContent) && goal === 'create_learning_candidate') {
@@ -503,8 +610,8 @@ export function looksMalformedNanoText(text: string): boolean {
 
   const visible = trimmed.replace(/\s/g, '').length || 1;
   const letters = (trimmed.match(/[a-zA-ZğüşöçıİĞÜŞÖÇ0-9]/g) || []).length;
-  // Kısa ama geçerli cevaplara izin ver (örneğin "Tamam.")
-  if (trimmed.length > 2 && letters / visible < 0.25) return true;
+  // BPE tokenizasyonunda boşluklar çok olduğu için oranı düşürelim (0.25 -> 0.15)
+  if (trimmed.length > 2 && letters / visible < 0.15) return true;
 
   const punctuationCount = (trimmed.match(/[\W_]/g) || []).length;
   if (trimmed.length > 10 && punctuationCount / visible > 0.4) return true;
@@ -512,20 +619,105 @@ export function looksMalformedNanoText(text: string): boolean {
   return false;
 }
 
+import { routeToVersion, resolveActiveVersion, PARALLEL_MODE } from '../engine/version-router';
+import { modelLoader } from '../engine/model-loader';
+import { logQualityEntry } from '../engine/quality-logger';
+import { getSharedCore } from '../../lib/aillame-engine';
+
+export async function inferWithVersionControl(
+  input: string,
+  taskScore: { complexity: number; research: number; code: number; creative: number },
+  maxTokens: number,
+  temperature: number
+): Promise<{ response: string; modelId: string }> {
+
+  const decision = routeToVersion(taskScore);
+  const activeVersion = resolveActiveVersion(decision);
+
+  console.log(`[NANO-F5] Yönlendirme: ${decision.version} (aktif: ${activeVersion}) — ${decision.reason}`);
+
+  // V1 yanıtı — her zaman üretilir (hızlıdır)
+  const coreV1 = await getSharedCore('v1');
+  if (!coreV1) throw new Error('V1 core not initialized');
+  
+  const { engine: engineV1, tokenizer } = coreV1;
+  await modelLoader.setEngine(engineV1, 'v1');
+  await modelLoader.ensureLoaded('v1');
+  
+  const inputIdsV1 = tokenizer.encode(input);
+  // [NANO-F7] V1 için stabilite amaçlı topK=1 (greedy) ve stopToken olarak \n (yaklaşık 10) deniyoruz
+  const outputIdsV1 = engineV1.generate(new Uint32Array(inputIdsV1), maxTokens, temperature, 1, 10); 
+  const generatedIdsV1 = Array.from(outputIdsV1).slice(inputIdsV1.length);
+  const v1Response = tokenizer.decode(generatedIdsV1.length > 0 ? generatedIdsV1 : outputIdsV1);
+
+  // V2 yanıtı — paralel modda veya v2 seçildiğinde üretilir
+  let v2Response: string | undefined;
+  let v2LoadTime: number | undefined;
+
+  if (decision.version === 'v2' || PARALLEL_MODE) {
+    try {
+      const t = Date.now();
+      const coreV2 = await getSharedCore('v2');
+      if (coreV2) {
+        const { engine: engineV2 } = coreV2;
+        
+        await modelLoader.setEngine(engineV2, 'v2');
+        await modelLoader.ensureLoaded('v2');
+        
+        const inputIdsV2 = engineV2.bpeEncode(input); 
+        // [NANO-F7] V2 için Top-K=40 ve EOS=3 (BPE <EOS>) kullanıyoruz
+        const outputIdsV2 = engineV2.generate(new Uint32Array(inputIdsV2), maxTokens, temperature, 40, 3);
+        const generatedIdsV2 = Array.from(outputIdsV2).slice(inputIdsV2.length);
+        
+        // V2 BPE decode kullanmalı
+        v2Response = engineV2.bpeDecode(generatedIdsV2.length > 0 ? generatedIdsV2 : outputIdsV2);
+        
+        v2LoadTime = Date.now() - t;
+      }
+    } catch (err) {
+      console.warn('[NANO-F5] V2 inference hatası — V1 kullanılıyor:', err);
+    }
+  }
+
+  // Kalite logu
+  logQualityEntry({
+    timestamp: Date.now(),
+    input: input.slice(0, 200),
+    v1Response: v1Response.slice(0, 300),
+    v2Response: v2Response?.slice(0, 300),
+    routingDecision: decision.reason,
+    taskScore,
+    v2LoadTime,
+  });
+
+  // Paralel modda veya v2 hatasında kullanıcıya V1 gider
+  const finalResponse = (activeVersion === 'v2' && v2Response)
+    ? v2Response
+    : v1Response;
+
+  return {
+    response: finalResponse,
+    modelId: (activeVersion === 'v2' && v2Response) ? 'aillame-nano-v2' : 'aillame-nano-v1'
+  };
+}
+
 export function safeFallback(prompt: string, history: { role: string, content: string }[] = []): string {
   const qualityAnswer = buildConversationAnswer(prompt, history);
-  if (qualityAnswer) return normalizeAssistantAnswer(qualityAnswer);
+  if (qualityAnswer) return enrichNanoAnswer(prompt, qualityAnswer, history);
 
   const quick = getQuickResponse(prompt, history);
-  if (quick) return quick;
+  if (quick) return enrichNanoAnswer(prompt, quick, history);
 
   const p = prompt.toLowerCase().trim();
   if (p.length < 3) return 'Anladım. Size nasıl yardımcı olabilirim?';
 
+  const intentAware = buildIntentAwareNanoAnswer(prompt, history);
+  if (intentAware) return enrichNanoAnswer(prompt, intentAware, history);
+
   const intent = detectUserIntent(prompt);
   if (intent === 'default') {
-    return 'Bunu daha iyi yanıtlayabilmem için bağlamı biraz daraltmam gerekiyor. İstersen hedefini tek cümleyle yaz; ben de sana uygulanabilir bir cevap hazırlayayım.';
+    return enrichNanoAnswer(prompt, 'Bunu daha iyi yanıtlayabilmem için bağlamı biraz daraltmam gerekiyor. İstersen hedefini tek cümleyle yaz; ben de sana uygulanabilir bir cevap hazırlayayım.', history);
   }
 
-  return 'Bu isteği tam karşılayacak bir model çıktısı alamadım; yine de konuyu adım adım açabilirim. İstersen biraz daha detay ver.';
+  return enrichNanoAnswer(prompt, 'Bu isteği tam karşılayacak bir model çıktısı alamadım; yine de konuyu adım adım açabilirim. İstersen biraz daha detay ver.', history);
 }

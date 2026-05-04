@@ -30,6 +30,12 @@ export interface NanoCognitivePlan {
   toolTarget: NanoToolTarget;
   confidenceScore: number;
   reason: string;
+  taskScore?: {
+    complexity: number;
+    research: number;
+    code: number;
+    creative: number;
+  };
 }
 
 export interface NanoLearningSuggestion {
