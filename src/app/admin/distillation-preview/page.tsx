@@ -8,6 +8,7 @@ import type {
   DistillationPreviewStatus,
 } from '@core/distillation-preview/types';
 import StatusBadge from '@components/ui/StatusBadge';
+import { adminFetch, requireAdminTokenOrRedirect } from '@lib/admin-fetch';
 
 const STATUS_OPTIONS: Array<{ value: DistillationPreviewStatus | 'all'; label: string }> = [
   { value: 'all', label: 'Tümü' },
@@ -92,11 +93,8 @@ export default function AdminDistillationPreviewPage() {
   const router = useRouter();
 
   useEffect(() => {
-    const auth = localStorage.getItem('admin_auth');
-    if (!auth) {
-      router.push('/admin/login');
-      return;
-    }
+    const token = requireAdminTokenOrRedirect(router);
+    if (!token) return;
     setAuthorized(true);
     loadPreviews();
   }, []);
@@ -106,7 +104,8 @@ export default function AdminDistillationPreviewPage() {
     setError(null);
 
     try {
-      const response = await fetch('/api/distillation-preview');
+      const response = await adminFetch('/api/distillation-preview');
+      if (response.status === 401) { router.push('/admin/login'); return; }
       if (!response.ok) {
         throw new Error('Damıtma önizleme kayıtları alınamadı.');
       }
@@ -130,11 +129,11 @@ export default function AdminDistillationPreviewPage() {
     setUpdatingId(id);
 
     try {
-      const response = await fetch('/api/distillation-preview', {
+      const response = await adminFetch('/api/distillation-preview', {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id, status }),
       });
+      if (response.status === 401) { router.push('/admin/login'); return; }
 
       const result = await response.json();
       if (!response.ok || !result?.success) {
@@ -158,11 +157,11 @@ export default function AdminDistillationPreviewPage() {
     setUpdatingId(previewId);
 
     try {
-      const response = await fetch('/api/memory-write-queue', {
+      const response = await adminFetch('/api/memory-write-queue', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ previewId }),
       });
+      if (response.status === 401) { router.push('/admin/login'); return; }
 
       const result = await response.json();
       if (!response.ok || !result?.success) {

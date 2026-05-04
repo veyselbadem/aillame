@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createOrUpdateDistillationPreview, listDistillationPreviews, updateDistillationPreviewStatus } from '@core/distillation-preview/service';
 import { getLearningCandidateById } from '@core/learning-candidates/service';
 import type { DistillationPreviewStatus } from '@core/distillation-preview/types';
+import { validateAdminRequest, createAdminAuthErrorResponse } from '@core/admin-auth/auth';
 
 const VALID_PREVIEW_STATUSES: DistillationPreviewStatus[] = [
   'draft',
@@ -10,7 +11,8 @@ const VALID_PREVIEW_STATUSES: DistillationPreviewStatus[] = [
   'archived',
 ];
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  if (!validateAdminRequest(request)) return createAdminAuthErrorResponse();
   try {
     const previews = await listDistillationPreviews();
     return NextResponse.json({ success: true, previews });
@@ -21,6 +23,7 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
+  if (!validateAdminRequest(req)) return createAdminAuthErrorResponse();
   try {
     const payload = await req.json();
     if (!payload?.id || payload?.status !== 'approved') {
@@ -45,6 +48,7 @@ export async function POST(req: NextRequest) {
 }
 
 export async function PATCH(req: NextRequest) {
+  if (!validateAdminRequest(req)) return createAdminAuthErrorResponse();
   try {
     const payload = await req.json();
     if (!payload?.id || !payload?.status) {

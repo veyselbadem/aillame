@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { listLearningCandidates, updateLearningCandidateStatus } from '@core/learning-candidates/service';
 import type { LearningCandidateStatus } from '@core/learning-candidates/types';
+import { validateAdminRequest, createAdminAuthErrorResponse } from '@core/admin-auth/auth';
 
 const VALID_LEARNING_CANDIDATE_STATUSES: LearningCandidateStatus[] = [
   'pending',
@@ -9,7 +10,8 @@ const VALID_LEARNING_CANDIDATE_STATUSES: LearningCandidateStatus[] = [
   'archived',
 ];
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  if (!validateAdminRequest(request)) return createAdminAuthErrorResponse();
   try {
     const candidates = await listLearningCandidates();
     return NextResponse.json({ success: true, candidates });
@@ -20,6 +22,7 @@ export async function GET() {
 }
 
 export async function PATCH(req: NextRequest) {
+  if (!validateAdminRequest(req)) return createAdminAuthErrorResponse();
   try {
     const payload = await req.json();
     if (!payload?.id || !payload?.status) {

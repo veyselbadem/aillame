@@ -10,6 +10,7 @@ import type {
 import type { AillameMode } from '@core/aillame-router/types';
 import { FiBook, FiRefreshCw } from 'react-icons/fi';
 import StatusBadge from '@components/ui/StatusBadge';
+import { adminFetch, requireAdminTokenOrRedirect } from '@lib/admin-fetch';
 
 const STATUS_OPTIONS: Array<{ value: LearningCandidateStatus | 'all'; label: string }> = [
   { value: 'all', label: 'Tümü' },
@@ -65,11 +66,8 @@ export default function AdminLearningCandidatesPage() {
   const router = useRouter();
 
   useEffect(() => {
-    const auth = localStorage.getItem('admin_auth');
-    if (!auth) {
-      router.push('/admin/login');
-      return;
-    }
+    const token = requireAdminTokenOrRedirect(router);
+    if (!token) return;
     setAuthorized(true);
     loadCandidates();
   }, []);
@@ -78,7 +76,8 @@ export default function AdminLearningCandidatesPage() {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch('/api/learning-candidates');
+      const response = await adminFetch('/api/learning-candidates');
+      if (response.status === 401) { router.push('/admin/login'); return; }
       if (!response.ok) {
         throw new Error('Learning candidate verisi yüklenemedi.');
       }
@@ -99,11 +98,11 @@ export default function AdminLearningCandidatesPage() {
     setActionMessage(null);
     setUpdatingId(id);
     try {
-      const response = await fetch('/api/learning-candidates', {
+      const response = await adminFetch('/api/learning-candidates', {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id, status }),
       });
+      if (response.status === 401) { router.push('/admin/login'); return; }
 
       const result = await response.json();
       if (!response.ok || !result?.success) {
@@ -126,11 +125,11 @@ export default function AdminLearningCandidatesPage() {
     setActionMessage(null);
     setUpdatingId(candidate.id);
     try {
-      const response = await fetch('/api/distillation-preview', {
+      const response = await adminFetch('/api/distillation-preview', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(candidate),
       });
+      if (response.status === 401) { router.push('/admin/login'); return; }
 
       const result = await response.json();
       if (!response.ok || !result?.success) {

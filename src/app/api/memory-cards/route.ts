@@ -1,12 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createMemoryCardFromQueueRecord, listMemoryCards, updateMemoryCardStatus } from '@core/memory-cards/service';
 import { createMemoryWriteLog } from '@core/memory-write-log/service';
+import { validateAdminRequest, createAdminAuthErrorResponse } from '@core/admin-auth/auth';
 import {
   getMemoryWriteQueueRecordById,
   updateMemoryWriteQueueRecordStatus,
 } from '@core/memory-write-queue/service';
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  if (!validateAdminRequest(request)) return createAdminAuthErrorResponse();
   try {
     const cards = await listMemoryCards();
     return NextResponse.json({ success: true, cards });
@@ -16,6 +18,7 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
+  if (!validateAdminRequest(req)) return createAdminAuthErrorResponse();
   let queueId = 'unknown';
 
   try {
@@ -97,6 +100,7 @@ export async function POST(req: NextRequest) {
 }
 
 export async function PATCH(req: NextRequest) {
+  if (!validateAdminRequest(req)) return createAdminAuthErrorResponse();
   try {
     const payload = await req.json();
     const { id, status } = payload ?? {};

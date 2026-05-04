@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { listMemoryWriteQueueRecords, queueMemoryWriteRecordForPreview, updateMemoryWriteQueueRecordStatus } from '@core/memory-write-queue/service';
 import type { MemoryWriteQueueStatus } from '@core/memory-write-queue/types';
+import { validateAdminRequest, createAdminAuthErrorResponse } from '@core/admin-auth/auth';
 
 const VALID_QUEUE_STATUSES: MemoryWriteQueueStatus[] = ['pending_write', 'ready_for_memory_write', 'written', 'rejected', 'archived'];
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  if (!validateAdminRequest(request)) return createAdminAuthErrorResponse();
   try {
     const records = await listMemoryWriteQueueRecords();
     return NextResponse.json({ success: true, records });
@@ -15,6 +17,7 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
+  if (!validateAdminRequest(req)) return createAdminAuthErrorResponse();
   try {
     const payload = await req.json();
     if (!payload?.previewId) {
@@ -31,6 +34,7 @@ export async function POST(req: NextRequest) {
 }
 
 export async function PATCH(req: NextRequest) {
+  if (!validateAdminRequest(req)) return createAdminAuthErrorResponse();
   try {
     const payload = await req.json();
     if (!payload?.id || !payload?.status) {

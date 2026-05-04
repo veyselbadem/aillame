@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import type { MemoryCard } from '@core/memory-cards/types';
 import StatusBadge from '@components/ui/StatusBadge';
+import { adminFetch, requireAdminTokenOrRedirect } from '@lib/admin-fetch';
 
 const STATUS_OPTIONS: Array<{ value: MemoryCard['status'] | 'all'; label: string }> = [
   { value: 'all', label: 'Tümü' },
@@ -77,11 +78,8 @@ export default function AdminMemoryCardsPage() {
   const router = useRouter();
 
   useEffect(() => {
-    const auth = localStorage.getItem('admin_auth');
-    if (!auth) {
-      router.push('/admin/login');
-      return;
-    }
+    const token = requireAdminTokenOrRedirect(router);
+    if (!token) return;
     setAuthorized(true);
     loadCards();
   }, []);
@@ -90,7 +88,8 @@ export default function AdminMemoryCardsPage() {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch('/api/memory-cards');
+      const response = await adminFetch('/api/memory-cards');
+      if (response.status === 401) { router.push('/admin/login'); return; }
       if (!response.ok) throw new Error('MemoryCard kayıtları alınamadı.');
       const result = await response.json();
       if (!result?.success || !Array.isArray(result.cards)) throw new Error('MemoryCard verisi geçersiz.');
@@ -106,11 +105,11 @@ export default function AdminMemoryCardsPage() {
     setActionMessage(null);
     setUpdatingId(id);
     try {
-      const response = await fetch('/api/memory-cards', {
+      const response = await adminFetch('/api/memory-cards', {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id, status: 'archived' }),
       });
+      if (response.status === 401) { router.push('/admin/login'); return; }
       const result = await response.json();
       if (!response.ok || !result?.success) {
         throw new Error(result?.error || 'Kayıt arşivlenemedi.');

@@ -38,6 +38,10 @@
       "@hooks/*": [
         "src/hooks/*"
       ]
+        ,
+        "@lib/*": [
+          "src/lib/*"
+        ]
     },
     "plugins": [
       {

@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import type { MemoryWriteQueueRecord, MemoryWriteQueueStatus } from '@core/memory-write-queue/types';
 import StatusBadge from '@components/ui/StatusBadge';
+import { adminFetch, requireAdminTokenOrRedirect } from '@lib/admin-fetch';
 
 const STATUS_OPTIONS: Array<{ value: MemoryWriteQueueStatus | 'all'; label: string }> = [
   { value: 'all', label: 'Tümü' },
@@ -85,12 +86,8 @@ export default function AdminMemoryWriteQueuePage() {
   const router = useRouter();
 
   useEffect(() => {
-    const auth = localStorage.getItem('admin_auth');
-    if (!auth) {
-      router.push('/admin/login');
-      return;
-    }
-
+    const token = requireAdminTokenOrRedirect(router);
+    if (!token) return;
     setAuthorized(true);
     loadQueueRecords();
   }, []);
@@ -100,7 +97,8 @@ export default function AdminMemoryWriteQueuePage() {
     setError(null);
 
     try {
-      const response = await fetch('/api/memory-write-queue');
+      const response = await adminFetch('/api/memory-write-queue');
+      if (response.status === 401) { router.push('/admin/login'); return; }
       if (!response.ok) {
         throw new Error('Hafıza yazım kuyruğu kayıtları alınamadı.');
       }
@@ -124,11 +122,11 @@ export default function AdminMemoryWriteQueuePage() {
     setUpdatingId(id);
 
     try {
-      const response = await fetch('/api/memory-write-queue', {
+      const response = await adminFetch('/api/memory-write-queue', {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id, status }),
       });
+      if (response.status === 401) { router.push('/admin/login'); return; }
 
       const result = await response.json();
       if (!response.ok || !result?.success) {
@@ -150,11 +148,11 @@ export default function AdminMemoryWriteQueuePage() {
     setUpdatingId(id);
 
     try {
-      const response = await fetch('/api/memory-cards', {
+      const response = await adminFetch('/api/memory-cards', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ queueId: id }),
       });
+      if (response.status === 401) { router.push('/admin/login'); return; }
 
       const result = await response.json();
       if (!response.ok || !result?.success) {
