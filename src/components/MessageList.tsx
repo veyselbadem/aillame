@@ -39,9 +39,22 @@ export default function MessageList({ messages, loading, listRef, conversationId
         </div>
       )}
 
-      {messages.map((msg, i) => (
-        <MessageItem key={msg.id} message={msg} index={i} conversationId={conversationId} />
-      ))}
+      {messages.map((msg, i) => {
+        const previousMessage = i > 0 ? messages[i - 1] : undefined;
+        const promptText =
+          msg.role === 'assistant' && previousMessage?.role === 'user'
+            ? previousMessage.content
+            : undefined;
+        return (
+          <MessageItem
+            key={msg.id}
+            message={msg}
+            index={i}
+            conversationId={conversationId}
+            promptText={promptText}
+          />
+        );
+      })}
 
       {/* Loading / Typing indicator */}
       {loading && (

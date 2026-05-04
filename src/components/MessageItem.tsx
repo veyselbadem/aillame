@@ -9,6 +9,7 @@ interface MessageItemProps {
   message: Message;
   index?: number;
   conversationId?: string;
+  promptText?: string;
 }
 
 // Fallback veya hata mesajlarını tespit et
@@ -22,7 +23,7 @@ function isFallbackMessage(content: string): boolean {
   );
 }
 
-export default function MessageItem({ message, index = 0, conversationId }: MessageItemProps) {
+export default function MessageItem({ message, index = 0, conversationId, promptText }: MessageItemProps) {
   const isUser = message.role === 'user';
   const ref = useRef<HTMLDivElement>(null);
   const isFallback = !isUser && isFallbackMessage(message.content);
@@ -73,7 +74,7 @@ export default function MessageItem({ message, index = 0, conversationId }: Mess
             <div className="whitespace-pre-wrap break-words leading-relaxed font-semibold">
               {message.content}
             </div>
-            {conversationId && <FeedbackActions message={message} conversationId={conversationId} />}
+            {conversationId && <FeedbackActions message={message} conversationId={conversationId} promptText={promptText} />}
           </div>
         ) : (
           <div
@@ -125,7 +126,7 @@ export default function MessageItem({ message, index = 0, conversationId }: Mess
             )}
 
             {conversationId && (
-              <FeedbackActions message={message} conversationId={conversationId} />
+              <FeedbackActions message={message} conversationId={conversationId} promptText={promptText} />
             )}
           </div>
         )}

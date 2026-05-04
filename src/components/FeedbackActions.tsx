@@ -7,6 +7,7 @@ import type { Message } from '@apptypes/message';
 interface FeedbackActionsProps {
   message: Message;
   conversationId: string;
+  promptText?: string;
 }
 
 type SubmitState = 'idle' | 'submitting' | 'success' | 'error';
@@ -22,6 +23,7 @@ type FeedbackV2Payload = {
   rating: 'positive' | 'negative';
   feedbackText?: string;
   correctedAnswer?: string;
+  promptSnapshot?: string;
   answerSnapshot?: string;
   datasetEligible: boolean;
   sensitive: boolean;
@@ -29,7 +31,7 @@ type FeedbackV2Payload = {
   tags: string[];
 };
 
-export default function FeedbackActions({ message, conversationId }: FeedbackActionsProps) {
+export default function FeedbackActions({ message, conversationId, promptText }: FeedbackActionsProps) {
   const [positiveState, setPositiveState] = useState<SubmitState>('idle');
   const [modalOpen, setModalOpen] = useState(false);
   const [feedbackText, setFeedbackText] = useState('');
@@ -119,6 +121,7 @@ export default function FeedbackActions({ message, conversationId }: FeedbackAct
         rating: 'negative',
         feedbackText: feedbackText.trim() || undefined,
         correctedAnswer: correctedAnswer.trim() || undefined,
+        promptSnapshot: includeSnapshot ? promptText : undefined,
         answerSnapshot: includeSnapshot ? message.content : undefined,
         datasetEligible,
         sensitive,
