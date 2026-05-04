@@ -2,7 +2,7 @@
 // Aillame Model Manager (FAZ 2)
 // ============================================================
 // Aggregates registry metadata with live runtime status.
-// Does NOT start or control any runtime.
+// Does not start or control any runtime.
 // ============================================================
 
 import {
@@ -36,17 +36,14 @@ function buildModelStatus(
 ): ModelWithStatus {
   const warnings: string[] = [];
 
-  // Disabled
   if (model.enabled === false) {
     return { model, status: 'disabled' };
   }
 
-  // Experimental
   if (model.experimental) {
     warnings.push('This model is experimental and may be unstable.');
   }
 
-  // Check path requirement
   const pathEnvKey = model.localPathEnv ?? model.modelPathEnv;
   let resolvedPath: string | undefined;
 
@@ -58,13 +55,13 @@ function buildModelStatus(
     }
   }
 
-  // Runtime-specific health checks
   if (model.runtime === 'internal-text' || model.runtime === 'llama-server-gguf') {
     if (!internalTextHealthy) {
       warnings.push('Internal text runtime is not healthy.');
       const status: ModelStatusValue = model.experimental ? 'experimental' : 'configured';
       return { model, status, resolvedPath, warnings };
     }
+
     return {
       model,
       status: 'available',
@@ -73,7 +70,6 @@ function buildModelStatus(
     };
   }
 
-  // Built-in models (Nano) — always available
   if (model.builtIn) {
     return {
       model,
@@ -82,7 +78,6 @@ function buildModelStatus(
     };
   }
 
-  // Models that need a path but we couldn't determine liveness
   const status: ModelStatusValue = model.experimental ? 'experimental' : 'configured';
   return {
     model,
@@ -110,7 +105,17 @@ export async function getModelWithStatus(modelId: string): Promise<ModelWithStat
   const model = MODEL_REGISTRY[modelId];
   if (!model) {
     return {
-      model: { id: modelId, label: modelId, tier: 'nano', purpose: 'chat', runtime: 'rust-candle', capabilities: [], sizeLabel: '', description: '', installHint: '' },
+      model: {
+        id: modelId,
+        label: modelId,
+        tier: 'nano',
+        purpose: 'chat',
+        runtime: 'rust-candle',
+        capabilities: [],
+        sizeLabel: '',
+        description: '',
+        installHint: '',
+      },
       status: 'unknown',
       warnings: [`Model "${modelId}" not found in registry.`],
     };
@@ -121,7 +126,7 @@ export async function getModelWithStatus(modelId: string): Promise<ModelWithStat
     const runtimeStatus = await getTextRuntimeRouterStatus();
     internalTextHealthy = runtimeStatus.enabled && runtimeStatus.health === 'healthy';
   } catch {
-    // Runtime not available — keep false
+    // Runtime not available; keep false.
   }
 
   return buildModelStatus(model, internalTextHealthy);
@@ -137,7 +142,7 @@ export async function getModelsWithStatus(): Promise<ModelWithStatus[]> {
     const runtimeStatus = await getTextRuntimeRouterStatus();
     internalTextHealthy = runtimeStatus.enabled && runtimeStatus.health === 'healthy';
   } catch {
-    // Runtime not available — keep false
+    // Runtime not available; keep false.
   }
 
   return getAllModels().map((model) => buildModelStatus(model, internalTextHealthy));
@@ -147,15 +152,11 @@ export async function getModelsWithStatus(): Promise<ModelWithStatus[]> {
  * Returns the list of AI Lab participants derived from enabled models.
  * Mapped conservatively to the existing LabParticipant union to avoid
  * breaking AI Lab session logic.
- *
- * Currently returns a safe static list of known participants that
- * have enabled models. Ileride model registry'den dinamik türetilebilir.
  */
 export function getAvailableParticipants(): LabParticipant[] {
   const enabled = getEnabledModels();
   const participants = new Set<LabParticipant>();
 
-  // Always include system
   participants.add('system');
 
   for (const model of enabled) {
@@ -178,7 +179,6 @@ export function getAvailableParticipants(): LabParticipant[] {
         }
         break;
       case 'python-diffusers':
-        // SDXL is disabled by default — only add if enabled
         if (model.enabled !== false) {
           participants.add('sdxl');
         }
