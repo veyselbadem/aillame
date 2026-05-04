@@ -61,6 +61,7 @@ memory-cards-store.json
 memory-write-queue-store.json
 learning-candidates-store.json
 distillation-preview-store.json
+feedback-store.json
 audit_logs.json
 
 # Aillame local/runtime ignores
