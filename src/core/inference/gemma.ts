@@ -80,7 +80,8 @@ function cleanText(value?: string): string {
   return typeof value === 'string' ? value.trim() : '';
 }
 
-function trimInputText(value: string, maxChars: number): string {
+function trimInputText(value: string | undefined, maxChars: number): string {
+  if (typeof value !== 'string') return '';
   if (!Number.isFinite(maxChars) || maxChars < 1 || value.length <= maxChars) return value;
   return value.slice(0, maxChars);
 }
@@ -116,7 +117,7 @@ function extractGemmaText(data: GgufChatCompletion): string {
 }
 
 export async function generateGemmaResponse({
-  prompt,
+  prompt = '',
   messages = [],
   maxTokens = 512,
   temperature = 0.7,

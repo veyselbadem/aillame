@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { generateOllamaResponse } from '@/core/inference/ollama';
+import { generateWithTextRuntimeRouter } from '@core/inference/text-runtime-router';
 
 export async function POST(req: NextRequest) {
   try {
@@ -9,12 +10,22 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: 'Ollama provider is disabled.', provider: 'ollama' }, { status: 403 });
     }
 
-    const response = await generateOllamaResponse({
+    const result = await generateWithTextRuntimeRouter({
       prompt,
       messages,
       temperature,
-      maxTokens
+      maxTokens,
+      preferredProvider: 'ollama',
     });
+
+    if (!result.success) {
+      return NextResponse.json(
+        { success: false, error: result.error || 'Ollama runtime failed', provider: 'ollama' },
+        { status: result.code === 'disabled' ? 403 : 500 }
+      );
+    }
+
+    const response = result.answer || '';
 
     return NextResponse.json({ success: true, answer: response, provider: 'ollama', model: process.env.AILLAME_OLLAMA_TEXT_MODEL || 'gemma:2b' });
   } catch (error: any) {
