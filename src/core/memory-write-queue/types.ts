@@ -1,7 +1,14 @@
 export type MemoryWriteQueueStatus = 'pending_write' | 'ready_for_memory_write' | 'written' | 'rejected' | 'archived';
 
+export type MemoryWriteQueueSourceType = 'distillation_preview' | 'feedback';
+
+export type MemoryWriteQueueSourceMetadataValue = string | number | boolean | null;
+
+export type MemoryWriteQueueSourceMetadata = Record<string, MemoryWriteQueueSourceMetadataValue>;
+
 export type MemoryWriteQueueRecord = {
   id: string;
+  sourceType: MemoryWriteQueueSourceType;
   sourcePreviewId: string;
   sourceCandidateId: string;
   sourceFeedbackId: string;
@@ -12,14 +19,18 @@ export type MemoryWriteQueueRecord = {
   keywords: string[];
   riskLevel: 'low' | 'medium' | 'high';
   confidenceScore: number;
+  proposedMemory?: string;
+  bridgeReason?: string;
+  sourceMetadata?: MemoryWriteQueueSourceMetadata;
   status: MemoryWriteQueueStatus;
   createdAt: number;
   updatedAt: number;
 };
 
 export type CreateMemoryWriteQueueInput = {
-  sourcePreviewId: string;
-  sourceCandidateId: string;
+  sourceType: MemoryWriteQueueSourceType;
+  sourcePreviewId?: string;
+  sourceCandidateId?: string;
   sourceFeedbackId: string;
   targetMemoryScope: string;
   targetMode: string;
@@ -28,6 +39,9 @@ export type CreateMemoryWriteQueueInput = {
   keywords: string[];
   riskLevel: MemoryWriteQueueRecord['riskLevel'];
   confidenceScore: number;
+  proposedMemory?: string;
+  bridgeReason?: string;
+  sourceMetadata?: MemoryWriteQueueSourceMetadata;
   status?: MemoryWriteQueueStatus;
 };
 

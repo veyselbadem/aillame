@@ -20,10 +20,24 @@ import { getFeedbackLearningCandidateEligibility } from '@core/feedback/bridge-r
 type RatingFilter = 'all' | 'positive' | 'negative';
 type BoolFilter = 'all' | 'yes' | 'no';
 type LearningBridgeStatus = 'idle' | 'loading' | 'success' | 'duplicate' | 'error';
+type MemoryQueueBridgeStatus = 'idle' | 'loading' | 'success' | 'duplicate' | 'error';
 
 type LearningBridgeState = {
   status: LearningBridgeStatus;
   message?: string;
+};
+
+type MemoryQueueBridgeState = {
+  status: MemoryQueueBridgeStatus;
+  message?: string;
+};
+
+type MemoryQueueModalState = {
+  proposedMemory: string;
+  reason: string;
+  includeSensitive: boolean;
+  error: string | null;
+  submitting: boolean;
 };
 
 // ---------------------------------------------------------------------------
@@ -53,11 +67,15 @@ function buildExportUrl(projectId: string, includeSensitive: boolean): string {
 function FeedbackCard({
   item,
   onCreateLearningCandidate,
+  onOpenMemoryQueueModal,
   learningBridgeState,
+  memoryQueueBridgeState,
 }: {
   item: FeedbackRecord;
   onCreateLearningCandidate: (item: FeedbackRecord) => Promise<void>;
+  onOpenMemoryQueueModal: (item: FeedbackRecord) => void;
   learningBridgeState?: LearningBridgeState;
+  memoryQueueBridgeState?: MemoryQueueBridgeState;
 }) {
   const [showSnapshot, setShowSnapshot] = useState(false);
   const isNegative = item.rating === 'negative';
@@ -65,6 +83,8 @@ function FeedbackCard({
   const learningEligibility = getFeedbackLearningCandidateEligibility(item);
   const bridgeStatus = learningBridgeState?.status ?? 'idle';
   const bridgeMessage = learningBridgeState?.message;
+  const memoryQueueStatus = memoryQueueBridgeState?.status ?? 'idle';
+  const memoryQueueMessage = memoryQueueBridgeState?.message;
 
   return (
     <div
@@ -172,14 +192,25 @@ function FeedbackCard({
       )}
 
       <div className="mt-4 space-y-2">
-        <button
-          type="button"
-          onClick={() => { void onCreateLearningCandidate(item); }}
-          disabled={!learningEligibility.eligible || bridgeStatus === 'loading'}
-          className="rounded-2xl border border-indigo-500/30 bg-indigo-500/10 px-4 py-2 text-xs font-bold text-indigo-100 transition-all hover:bg-indigo-500/20 disabled:cursor-not-allowed disabled:border-white/20 disabled:bg-white/5 disabled:text-gray-300 disabled:opacity-70"
-        >
-          {bridgeStatus === 'loading' ? 'Gönderiliyor...' : 'Learning Candidate’a Gönder'}
-        </button>
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={() => { void onCreateLearningCandidate(item); }}
+            disabled={!learningEligibility.eligible || bridgeStatus === 'loading'}
+            className="rounded-2xl border border-indigo-500/30 bg-indigo-500/10 px-4 py-2 text-xs font-bold text-indigo-100 transition-all hover:bg-indigo-500/20 disabled:cursor-not-allowed disabled:border-white/20 disabled:bg-white/5 disabled:text-gray-300 disabled:opacity-70"
+          >
+            {bridgeStatus === 'loading' ? 'Gönderiliyor...' : 'Learning Candidate’a Gönder'}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => onOpenMemoryQueueModal(item)}
+            disabled={memoryQueueStatus === 'loading'}
+            className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-2 text-xs font-bold text-emerald-100 transition-all hover:bg-emerald-500/20 disabled:cursor-not-allowed disabled:border-white/20 disabled:bg-white/5 disabled:text-gray-300 disabled:opacity-70"
+          >
+            {memoryQueueStatus === 'loading' ? 'Gönderiliyor...' : 'Memory Queue’ya Öner'}
+          </button>
+        </div>
 
         {!learningEligibility.eligible && (
           <p className="text-[11px] text-amber-200">
@@ -198,6 +229,16 @@ function FeedbackCard({
         {bridgeStatus === 'error' && bridgeMessage && (
           <p className="text-[11px] text-rose-200">{bridgeMessage}</p>
         )}
+
+        {memoryQueueStatus === 'success' && (
+          <p className="text-[11px] text-emerald-200">Memory queue’ya eklendi.</p>
+        )}
+        {memoryQueueStatus === 'duplicate' && (
+          <p className="text-[11px] text-amber-200">Bu feedback için memory queue kaydı zaten var.</p>
+        )}
+        {memoryQueueStatus === 'error' && memoryQueueMessage && (
+          <p className="text-[11px] text-rose-200">{memoryQueueMessage}</p>
+        )}
       </div>
     </div>
   );
@@ -208,6 +249,13 @@ function FeedbackCard({
 // ---------------------------------------------------------------------------
 export default function AdminFeedbackPage() {
   const adminTokenKey = 'aillame_admin_token';
+  const initialMemoryQueueModalState: MemoryQueueModalState = {
+    proposedMemory: '',
+    reason: '',
+    includeSensitive: false,
+    error: null,
+    submitting: false,
+  };
   const [feedbacks, setFeedbacks] = useState<FeedbackRecord[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -230,6 +278,9 @@ export default function AdminFeedbackPage() {
   const [exportDownloadLoading, setExportDownloadLoading] = useState(false);
   const [exportError, setExportError] = useState<string | null>(null);
   const [learningBridgeMap, setLearningBridgeMap] = useState<Record<string, LearningBridgeState>>({});
+  const [memoryQueueBridgeMap, setMemoryQueueBridgeMap] = useState<Record<string, MemoryQueueBridgeState>>({});
+  const [memoryQueueModalFeedback, setMemoryQueueModalFeedback] = useState<FeedbackRecord | null>(null);
+  const [memoryQueueModalState, setMemoryQueueModalState] = useState<MemoryQueueModalState>(initialMemoryQueueModalState);
 
   useEffect(() => {
     const auth = localStorage.getItem('admin_auth');
@@ -430,6 +481,100 @@ export default function AdminFeedbackPage() {
     }
   };
 
+  const openMemoryQueueModal = (feedback: FeedbackRecord) => {
+    setMemoryQueueModalFeedback(feedback);
+    setMemoryQueueModalState({
+      proposedMemory: '',
+      reason: '',
+      includeSensitive: false,
+      error: null,
+      submitting: false,
+    });
+  };
+
+  const closeMemoryQueueModal = () => {
+    setMemoryQueueModalFeedback(null);
+    setMemoryQueueModalState(initialMemoryQueueModalState);
+  };
+
+  const handleSubmitMemoryQueue = async () => {
+    if (!memoryQueueModalFeedback) return;
+
+    const proposedMemory = memoryQueueModalState.proposedMemory.trim();
+    if (!proposedMemory) {
+      setMemoryQueueModalState((current) => ({
+        ...current,
+        error: 'Memory önerisi için proposedMemory gerekli.',
+      }));
+      return;
+    }
+
+    const token = getAdminToken();
+    if (!token) return;
+
+    setMemoryQueueModalState((current) => ({
+      ...current,
+      error: null,
+      submitting: true,
+    }));
+
+    setMemoryQueueBridgeMap((current) => ({
+      ...current,
+      [memoryQueueModalFeedback.id]: { status: 'loading' },
+    }));
+
+    try {
+      const response = await fetch('/api/admin/feedback/bridge/memory-queue', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-aillame-admin-token': token,
+        },
+        body: JSON.stringify({
+          feedbackId: memoryQueueModalFeedback.id,
+          proposedMemory,
+          reason: memoryQueueModalState.reason.trim() || undefined,
+          includeSensitive: memoryQueueModalState.includeSensitive,
+        }),
+      });
+
+      const result = await response.json() as { error?: string };
+
+      if (response.status === 409) {
+        setMemoryQueueBridgeMap((current) => ({
+          ...current,
+          [memoryQueueModalFeedback.id]: { status: 'duplicate' },
+        }));
+        closeMemoryQueueModal();
+        return;
+      }
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Memory queue önerisi gönderilemedi.');
+      }
+
+      setMemoryQueueBridgeMap((current) => ({
+        ...current,
+        [memoryQueueModalFeedback.id]: { status: 'success' },
+      }));
+      closeMemoryQueueModal();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Memory queue önerisi gönderilirken hata oluştu.';
+      setMemoryQueueBridgeMap((current) => ({
+        ...current,
+        [memoryQueueModalFeedback.id]: {
+          status: 'error',
+          message,
+        },
+      }));
+      setMemoryQueueModalState((current) => ({
+        ...current,
+        error: message,
+        submitting: false,
+      }));
+    }
+  };
+
   if (!authorized) return null;
 
   return (
@@ -583,9 +728,121 @@ export default function AdminFeedbackPage() {
               key={item.id}
               item={item}
               onCreateLearningCandidate={handleCreateLearningCandidate}
+              onOpenMemoryQueueModal={openMemoryQueueModal}
               learningBridgeState={learningBridgeMap[item.id]}
+              memoryQueueBridgeState={memoryQueueBridgeMap[item.id]}
             />
           ))}
+        </div>
+      )}
+
+      {memoryQueueModalFeedback && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
+          <div className="w-full max-w-2xl rounded-3xl border border-white/10 bg-slate-950 p-6 shadow-2xl">
+            <div className="mb-5 flex items-start justify-between gap-4">
+              <div>
+                <p className="text-[10px] uppercase tracking-[0.3em] text-emerald-300">Memory Queue Bridge</p>
+                <h2 className="mt-2 text-2xl font-black text-white">Memory Queue’ya Öner</h2>
+                <p className="mt-2 text-sm text-gray-300">
+                  Bu feedback kaydını doğrudan hafızaya yazmadan önce memory write queue’ya aday olarak ekleyin.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={closeMemoryQueueModal}
+                disabled={memoryQueueModalState.submitting}
+                className="rounded-2xl border border-white/10 px-4 py-2 text-xs font-bold text-gray-300 hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                İptal
+              </button>
+            </div>
+
+            <div className="mb-4 rounded-2xl border border-white/10 bg-black/20 p-4 text-sm text-gray-200">
+              <p className="text-[10px] uppercase tracking-[0.3em] text-gray-400">Seçilen Feedback</p>
+              <p className="mt-2 whitespace-pre-wrap break-words">
+                {memoryQueueModalFeedback.feedbackText || memoryQueueModalFeedback.optionalComment || 'Metin yok.'}
+              </p>
+            </div>
+
+            {memoryQueueModalFeedback.sensitive && (
+              <div className="mb-4 rounded-2xl border border-amber-500/20 bg-amber-500/10 p-4 text-sm text-amber-100">
+                Hassas feedback varsayılan olarak memory queue’ya eklenmez. Gerekliyse includeSensitive işaretlenmelidir.
+              </div>
+            )}
+
+            <div className="space-y-4">
+              <div>
+                <label className="mb-2 block text-[10px] font-black uppercase tracking-[0.3em] text-gray-400">
+                  Proposed Memory
+                </label>
+                <textarea
+                  value={memoryQueueModalState.proposedMemory}
+                  onChange={(event) => setMemoryQueueModalState((current) => ({
+                    ...current,
+                    proposedMemory: event.target.value,
+                    error: null,
+                  }))}
+                  rows={4}
+                  className="w-full rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-white outline-none transition focus:border-emerald-400/40"
+                  placeholder="Örn. Bu projede yanıtlar kısa, net ve Türkçe olmalı."
+                />
+              </div>
+
+              <div>
+                <label className="mb-2 block text-[10px] font-black uppercase tracking-[0.3em] text-gray-400">
+                  Reason
+                </label>
+                <textarea
+                  value={memoryQueueModalState.reason}
+                  onChange={(event) => setMemoryQueueModalState((current) => ({
+                    ...current,
+                    reason: event.target.value,
+                  }))}
+                  rows={3}
+                  className="w-full rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-white outline-none transition focus:border-emerald-400/40"
+                  placeholder="İsteğe bağlı açıklama"
+                />
+              </div>
+
+              <label className="flex items-center gap-3 text-sm text-gray-300">
+                <input
+                  type="checkbox"
+                  checked={memoryQueueModalState.includeSensitive}
+                  onChange={(event) => setMemoryQueueModalState((current) => ({
+                    ...current,
+                    includeSensitive: event.target.checked,
+                  }))}
+                  className="h-4 w-4 rounded accent-amber-400"
+                />
+                Hassas feedback için includeSensitive=true kullan
+              </label>
+
+              {memoryQueueModalState.error && (
+                <div className="rounded-2xl border border-rose-500/20 bg-rose-500/10 p-3 text-sm text-rose-100">
+                  {memoryQueueModalState.error}
+                </div>
+              )}
+            </div>
+
+            <div className="mt-6 flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={closeMemoryQueueModal}
+                disabled={memoryQueueModalState.submitting}
+                className="rounded-2xl border border-white/10 px-5 py-2.5 text-sm font-bold text-gray-300 hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Vazgeç
+              </button>
+              <button
+                type="button"
+                onClick={() => { void handleSubmitMemoryQueue(); }}
+                disabled={memoryQueueModalState.submitting}
+                className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 px-5 py-2.5 text-sm font-bold text-emerald-100 hover:bg-emerald-500/20 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {memoryQueueModalState.submitting ? 'Gönderiliyor...' : 'Gönder'}
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
