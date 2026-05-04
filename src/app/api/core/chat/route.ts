@@ -47,6 +47,7 @@ export async function POST(req: NextRequest) {
 
         // 1. Nano Cognitive Layer - Task Classification
         const cognitivePlan = classifyTask(prompt);
+        const taskScore = cognitivePlan.taskScore || { complexity: 0, research: 0, code: 0, creative: 0 };
         const plan = routeRequest(prompt); // Keep orchestration plan for compatibility
         const conversationIntent = detectUserIntent(prompt);
         const maxTokens = Math.max(requestedMaxTokens, getRecommendedMaxTokens(conversationIntent));
@@ -163,7 +164,10 @@ export async function POST(req: NextRequest) {
 
         // 4. Engine'i al
         const requestedCheckpoint = req.headers.get('x-aillame-checkpoint') || undefined;
-        const core = await getSharedCore(requestedCheckpoint);
+        const requestedVersion = requestedCheckpoint === 'v1' || requestedCheckpoint === 'v2'
+            ? requestedCheckpoint
+            : undefined;
+        const core = await getSharedCore(requestedVersion);
         if (!core) {
             const fallback = safeFallback(prompt, messages);
             return NextResponse.json({ 
@@ -175,14 +179,16 @@ export async function POST(req: NextRequest) {
 
         const { engine, tokenizer } = core;
 
-        // 5. Inference
-        const enrichedPrompt = enrichPromptForConversation(prompt, messages);
-        const inputIds = tokenizer.encode(enrichedPrompt);
-        const outputIds = engine.generate(new Uint32Array(inputIds), maxTokens, temperature);
+        // 5. Inference (Version Controlled)
+        const { inferWithVersionControl } = await import('@/core/nano-cognitive/service');
         
-        // Sadece yeni üretilen tokenları al
-        const generatedIds = Array.from(outputIds).slice(inputIds.length);
-        const rawResponse = tokenizer.decode(generatedIds.length > 0 ? generatedIds : outputIds);
+        const enrichedPrompt = enrichPromptForConversation(prompt, messages);
+        const { response: rawResponse, modelId } = await inferWithVersionControl(
+            enrichedPrompt,
+            taskScore,
+            maxTokens,
+            temperature
+        );
         
         // 6. Kalite kontrolü ve Fallback
         const response = looksMalformedNanoText(rawResponse)
@@ -191,8 +197,8 @@ export async function POST(req: NextRequest) {
 
         return NextResponse.json({ 
             response, 
-            modelId: 'aillame-nano-v1',
-            plan: { ...plan, cognitivePlan, conversationIntent }
+            modelId,
+            plan: { ...plan, cognitivePlan, conversationIntent, taskScore }
         });
     } catch (error: any) {
         console.error('API Chat Error:', error);

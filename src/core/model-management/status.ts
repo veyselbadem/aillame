@@ -4,6 +4,7 @@ import fs from 'fs';
 import path from 'path';
 import { MODEL_REGISTRY } from '../models/registry';
 import { checkGeminiConfig } from '../inference/gemini';
+import { getTextRuntimeRouterStatus } from '../inference/text-runtime-router';
 
 const execAsync = promisify(exec);
 const homeDir = process.env.USERPROFILE || process.env.HOME || '';
@@ -66,6 +67,47 @@ export interface ModelStatusReport {
     apiKeyConfigured?: boolean;
     enabled?: boolean;
     proProvider?: string;
+  };
+}
+
+export type InternalTextRuntimeReadiness = {
+  isReady: boolean;
+  status: 'active' | 'planning_only' | 'error';
+  message: string;
+  details: {
+    enabled: boolean;
+    health: string;
+    provider: string;
+    lockPhase: string;
+    lockOwner: string | null;
+    lastError?: string;
+  };
+};
+
+export async function getInternalTextRuntimeReadiness(): Promise<InternalTextRuntimeReadiness> {
+  const status = await getTextRuntimeRouterStatus();
+  const lockOwner = status.lock.owner
+    ? `${status.lock.owner.provider}:${status.lock.owner.modelId}`
+    : null;
+
+  const isReady = status.enabled && status.health === 'healthy';
+
+  return {
+    isReady,
+    status: isReady ? 'active' : status.enabled ? 'error' : 'planning_only',
+    message: isReady
+      ? 'Unified internal text runtime is ready.'
+      : status.enabled
+        ? 'Unified internal text runtime is enabled but not healthy.'
+        : 'Unified internal text runtime is disabled.',
+    details: {
+      enabled: status.enabled,
+      health: status.health,
+      provider: status.activeProvider || 'gguf',
+      lockPhase: status.lock.phase,
+      lockOwner,
+      lastError: status.lastError,
+    },
   };
 }
 

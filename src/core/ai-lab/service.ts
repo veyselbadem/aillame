@@ -7,6 +7,8 @@ import { reflectOnLabStep } from '../nano-cognitive/service';
 import { createTrainingCandidateFromAiLabMessage } from './training-candidate';
 import type { NanoLearningSuggestion } from '../nano-cognitive/types';
 import { buildAnswerStyleGuide, normalizeAssistantAnswer } from '../conversation/conversation-quality';
+import { generateWithTextRuntimeRouter, getTextRuntimeRouterStatus } from '../inference/text-runtime-router';
+import type { InternalTextRuntimeStatus } from '../internal-text-runtime/model-types';
 
 
 export async function createSession(input: CreateSessionInput & { goal?: string }): Promise<LabSession> {
@@ -232,9 +234,9 @@ function buildCompactGemmaRetryPrompt(session: LabSession): string {
 
   return [
     `Konu: ${sanitizeLabText(session.topic)}.`,
-    '5 maddelik kısa Türkçe sentez üret.',
+    'Cevap: 3 kısa madde yaz; her maddede yalnızca sonuç cümlesi olsun.',
     'Kullanıcıdan ek metin isteme.',
-    'Sadece sonuç yaz.',
+    'Düşünme süreci yazma. Sadece sonuç yaz.',
     '',
     'Varsa kullanabileceğin kaynak notları:',
     sources,
@@ -268,6 +270,17 @@ function chooseFastProvider(
   if (active.includes('gemma') && gemmaCount === 0 && !gemmaFailed) return 'gemma';
   if (active.includes('ollama') && ollamaCount === 0 && !ollamaFailed) return 'ollama';
   return null;
+}
+
+function isInternalRuntimeLockedByOtherProvider(
+  runtimeStatus: InternalTextRuntimeStatus | null,
+  provider: 'gemma' | 'ollama'
+): boolean {
+  if (!runtimeStatus) return false;
+  if (runtimeStatus.lock.phase === 'unlocked') return false;
+  const lockOwner = runtimeStatus.lock.owner;
+  if (!lockOwner) return false;
+  return lockOwner.provider !== provider;
 }
 
 function decideNextLabAction(session: LabSession): { nextParticipant: LabParticipant | 'stop', reason: string } {
@@ -392,6 +405,11 @@ export async function executeNextStep(id: string): Promise<LabMessage> {
   let success = true;
   let pendingLearningCandidate: NanoLearningSuggestion | undefined;
   let generationMetadata: any;
+  let internalTextRuntimeStatus: InternalTextRuntimeStatus | null = null;
+
+  if (currentParticipant === 'gemma' || currentParticipant === 'ollama') {
+    internalTextRuntimeStatus = await getTextRuntimeRouterStatus();
+  }
 
   try {
     if (currentParticipant === 'web_search') {
@@ -495,15 +513,50 @@ Konuyu teknik ve analitik açıdan değerlendir. 2-4 net maddeyle cevap ver.`;
     } else if (currentParticipant === 'ollama') {
       outputType = 'text';
       const isEnabled = process.env.AILLAME_OLLAMA_ENABLED !== 'false';
-      if (isEnabled) {
+      if (isEnabled && internalTextRuntimeStatus?.enabled !== false) {
+        if (isInternalRuntimeLockedByOtherProvider(internalTextRuntimeStatus, 'ollama')) {
+          content = 'Ollama turu, başka bir ağır model işlemi aktif olduğu için güvenli şekilde atlandı.';
+          outputType = 'skipped';
+          generationMetadata = {
+            status: 'skipped',
+            source: 'ollama',
+            reason: 'heavy_model_lock',
+            internalTextRuntimeLock: internalTextRuntimeStatus?.lock,
+          };
+        } else {
         const lastMsgs = session.messages.slice(-5).map(m => `${m.model}: ${m.content}`).join('\n');
         const prompt = `Sen AI Lab katılımcısısın (Ollama). Konu: "${session.topic}".\n\nKonuşma kalite kuralları:\n${buildAnswerStyleGuide('ai_lab_analysis')}\n\nÖnceki tartışma:\n${lastMsgs}\n\nKonuyu hızlı ve öz değerlendir. 2-4 net maddeyle cevap ver.`;
         try {
-          const { generateOllamaResponse } = await import('@/core/inference/ollama');
           const ollamaTimeout = process.env.AILLAME_OLLAMA_TIMEOUT_MS
             ? parseInt(process.env.AILLAME_OLLAMA_TIMEOUT_MS)
             : 60000;
-          content = await generateOllamaResponse({ prompt, maxTokens: 256, temperature: 0.7, timeout: ollamaTimeout }) || 'Ollama yanıt üretemedi.';
+          const result = await generateWithTextRuntimeRouter({
+            prompt,
+            maxTokens: 256,
+            temperature: 0.7,
+            timeout: ollamaTimeout,
+            preferredProvider: 'ollama',
+          });
+
+          if (result.success) {
+            content = result.answer || 'Ollama yanıt üretemedi.';
+            generationMetadata = {
+              status: 'completed',
+              source: 'ollama',
+              usedFallback: result.usedFallback,
+              provider: result.provider,
+              internalTextRuntimeLock: internalTextRuntimeStatus?.lock,
+            };
+          } else {
+            content = `Ollama Analiz Hatası: ${result.error || 'Model hazır değil.'}`;
+            outputType = 'degraded';
+            generationMetadata = {
+              status: 'degraded',
+              source: 'ollama',
+              reason: result.code || 'runtime_error',
+              internalTextRuntimeLock: internalTextRuntimeStatus?.lock,
+            };
+          }
         } catch (err: any) {
           const isTimeout = err?.message?.includes('zaman aşımı') || err?.message?.includes('timeout');
           if (isTimeout) {
@@ -514,6 +567,7 @@ Konuyu teknik ve analitik açıdan değerlendir. 2-4 net maddeyle cevap ver.`;
             outputType = 'degraded';
           }
         }
+        }
       } else {
         content = `Ollama (Fast Model) devre dışı. Lütfen .env üzerinden aktif edin.`;
         outputType = 'planning';
@@ -521,23 +575,38 @@ Konuyu teknik ve analitik açıdan değerlendir. 2-4 net maddeyle cevap ver.`;
     } else if (currentParticipant === 'gemma') {
       outputType = 'text';
       const isEnabled = process.env.AILLAME_GEMMA_ENABLED === 'true';
-      if (isEnabled) {
+      if (isEnabled && internalTextRuntimeStatus?.enabled !== false) {
+        if (isInternalRuntimeLockedByOtherProvider(internalTextRuntimeStatus, 'gemma')) {
+          content = 'Gemma turu, başka bir ağır model işlemi aktif olduğu için güvenli şekilde atlandı.';
+          outputType = 'skipped';
+          generationMetadata = {
+            status: 'skipped',
+            source: 'gemma',
+            reason: 'heavy_model_lock',
+            internalTextRuntimeLock: internalTextRuntimeStatus?.lock,
+          };
+        } else {
         const lastMsgs = session.messages.slice(-5).map(m => `${m.model}: ${m.content}`).join('\n');
-        const gemmaPrompt = `Sen AI Lab katılımcısısın (Gemma). Konu: "${session.topic}".\n\nKonuşma kalite kuralları:\n${buildAnswerStyleGuide('ai_lab_analysis')}\n\nÖnceki tartışma:\n${lastMsgs}\n\nKonuyu hızlı ve öz değerlendir. 2-4 net maddeyle cevap ver.`;
+        const gemmaPrompt = `Konu: "${session.topic}".\n\nÖnceki tartışma:\n${lastMsgs}\n\nCevap: 3 kısa madde yaz; her maddede yalnızca sonuç cümlesi olsun. Kullanıcıdan ek metin isteme. Düşünme süreci yazma.`;
 
         try {
           const gemmaTimeout = process.env.AILLAME_GEMMA_TIMEOUT_MS
-            ? parseInt(process.env.AILLAME_GEMMA_TIMEOUT_MS)
-            : 60000;
+            ? Math.max(parseInt(process.env.AILLAME_GEMMA_TIMEOUT_MS), 90000)
+            : 90000;
 
-          const { generateGemmaResponse } = await import('@/core/inference/gemma');
-          const result = await generateGemmaResponse({
+          const result = await generateWithTextRuntimeRouter({
             prompt: gemmaPrompt,
-            maxTokens: 256,
+            maxTokens: 512,
             temperature: 0.7,
-            timeout: gemmaTimeout
+            timeout: gemmaTimeout,
+            preferredProvider: 'gemma',
           });
-          content = result || 'Gemma yanıt üretemedi.';
+
+          if (!result.success) {
+            throw new Error(result.error || 'Gemma runtime failed.');
+          }
+
+          content = result.answer || 'Gemma yanıt üretemedi.';
 
           const initialGemmaIssue = getGemmaOutputQualityIssue(content, session.topic);
           if (initialGemmaIssue) {
@@ -549,14 +618,20 @@ Konuyu teknik ve analitik açıdan değerlendir. 2-4 net maddeyle cevap ver.`;
               retryAttempted: true,
             };
 
-            const retryResult = await generateGemmaResponse({
+            const retryResult = await generateWithTextRuntimeRouter({
               prompt: buildCompactGemmaRetryPrompt(session),
-              maxTokens: 220,
+              maxTokens: 512,
               temperature: 0.3,
-              timeout: gemmaTimeout
+              timeout: gemmaTimeout,
+              preferredProvider: 'gemma',
             });
 
-            const retryGemmaIssue = getGemmaOutputQualityIssue(retryResult, session.topic);
+            if (!retryResult.success) {
+              throw new Error(retryResult.error || 'Gemma retry failed.');
+            }
+
+            const retryAnswer = retryResult.answer || '';
+            const retryGemmaIssue = getGemmaOutputQualityIssue(retryAnswer, session.topic);
             if (retryGemmaIssue) {
               content = 'Gemma bu turda kullanılabilir sentez üretemedi; final özet Web Search ve Nano değerlendirmesiyle hazırlanacak.';
               outputType = 'degraded';
@@ -569,12 +644,13 @@ Konuyu teknik ve analitik açıdan değerlendir. 2-4 net maddeyle cevap ver.`;
                 retryAttempted: true,
               };
             } else {
-              content = retryResult;
+              content = retryAnswer;
               generationMetadata = {
                 status: 'completed',
                 isFallback: false,
                 source: 'gemma',
                 retryAttempted: true,
+                internalTextRuntimeLock: internalTextRuntimeStatus?.lock,
               };
             }
           } else {
@@ -582,6 +658,7 @@ Konuyu teknik ve analitik açıdan değerlendir. 2-4 net maddeyle cevap ver.`;
               status: 'completed',
               isFallback: false,
               source: 'gemma',
+              internalTextRuntimeLock: internalTextRuntimeStatus?.lock,
             };
           }
         } catch (err: any) {
@@ -604,6 +681,7 @@ Konuyu teknik ve analitik açıdan değerlendir. 2-4 net maddeyle cevap ver.`;
               isFallback: true,
               source: 'gemma',
               reason: 'timeout',
+              internalTextRuntimeLock: internalTextRuntimeStatus?.lock,
             };
           } else {
             const autoStartNote = process.env.AILLAME_GEMMA_AUTO_START === 'true'
@@ -616,8 +694,10 @@ Konuyu teknik ve analitik açıdan değerlendir. 2-4 net maddeyle cevap ver.`;
               isFallback: true,
               source: 'gemma',
               reason: err?.code || 'unknown_error',
+              internalTextRuntimeLock: internalTextRuntimeStatus?.lock,
             };
           }
+        }
         }
       } else {
         content = `Gemma 4 E4B (Fast Model) devre dışı veya yapılandırılmadı. AI Lab Nano/Web Search ile güvenli devam ediyor.`;

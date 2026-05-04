@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getOllamaReadiness } from '@/core/model-management/status';
+import { getTextRuntimeRouterStatus } from '@/core/inference/text-runtime-router';
 
 export async function GET(req: NextRequest) {
   const token = req.headers.get('x-aillame-admin-token');
@@ -8,8 +9,11 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const report = await getOllamaReadiness();
-    return NextResponse.json(report);
+    const [report, internalTextRuntime] = await Promise.all([
+      getOllamaReadiness(),
+      getTextRuntimeRouterStatus(),
+    ]);
+    return NextResponse.json({ ...report, internalTextRuntime });
   } catch (error: any) {
     return NextResponse.json({ error: error.message || 'Internal error' }, { status: 500 });
   }

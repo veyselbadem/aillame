@@ -95,3 +95,23 @@ target*/
 external-api-request-log.json
 memory-write-log.json
 training_log.txt
+
+# ---- Büyük model artefaktları (repo dışında tutulmalı) -----
+# Bu dosyalar Git LFS veya dış model klasörüne (örn. C:\AillameModels\) taşınmalıdır.
+*.exe
+*.safetensors
+*.ckpt
+*.gguf
+*.pt
+*.pth
+*.bin
+*.onnx
+
+# ---- Eğitim veri setleri ----------------------------------
+# Büyük jsonl veri setleri repoda tutulmamalı.
+*.jsonl
+
+# ---- Model ve checkpoint klasörleri -----------------------
+# src/core/engine/checkpoints/ altındaki ağırlık dosyaları zaten *.safetensors ile kapsanır.
+# Aşağıdaki satırlar ek koruma sağlar:
+logs/

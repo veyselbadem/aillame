@@ -10,7 +10,8 @@ export type ModelRuntime =
   | 'rust-candle'
   | 'python-transformers'
   | 'python-diffusers'
-  | 'browser-indexeddb';
+  | 'browser-indexeddb'
+  | 'llama-server-gguf';
 
 export type ManagedModel = {
   id: string;
@@ -27,11 +28,15 @@ export type ManagedModel = {
   description: string;
   installHint: string;
   builtIn?: boolean;
+  internalTextProvider?: 'gguf' | 'gemma' | 'ollama';
+  modelPathEnv?: string;
+  recommendedRamGb?: number;
 };
 
 export const NANO_CHAT_MODEL_ID = 'aillame-nano-v1';
 export const PRO_CHAT_MODEL_ID = 'qwen3-vl-8b-instruct';
 export const PRO_IMAGE_MODEL_ID = 'sdxl-base-1.0';
+export const INTERNAL_TEXT_GGUF_MODEL_ID = 'internal-text-gemma-gguf';
 
 export const MODEL_REGISTRY: Record<string, ManagedModel> = {
   [NANO_CHAT_MODEL_ID]: {
@@ -74,6 +79,24 @@ export const MODEL_REGISTRY: Record<string, ManagedModel> = {
     capabilities: ['image-generation'],
     description: 'Local Pro text-to-image generation model powered by Diffusers.',
     installHint: 'Downloaded from Hugging Face by the Python Diffusers runner.',
+  },
+  [INTERNAL_TEXT_GGUF_MODEL_ID]: {
+    id: INTERNAL_TEXT_GGUF_MODEL_ID,
+    label: 'Internal Text Gemma GGUF',
+    shortLabel: 'Internal GGUF',
+    tier: 'nano',
+    purpose: 'chat',
+    repoId: 'ggml-org/gemma-4-E4B-it-GGUF',
+    filename: 'gemma-4-E4B-it-Q4_K_M.gguf',
+    runtime: 'llama-server-gguf',
+    sizeLabel: 'GGUF Q4_K_M',
+    licenseLabel: 'Gemma Terms',
+    capabilities: ['text-generation'],
+    description: 'Unified internal text runtime default model served through llama-server GGUF path.',
+    installHint: 'Set AILLAME_INTERNAL_TEXT_MODEL_PATH to the GGUF file and enable internal text runtime.',
+    internalTextProvider: 'gguf',
+    modelPathEnv: 'AILLAME_INTERNAL_TEXT_MODEL_PATH',
+    recommendedRamGb: 8,
   },
 };
 

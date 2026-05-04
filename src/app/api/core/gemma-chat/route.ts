@@ -1,11 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { GemmaProviderError, generateGemmaResponse, isGemmaFallbackResponse } from '@/core/inference/gemma';
+import { generateWithTextRuntimeRouter } from '@/core/inference/text-runtime-router';
 
 export const runtime = 'nodejs';
 
 export async function POST(req: NextRequest) {
   try {
-    const { prompt, messages, temperature, maxTokens } = await req.json();
+    const { prompt, message, messages, temperature, maxTokens } = await req.json();
+    const resolvedPrompt = (prompt || message || '').trim();
+    if (!resolvedPrompt) {
+      return NextResponse.json({ success: false, provider: 'gemma', error: 'empty_prompt', code: 'gemma_no_input' }, { status: 400 });
+    }
 
     if (process.env.AILLAME_GEMMA_ENABLED !== 'true') {
       return NextResponse.json({
@@ -18,15 +23,32 @@ export async function POST(req: NextRequest) {
     }
 
     const model = process.env.AILLAME_GEMMA_MODEL_ID || process.env.AILLAME_GEMMA_GGUF_FILE || 'gemma-4-E4B-it-Q4_K_M.gguf';
-    const response = await generateGemmaResponse({
-      prompt,
+    const runtimeResult = await generateWithTextRuntimeRouter({
+      prompt: resolvedPrompt,
       messages,
       temperature,
       maxTokens,
-      timeout: process.env.AILLAME_GEMMA_TIMEOUT_MS 
-        ? parseInt(process.env.AILLAME_GEMMA_TIMEOUT_MS) 
-        : 60000
+      timeout: process.env.AILLAME_GEMMA_TIMEOUT_MS
+        ? parseInt(process.env.AILLAME_GEMMA_TIMEOUT_MS)
+        : 60000,
+      preferredProvider: 'gemma',
+      modelId: model,
     });
+
+    if (!runtimeResult.success) {
+      return NextResponse.json(
+        {
+          success: false,
+          provider: 'gemma',
+          code: runtimeResult.code || 'runtime_error',
+          error: runtimeResult.error || 'Gemma runtime failed.',
+          hint: runtimeResult.hint,
+        },
+        { status: runtimeResult.code === 'disabled' ? 403 : runtimeResult.code === 'timeout' ? 504 : 500 }
+      );
+    }
+
+    const response = runtimeResult.answer || '';
 
     if (isGemmaFallbackResponse(response)) {
       return NextResponse.json({
