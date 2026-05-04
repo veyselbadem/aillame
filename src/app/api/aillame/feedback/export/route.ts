@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { exportFeedbackDatasetJsonl } from '@core/feedback/service';
+import { createAdminAuthErrorResponse, validateAdminRequest } from '@core/admin-auth/auth';
 
 function parseBoolean(value: string | null, fallback = false): boolean {
   if (value === null) return fallback;
@@ -8,6 +9,10 @@ function parseBoolean(value: string | null, fallback = false): boolean {
 }
 
 export async function GET(req: NextRequest) {
+  if (!validateAdminRequest(req)) {
+    return createAdminAuthErrorResponse();
+  }
+
   try {
     const format = (req.nextUrl.searchParams.get('format') ?? 'jsonl').toLowerCase();
     if (format !== 'jsonl') {

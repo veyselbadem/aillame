@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { listFeedback, saveFeedback } from '@core/feedback/service';
 import { FEEDBACK_RATINGS } from '@core/feedback/schema-v2';
+import { createAdminAuthErrorResponse, validateAdminRequest } from '@core/admin-auth/auth';
 
 const FEEDBACK_RATING_SET = new Set(FEEDBACK_RATINGS);
 
@@ -30,6 +31,10 @@ export async function POST(req: NextRequest) {
 }
 
 export async function GET(req: NextRequest) {
+  if (!validateAdminRequest(req)) {
+    return createAdminAuthErrorResponse();
+  }
+
   try {
     const projectId = req.nextUrl.searchParams.get('projectId') ?? undefined;
     const feedback = await listFeedback({ projectId });

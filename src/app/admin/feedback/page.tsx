@@ -160,6 +160,7 @@ function FeedbackCard({ item }: { item: FeedbackRecord }) {
 // Page
 // ---------------------------------------------------------------------------
 export default function AdminFeedbackPage() {
+  const adminTokenKey = 'aillame_admin_token';
   const [feedbacks, setFeedbacks] = useState<FeedbackRecord[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -188,15 +189,35 @@ export default function AdminFeedbackPage() {
       router.push('/admin/login');
       return;
     }
+    const token = localStorage.getItem(adminTokenKey)?.trim();
+    if (!token) {
+      setError('Admin token bulunamadı. Lütfen tekrar giriş yapın.');
+      router.push('/admin/login');
+      return;
+    }
     setAuthorized(true);
-    void loadFeedback();
+    void loadFeedback(token);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const loadFeedback = async () => {
+  const getAdminToken = (): string | null => {
+    const token = localStorage.getItem(adminTokenKey)?.trim();
+    if (!token) {
+      setError('Admin token bulunamadı. Lütfen tekrar giriş yapın.');
+      router.push('/admin/login');
+      return null;
+    }
+    return token;
+  };
+
+  const loadFeedback = async (providedToken?: string) => {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch('/api/aillame/feedback');
+      const token = providedToken ?? getAdminToken();
+      if (!token) return;
+      const response = await fetch('/api/aillame/feedback', {
+        headers: { 'x-aillame-admin-token': token },
+      });
       if (!response.ok) throw new Error('Geri bildirimler yüklenemedi.');
       const result = (await response.json()) as { success: boolean; feedback: FeedbackRecord[] };
       if (!result?.success || !Array.isArray(result.feedback)) throw new Error('Geri bildirim verisi geçersiz.');
@@ -247,8 +268,12 @@ export default function AdminFeedbackPage() {
     setExportError(null);
     setExportPreview(null);
     try {
+      const token = getAdminToken();
+      if (!token) return;
       const url = buildExportUrl(exportProjectId, exportIncludeSensitive);
-      const res = await fetch(url);
+      const res = await fetch(url, {
+        headers: { 'x-aillame-admin-token': token },
+      });
       if (!res.ok) throw new Error(`Export başarısız: ${res.status}`);
       const text = await res.text();
       const lines = text.split('\n').filter(Boolean);
@@ -265,8 +290,12 @@ export default function AdminFeedbackPage() {
     setExportDownloadLoading(true);
     setExportError(null);
     try {
+      const token = getAdminToken();
+      if (!token) return;
       const url = buildExportUrl(exportProjectId, exportIncludeSensitive);
-      const res = await fetch(url);
+      const res = await fetch(url, {
+        headers: { 'x-aillame-admin-token': token },
+      });
       if (!res.ok) throw new Error(`Export başarısız: ${res.status}`);
       const text = await res.text();
       const blob = new Blob([text], { type: 'application/x-ndjson' });
