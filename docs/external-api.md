@@ -85,8 +85,29 @@ npm run smoke:external-api
 
 Opsiyonel environment değişkenleri:
 
-- AILLAME_EXTERNAL_API_BASE_URL
-- AILLAME_EXTERNAL_API_KEY
+- `AILLAME_EXTERNAL_API_BASE_URL` (default: http://localhost:3000)
+- `AILLAME_EXTERNAL_API_KEY`
+
+Sunucu kapalıysa script "Local server is not reachable. Start the app first." mesajı verir.
+
+## Rate-Limit Response Headers
+
+`AILLAME_EXTERNAL_API_RATE_LIMIT_ENABLED=true` olduğunda başarılı yanıtlarda aşağıdaki header'lar eklenir:
+
+- `x-aillame-rate-limit-policy` — Politika açıklaması (ör: `60req/60s`)
+- `x-ratelimit-remaining` — Kalan istek sayısı
+- `x-ratelimit-reset-at` — Kota sıfırlama zamanı (ISO-8601)
+
+Rate limit aşılırsa HTTP 429 ve OpenAI uyumlu hata döner:
+```json
+{
+  "error": {
+    "message": "Rate limit exceeded",
+    "type": "requests",
+    "code": "rate_limit_exceeded"
+  }
+}
+```
 
 ## Current Limitations
 
