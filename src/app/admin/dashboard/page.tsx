@@ -9,7 +9,7 @@ import {
   FiZap, FiDatabase, FiBox, FiTrendingDown,
   FiCheckCircle, FiAlertCircle, FiRefreshCw,
   FiKey, FiClipboard, FiLayers, FiBook, FiThumbsUp,
-  FiShield, FiArrowRight,
+  FiShield, FiArrowRight, FiPackage,
 } from 'react-icons/fi';
 import StatusBadge from '@components/ui/StatusBadge';
 
@@ -36,6 +36,7 @@ const QUICK_LINKS = [
   { href: '/admin/research-results',     label: 'Araştırma Sonuçları', icon: FiBook,      color: 'text-cyan-400 bg-cyan-500/10 border-cyan-500/15' },
   { href: '/admin/feedback',             label: 'Feedback Yönetimi',   icon: FiThumbsUp,  color: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/15' },
   { href: '/admin/distillation-preview', label: 'Damıtma Önizleme',    icon: FiLayers,    color: 'text-purple-400 bg-purple-500/10 border-purple-500/15' },
+  { href: '/admin/model-library',        label: 'Model Kütüphanesi',    icon: FiPackage,   color: 'text-violet-400 bg-violet-500/10 border-violet-500/15' },
 ] as const;
 
 // ── MVP Status rows ───────────────────────────────────────────────────────
