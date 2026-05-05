@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { validateExternalClientRequest } from '@core/external-auth/client-auth';
 import { getModelsWithStatus } from '@core/models/model-manager';
-import { toOpenAIModelList } from '@core/external-api/openai-mapper';
 import { jsonOpenAIError } from '@core/external-api/error-format';
 import type { ManagedModel } from '@core/models/types';
+import { listLocalModels } from '@core/model-library';
+import { buildExternalApiModelList } from '@core/model-library/openai-models';
 
 function isChatCompatibleModel(model: ManagedModel): boolean {
   if (model.enabled === false) return false;
@@ -29,7 +30,17 @@ export async function GET(request: NextRequest) {
       .map((entry) => entry.model)
       .filter((model) => isChatCompatibleModel(model));
 
-    return NextResponse.json(toOpenAIModelList(compatibleModels), { status: 200 });
+    let localModels: ReturnType<typeof listLocalModels> = [];
+    try {
+      localModels = listLocalModels();
+    } catch {
+      // model-library failure must not break the v1/models endpoint
+    }
+
+    return NextResponse.json(
+      buildExternalApiModelList(compatibleModels, localModels),
+      { status: 200 },
+    );
   } catch {
     return jsonOpenAIError('Internal server error.', 'internal_error', 500);
   }
