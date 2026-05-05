@@ -7,6 +7,8 @@ import {
   discoverModelLibrary,
   dryRunRemoveModel,
   fetchModelPreferences,
+  updateModelPreference,
+  clearModelPreference,
   type LocalModelMetadata,
   type ModelLibraryListResponse,
   type ModelLibraryActionResult,
@@ -108,9 +110,11 @@ interface DefaultModelPreferencesCardProps {
   preferences: DefaultModelPreferencesUi | null;
   models: LocalModelMetadata[];
   loading: boolean;
+  prefBusy: ReadonlySet<DefaultModelCapabilityUi>;
+  onClear: (cap: DefaultModelCapabilityUi) => void;
 }
 
-function DefaultModelPreferencesCard({ preferences, models, loading }: DefaultModelPreferencesCardProps) {
+function DefaultModelPreferencesCard({ preferences, models, loading, prefBusy, onClear }: DefaultModelPreferencesCardProps) {
   const modelById = new Map(models.map(m => [m.id, m]));
 
   return (
@@ -127,13 +131,26 @@ function DefaultModelPreferencesCard({ preferences, models, loading }: DefaultMo
             const modelId = preferences?.[field] as string | undefined;
             const matched = modelId ? modelById.get(modelId) : undefined;
             const notInList = modelId && !matched;
+            const busy = prefBusy.has(cap);
 
             return (
               <div
                 key={cap}
                 className="rounded-md border border-zinc-700/30 bg-zinc-900/50 px-3 py-2 flex flex-col gap-0.5"
               >
-                <span className="text-xs font-medium text-zinc-400">{CAPABILITY_LABELS[cap]}</span>
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-medium text-zinc-400">{CAPABILITY_LABELS[cap]}</span>
+                  {modelId && (
+                    <button
+                      disabled={busy}
+                      onClick={() => onClear(cap)}
+                      className="text-xs text-zinc-600 hover:text-red-400 disabled:opacity-40 transition-colors leading-none"
+                      title={`${CAPABILITY_LABELS[cap]} tercihini temizle`}
+                    >
+                      {busy ? '…' : 'Temizle'}
+                    </button>
+                  )}
+                </div>
                 {modelId ? (
                   <>
                     <span className="text-xs text-white truncate" title={modelId}>{modelId}</span>
@@ -165,15 +182,29 @@ function DefaultModelPreferencesCard({ preferences, models, loading }: DefaultMo
   );
 }
 
+// ── Helpers ───────────────────────────────────────────────────────────────
+
+const VALID_CAPABILITIES = new Set<DefaultModelCapabilityUi>(['text', 'code', 'image', 'vision', 'embedding']);
+
+function validCapabilitiesOf(model: LocalModelMetadata): DefaultModelCapabilityUi[] {
+  return model.capabilities.filter((c): c is DefaultModelCapabilityUi =>
+    VALID_CAPABILITIES.has(c as DefaultModelCapabilityUi)
+  );
+}
+
 // ── Model row ─────────────────────────────────────────────────────────────
 
 interface ModelRowProps {
   model: LocalModelMetadata;
   onRemoveSimulate: (id: string) => void;
+  onSetDefault: (cap: DefaultModelCapabilityUi, modelId: string) => void;
   busy: boolean;
+  prefBusy: ReadonlySet<DefaultModelCapabilityUi>;
 }
 
-function ModelRow({ model, onRemoveSimulate, busy }: ModelRowProps) {
+function ModelRow({ model, onRemoveSimulate, onSetDefault, busy, prefBusy }: ModelRowProps) {
+  const caps = validCapabilitiesOf(model);
+
   return (
     <tr className="border-b border-zinc-700/30 hover:bg-zinc-800/30 transition-colors">
       <td className="py-2 px-3 text-sm font-medium text-white max-w-[160px] truncate">
@@ -192,14 +223,31 @@ function ModelRow({ model, onRemoveSimulate, busy }: ModelRowProps) {
         {shortPath(model.localPath ?? model.fileName)}
       </td>
       <td className="py-2 px-3 text-right">
-        <button
-          disabled={busy}
-          onClick={() => onRemoveSimulate(model.id)}
-          className="text-xs text-zinc-500 hover:text-red-400 disabled:opacity-40 transition-colors"
-          title="Kaldırmayı simüle et (gerçek silme yok)"
-        >
-          Simüle Et
-        </button>
+        <div className="flex flex-col items-end gap-1">
+          {caps.length > 0 ? (
+            caps.map(cap => (
+              <button
+                key={cap}
+                disabled={busy || prefBusy.has(cap)}
+                onClick={() => onSetDefault(cap, model.id)}
+                className="text-xs text-indigo-400 hover:text-indigo-300 disabled:opacity-40 transition-colors whitespace-nowrap"
+                title={`${CAPABILITY_LABELS[cap]} için varsayılan yap (runtime anında değişmez)`}
+              >
+                {prefBusy.has(cap) ? '…' : `${CAPABILITY_LABELS[cap]} varsayılanı`}
+              </button>
+            ))
+          ) : (
+            <span className="text-xs text-zinc-700">—</span>
+          )}
+          <button
+            disabled={busy}
+            onClick={() => onRemoveSimulate(model.id)}
+            className="text-xs text-zinc-500 hover:text-red-400 disabled:opacity-40 transition-colors"
+            title="Kaldırmayı simüle et (gerçek silme yok)"
+          >
+            Simüle Et
+          </button>
+        </div>
       </td>
     </tr>
   );
@@ -216,7 +264,9 @@ export default function ModelLibraryPanel() {
   const [prefsLoading, setPrefsLoading] = useState(true);
   const [discovering, setDiscovering] = useState(false);
   const [actionBusy, setActionBusy] = useState(false);
+  const [prefBusy, setPrefBusy] = useState<Set<DefaultModelCapabilityUi>>(new Set());
   const [actionResult, setActionResult] = useState<ModelLibraryActionResult | null>(null);
+  const [prefResult, setPrefResult] = useState<{ ok: boolean; message: string } | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const loadList = useCallback(async () => {
@@ -267,6 +317,35 @@ export default function ModelLibraryPanel() {
     setActionBusy(false);
   };
 
+  const handleSetDefault = async (cap: DefaultModelCapabilityUi, modelId: string) => {
+    setPrefBusy(prev => new Set([...prev, cap]));
+    setPrefResult(null);
+    const result = await updateModelPreference(cap, modelId);
+    if (result.ok && result.preferences) {
+      setPreferences(result.preferences);
+      setPrefResult({
+        ok: true,
+        message: `${CAPABILITY_LABELS[cap]} varsayılan modeli güncellendi. Bu işlem runtime'ı anında değiştirmez; yeni isteklerde seçim/fallback için kullanılır.`,
+      });
+    } else {
+      setPrefResult({ ok: false, message: result.message });
+    }
+    setPrefBusy(prev => { const next = new Set(prev); next.delete(cap); return next; });
+  };
+
+  const handleClearPreference = async (cap: DefaultModelCapabilityUi) => {
+    setPrefBusy(prev => new Set([...prev, cap]));
+    setPrefResult(null);
+    const result = await clearModelPreference(cap);
+    if (result.ok && result.preferences) {
+      setPreferences(result.preferences);
+      setPrefResult({ ok: true, message: `${CAPABILITY_LABELS[cap]} tercihi temizlendi.` });
+    } else {
+      setPrefResult({ ok: false, message: result.message });
+    }
+    setPrefBusy(prev => { const next = new Set(prev); next.delete(cap); return next; });
+  };
+
   return (
     <div className="space-y-1">
       {/* Header */}
@@ -288,6 +367,23 @@ export default function ModelLibraryPanel() {
       {/* Action feedback */}
       <ActionFeedback result={actionResult} onClose={() => setActionResult(null)} />
 
+      {/* Preference feedback */}
+      {prefResult && (
+        <div
+          className={`flex items-start gap-2 rounded-lg border px-3 py-2 text-sm mb-4 ${
+            prefResult.ok
+              ? 'bg-indigo-950/30 border-indigo-700/30 text-indigo-300'
+              : 'bg-red-950/20 border-red-700/25 text-red-300'
+          }`}
+        >
+          <span className="mt-0.5 shrink-0">
+            {prefResult.ok ? <FiCheckCircle size={14} /> : <FiAlertCircle size={14} />}
+          </span>
+          <span className="flex-1">{prefResult.message}</span>
+          <button onClick={() => setPrefResult(null)} className="shrink-0 text-zinc-500 hover:text-zinc-300 ml-1 text-xs">✕</button>
+        </div>
+      )}
+
       {/* Error */}
       {error && (
         <div className="flex items-center gap-2 rounded-lg border border-red-700/30 bg-red-950/20 px-3 py-2 text-sm text-red-300 mb-4">
@@ -304,6 +400,8 @@ export default function ModelLibraryPanel() {
         preferences={preferences}
         models={list.models}
         loading={prefsLoading}
+        prefBusy={prefBusy}
+        onClear={handleClearPreference}
       />
 
       {/* Table */}
@@ -331,7 +429,9 @@ export default function ModelLibraryPanel() {
                   key={model.id}
                   model={model}
                   onRemoveSimulate={handleRemoveSimulate}
+                  onSetDefault={handleSetDefault}
                   busy={actionBusy}
+                  prefBusy={prefBusy}
                 />
               ))}
             </tbody>
