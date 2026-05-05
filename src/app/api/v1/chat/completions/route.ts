@@ -14,6 +14,10 @@ import {
   buildPromptFromMessages,
   normalizeOpenAIChatMessages,
 } from '@core/external-api/chat-normalizer';
+import {
+  extractExternalProviderContext,
+  summarizeExternalProviderContext,
+} from '@core/external-api/provider-contract';
 import { toOpenAIChatCompletion } from '@core/external-api/openai-mapper';
 import { jsonOpenAIError } from '@core/external-api/error-format';
 import {
@@ -109,8 +113,13 @@ function logModelSelectionDecision(input: {
   provider?: string;
   available: boolean;
   reason: string;
+  contextSummary?: string;
 }): void {
   try {
+    const summaryReason = input.contextSummary
+      ? `${input.reason} Context: ${input.contextSummary}`
+      : input.reason;
+
     const decision = createRuntimeFallbackDecision({
       requestedModelId: input.requestedModelId,
       selectedModelId: input.available ? input.selectedModelId : undefined,
@@ -118,7 +127,7 @@ function logModelSelectionDecision(input: {
       provider: input.provider,
       capability: 'text',
       available: input.available,
-      reason: input.reason,
+      reason: summaryReason,
     });
 
     appendRuntimeModelEvent({
@@ -142,6 +151,9 @@ export async function POST(request: NextRequest) {
   } catch {
     return jsonOpenAIError('Invalid JSON payload.', 'invalid_json', 400);
   }
+
+  const externalContext = extractExternalProviderContext(payload);
+  const externalContextSummary = summarizeExternalProviderContext(externalContext);
 
   const parsed = parseChatBody(payload);
   if (!parsed.success) {
@@ -205,6 +217,7 @@ export async function POST(request: NextRequest) {
       provider: selectedProvider,
       available: false,
       reason: 'No default model is configured.',
+      contextSummary: externalContextSummary,
     });
     return jsonOpenAIError('No default model is configured.', 'model_not_configured', 500);
   }
@@ -223,6 +236,7 @@ export async function POST(request: NextRequest) {
     reason: requestedModelId && requestedModelId !== selectedModel
       ? `Requested model '${requestedModelId}' is unavailable; defaulted to '${selectedModel}'.`
       : 'Requested or default model selected successfully.',
+    contextSummary: externalContextSummary,
   });
 
   const prompt = buildPromptFromMessages(normalized.messages);
