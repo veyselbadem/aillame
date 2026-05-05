@@ -25,6 +25,10 @@ export type AiLabModelLibrarySummary = {
   defaultImageModelId: string | null;
   runtimeSelectionReady: boolean;
   externalApiModelsCount: number;
+  ollamaModelForwardingReady: boolean;
+  gemmaStaticRuntime: boolean;
+  gemmaModelSwitchingReady: boolean;
+  v1ChatModelFieldReady: boolean;
 };
 
 export function getAiLabModelLibrarySummary(): AiLabModelLibrarySummary {
@@ -62,6 +66,10 @@ export function getAiLabModelLibrarySummary(): AiLabModelLibrarySummary {
       defaultImageModelId: defaultImageModel?.id ?? null,
       runtimeSelectionReady: availableModels > 0,
       externalApiModelsCount: availableModels,
+      ollamaModelForwardingReady: true,
+      gemmaStaticRuntime: true,
+      gemmaModelSwitchingReady: false,
+      v1ChatModelFieldReady: true,
     };
   } catch (error) {
     return {
@@ -78,6 +86,10 @@ export function getAiLabModelLibrarySummary(): AiLabModelLibrarySummary {
       defaultImageModelId: null,
       runtimeSelectionReady: false,
       externalApiModelsCount: 0,
+      ollamaModelForwardingReady: false,
+      gemmaStaticRuntime: true,
+      gemmaModelSwitchingReady: false,
+      v1ChatModelFieldReady: false,
     };
   }
 }
