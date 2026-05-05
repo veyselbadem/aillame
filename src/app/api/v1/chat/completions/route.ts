@@ -16,6 +16,11 @@ import {
 } from '@core/external-api/chat-normalizer';
 import { toOpenAIChatCompletion } from '@core/external-api/openai-mapper';
 import { jsonOpenAIError } from '@core/external-api/error-format';
+import {
+  createModelSelectionEventFromDecision,
+  createRuntimeFallbackDecision,
+} from '@core/inference/fallback-policy';
+import { appendRuntimeModelEvent } from '@core/ai-lab/runtime-event-log';
 import type { ManagedModel } from '@core/models/types';
 
 type ChatCompletionsBody = {
@@ -97,6 +102,34 @@ function pickPreferredProvider(
   return undefined;
 }
 
+function logModelSelectionDecision(input: {
+  requestedModelId?: string;
+  selectedModelId?: string;
+  fallbackModelId?: string;
+  provider?: string;
+  available: boolean;
+  reason: string;
+}): void {
+  try {
+    const decision = createRuntimeFallbackDecision({
+      requestedModelId: input.requestedModelId,
+      selectedModelId: input.available ? input.selectedModelId : undefined,
+      fallbackModelId: input.fallbackModelId,
+      provider: input.provider,
+      capability: 'text',
+      available: input.available,
+      reason: input.reason,
+    });
+
+    appendRuntimeModelEvent({
+      ...createModelSelectionEventFromDecision(decision),
+      source: 'v1-chat-completions',
+    });
+  } catch {
+    // Event logging must not affect chat completions.
+  }
+}
+
 export async function POST(request: NextRequest) {
   const authResult = await validateExternalClientRequest(request);
   if (!authResult.success || !authResult.client) {
@@ -161,7 +194,18 @@ export async function POST(request: NextRequest) {
     || (resolvedSelection.ok ? resolvedSelection.model?.id : undefined)
     || defaultModel;
 
+  const selectedProvider = pickPreferredProvider(
+    selectedModel,
+    resolvedSelection.ok ? resolvedSelection.model?.provider : undefined,
+  );
+
   if (!selectedModel) {
+    logModelSelectionDecision({
+      requestedModelId,
+      provider: selectedProvider,
+      available: false,
+      reason: 'No default model is configured.',
+    });
     return jsonOpenAIError('No default model is configured.', 'model_not_configured', 500);
   }
 
@@ -169,6 +213,17 @@ export async function POST(request: NextRequest) {
   if (requestedModelId && requestedModelId !== selectedModel) {
     modelWarnings.push(`Requested model '${requestedModelId}' is unavailable; defaulted to '${selectedModel}'.`);
   }
+
+  logModelSelectionDecision({
+    requestedModelId,
+    selectedModelId: selectedModel,
+    fallbackModelId: requestedModelId && requestedModelId !== selectedModel ? selectedModel : undefined,
+    provider: selectedProvider,
+    available: !requestedModelId || requestedModelId === selectedModel,
+    reason: requestedModelId && requestedModelId !== selectedModel
+      ? `Requested model '${requestedModelId}' is unavailable; defaulted to '${selectedModel}'.`
+      : 'Requested or default model selected successfully.',
+  });
 
   const prompt = buildPromptFromMessages(normalized.messages);
   const preferredProvider = pickPreferredProvider(
