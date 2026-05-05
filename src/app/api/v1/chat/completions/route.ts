@@ -3,7 +3,12 @@ import { validateExternalClientRequest } from '@core/external-auth/client-auth';
 import { getDefaultModelForMode } from '@core/models/model-policy';
 import { getEnabledModels } from '@core/models/registry';
 import { generateWithTextRuntimeRouter } from '@core/inference/text-runtime-router';
-import { listLocalModels, createRuntimeModelSelection, resolveRuntimeModelSelection } from '@core/model-library';
+import {
+  listLocalModels,
+  createRuntimeModelSelection,
+  resolveRuntimeSelectionWithPreference,
+  getPreferredModelIdForCapability,
+} from '@core/model-library';
 import { ensureSafeModelId, normalizeInferenceModelSelection } from '@core/inference/model-selection';
 import {
   buildPromptFromMessages,
@@ -136,13 +141,16 @@ export async function POST(request: NextRequest) {
     source: 'v1-chat',
   });
 
-  const resolvedSelection = resolveRuntimeModelSelection(
+  const preferredTextModelId = getPreferredModelIdForCapability('text');
+
+  const resolvedSelection = resolveRuntimeSelectionWithPreference(
     createRuntimeModelSelection({
       modelId: normalizedSelection.modelId,
       capability: 'text',
       source: 'request',
     }),
     localModels,
+    preferredTextModelId,
   );
 
   const registryRequestedModel = requestedModelId

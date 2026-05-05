@@ -54,6 +54,12 @@ function sanitizeModelId(raw: string): string {
   return raw.replace(/[/\\.\x00-\x1f]+/g, '-').slice(0, 128).trim();
 }
 
+function sanitizePreferredModelId(raw?: string): string | undefined {
+  if (!raw || typeof raw !== 'string') return undefined;
+  const sanitized = sanitizeModelId(raw);
+  return sanitized || undefined;
+}
+
 // ── Factory ───────────────────────────────────────────────────────────────
 
 /**
@@ -154,6 +160,41 @@ export function resolveRuntimeModelSelection(
   }
 
   return { ...base, reason: 'No available models in the local library.' };
+}
+
+/**
+ * Resolve selection by applying preferred model only when request model is absent.
+ * Request modelId keeps the highest priority.
+ */
+export function resolveRuntimeSelectionWithPreference(
+  input: RuntimeModelSelection,
+  models: LocalModelMetadata[],
+  preferredModelId?: string,
+): ResolvedRuntimeModel {
+  if (input.modelId) {
+    return resolveRuntimeModelSelection(input, models);
+  }
+
+  const safePreferredModelId = sanitizePreferredModelId(preferredModelId);
+  if (safePreferredModelId) {
+    const preferredAttempt = resolveRuntimeModelSelection(
+      {
+        ...input,
+        modelId: safePreferredModelId,
+        source: input.source ?? 'default',
+      },
+      models,
+    );
+
+    if (preferredAttempt.ok) {
+      return {
+        ...preferredAttempt,
+        reason: `Preferred model '${safePreferredModelId}' resolved successfully.`,
+      };
+    }
+  }
+
+  return resolveRuntimeModelSelection(input, models);
 }
 
 /**
