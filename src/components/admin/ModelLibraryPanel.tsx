@@ -6,9 +6,12 @@ import {
   fetchModelLibraryList,
   discoverModelLibrary,
   dryRunRemoveModel,
+  fetchModelPreferences,
   type LocalModelMetadata,
   type ModelLibraryListResponse,
   type ModelLibraryActionResult,
+  type DefaultModelPreferencesUi,
+  type DefaultModelCapabilityUi,
 } from '@/lib/model-library-client';
 
 // ── Helpers ───────────────────────────────────────────────────────────────
@@ -32,6 +35,22 @@ const STATUS_COLORS: Record<string, string> = {
   installing: 'text-amber-400',
   failed: 'text-red-500',
   disabled: 'text-zinc-400',
+};
+
+const CAPABILITY_LABELS: Record<DefaultModelCapabilityUi, string> = {
+  text: 'Metin',
+  code: 'Kod',
+  image: 'Görsel',
+  vision: 'Vision',
+  embedding: 'Embedding',
+};
+
+const CAPABILITY_FIELD_MAP: Record<DefaultModelCapabilityUi, keyof DefaultModelPreferencesUi> = {
+  text: 'textModelId',
+  code: 'codeModelId',
+  image: 'imageModelId',
+  vision: 'visionModelId',
+  embedding: 'embeddingModelId',
 };
 
 // ── Sub-components ────────────────────────────────────────────────────────
@@ -83,6 +102,71 @@ function ActionFeedback({ result, onClose }: ActionFeedbackProps) {
   );
 }
 
+// ── Default model preferences card ───────────────────────────────────────
+
+interface DefaultModelPreferencesCardProps {
+  preferences: DefaultModelPreferencesUi | null;
+  models: LocalModelMetadata[];
+  loading: boolean;
+}
+
+function DefaultModelPreferencesCard({ preferences, models, loading }: DefaultModelPreferencesCardProps) {
+  const modelById = new Map(models.map(m => [m.id, m]));
+
+  return (
+    <div className="rounded-lg border border-zinc-700/40 bg-zinc-800/30 p-4 mb-5">
+      <h3 className="text-xs font-semibold text-zinc-300 uppercase tracking-wide mb-3">
+        Varsayılan Modeller
+      </h3>
+      {loading ? (
+        <p className="text-xs text-zinc-500">Tercihler yükleniyor…</p>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+          {(Object.keys(CAPABILITY_LABELS) as DefaultModelCapabilityUi[]).map(cap => {
+            const field = CAPABILITY_FIELD_MAP[cap];
+            const modelId = preferences?.[field] as string | undefined;
+            const matched = modelId ? modelById.get(modelId) : undefined;
+            const notInList = modelId && !matched;
+
+            return (
+              <div
+                key={cap}
+                className="rounded-md border border-zinc-700/30 bg-zinc-900/50 px-3 py-2 flex flex-col gap-0.5"
+              >
+                <span className="text-xs font-medium text-zinc-400">{CAPABILITY_LABELS[cap]}</span>
+                {modelId ? (
+                  <>
+                    <span className="text-xs text-white truncate" title={modelId}>{modelId}</span>
+                    {matched ? (
+                      <span className="text-xs text-zinc-500">
+                        {matched.provider} · {matched.runtime} ·{' '}
+                        <span className={STATUS_COLORS[matched.status] ?? 'text-zinc-400'}>
+                          {matched.status}
+                        </span>
+                      </span>
+                    ) : notInList ? (
+                      <span className="text-xs text-amber-400">Model listesinde bulunamadı</span>
+                    ) : null}
+                  </>
+                ) : (
+                  <span className="text-xs text-zinc-600 italic">Seçilmedi</span>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+      {preferences?.updatedAt && !loading && (
+        <p className="text-xs text-zinc-600 mt-2">
+          Son güncelleme: {new Date(preferences.updatedAt).toLocaleString('tr-TR')} · Kaynak: {preferences.source}
+        </p>
+      )}
+    </div>
+  );
+}
+
+// ── Model row ─────────────────────────────────────────────────────────────
+
 interface ModelRowProps {
   model: LocalModelMetadata;
   onRemoveSimulate: (id: string) => void;
@@ -127,7 +211,9 @@ export default function ModelLibraryPanel() {
   const [list, setList] = useState<ModelLibraryListResponse>({
     models: [], total: 0, available: 0, missing: 0,
   });
+  const [preferences, setPreferences] = useState<DefaultModelPreferencesUi | null>(null);
   const [loading, setLoading] = useState(true);
+  const [prefsLoading, setPrefsLoading] = useState(true);
   const [discovering, setDiscovering] = useState(false);
   const [actionBusy, setActionBusy] = useState(false);
   const [actionResult, setActionResult] = useState<ModelLibraryActionResult | null>(null);
@@ -143,10 +229,22 @@ export default function ModelLibraryPanel() {
     }
   }, []);
 
+  const loadPreferences = useCallback(async () => {
+    setPrefsLoading(true);
+    try {
+      const data = await fetchModelPreferences();
+      setPreferences(data);
+    } catch {
+      // silent — preferences card shows empty state
+    } finally {
+      setPrefsLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     setLoading(true);
-    loadList().finally(() => setLoading(false));
-  }, [loadList]);
+    Promise.all([loadList(), loadPreferences()]).finally(() => setLoading(false));
+  }, [loadList, loadPreferences]);
 
   const handleDiscover = async () => {
     setDiscovering(true);
@@ -200,6 +298,13 @@ export default function ModelLibraryPanel() {
 
       {/* Summary */}
       {!loading && <SummaryBar list={list} />}
+
+      {/* Default model preferences */}
+      <DefaultModelPreferencesCard
+        preferences={preferences}
+        models={list.models}
+        loading={prefsLoading}
+      />
 
       {/* Table */}
       {loading ? (
