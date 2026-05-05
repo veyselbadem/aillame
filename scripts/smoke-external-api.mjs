@@ -85,8 +85,24 @@ async function main() {
       console.log('[smoke:external-api] all checks passed');
     }
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Unknown smoke test error.';
-    fail('smoke test failed', message);
+    const isConnRefused =
+      error instanceof Error &&
+      (error.message.includes('ECONNREFUSED') ||
+        error.message.includes('fetch failed') ||
+        (error.cause instanceof Error && error.cause.message.includes('ECONNREFUSED')));
+
+    if (isConnRefused) {
+      const displayUrl = baseUrl || 'http://localhost:3000';
+      console.error(
+        `[smoke:external-api] Local server is not reachable. Start the app first.\n` +
+          `  Base URL: ${displayUrl}\n` +
+          `  Set AILLAME_EXTERNAL_API_BASE_URL to override.`,
+      );
+    } else {
+      const message = error instanceof Error ? error.message : 'Unknown smoke test error.';
+      fail('smoke test failed', message);
+    }
+    process.exitCode = 1;
   }
 }
 
