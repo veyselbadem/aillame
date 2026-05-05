@@ -14,7 +14,6 @@ import {
   normalizeOpenAIChatMessages,
 } from '@core/external-api/chat-normalizer';
 import {
-  assertExternalApiContextAccess,
   createExternalApiResponseHeaders,
   validateExternalApiRequest,
 } from '@core/external-api/auth';
@@ -163,15 +162,6 @@ export async function POST(request: NextRequest) {
 
   const externalContext = extractExternalProviderContext(payload);
   const externalContextSummary = summarizeExternalProviderContext(externalContext);
-  const contextAccess = assertExternalApiContextAccess(authResult.client, externalContext);
-  if (!contextAccess.success) {
-    return jsonOpenAIError(
-      contextAccess.error,
-      'forbidden_context',
-      contextAccess.statusCode,
-      createExternalApiResponseHeaders(authResult),
-    );
-  }
   const responseHeaders = createExternalApiResponseHeaders(authResult);
 
   const parsed = parseChatBody(payload);
