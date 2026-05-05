@@ -30,10 +30,16 @@ export class AillameLocalProvider implements LLMProvider {
     isLoading(): boolean { return this._isLoading; }
     isReady(): boolean { return this._isReady; }
 
+    private normalizeApiUrl(url: string): string {
+        const trimmed = (url || '').trim();
+        return trimmed || '/api/core/chat';
+    }
+
     private async fetchWithTimeout(url: string, options: RequestInit): Promise<Response> {
-        const envTimeout = process.env.NEXT_PUBLIC_AILLAME_NANO_TIMEOUT_MS 
-            ? parseInt(process.env.NEXT_PUBLIC_AILLAME_NANO_TIMEOUT_MS, 10) 
-            : 25000;
+        const parsedTimeout = process.env.NEXT_PUBLIC_AILLAME_NANO_TIMEOUT_MS
+            ? Number.parseInt(process.env.NEXT_PUBLIC_AILLAME_NANO_TIMEOUT_MS, 10)
+            : 60000;
+        const envTimeout = Number.isFinite(parsedTimeout) ? parsedTimeout : 60000;
         
         // Clamp timeout between 5s and 60s
         const timeoutMs = Math.min(Math.max(envTimeout, 5000), 60000);
@@ -53,7 +59,7 @@ export class AillameLocalProvider implements LLMProvider {
         }
 
         try {
-            return await fetch(url, { ...options, signal: controller.signal });
+            return await fetch(this.normalizeApiUrl(url), { ...options, signal: controller.signal });
         } finally {
             clearTimeout(timeout);
             if (cleanup) cleanup();
@@ -69,12 +75,14 @@ export class AillameLocalProvider implements LLMProvider {
         }
 
         try {
+            const safePrompt = typeof prompt === 'string' ? prompt.trim() : '';
+            const safeMessages = Array.isArray(options?.messages) ? options.messages : [];
             const response = await this.fetchWithTimeout('/api/core/chat', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ 
-                    prompt, 
-                    messages: options?.messages || [],
+                    prompt: safePrompt,
+                    messages: safeMessages,
                     temperature: 0.8 
                 }),
                 signal,
@@ -85,14 +93,22 @@ export class AillameLocalProvider implements LLMProvider {
                 throw new Error(payload || 'API Error');
             }
 
-            const data = await response.json();
-            const result = data.response || '';
+            const data = await response.json().catch(() => ({}));
+            const rawResult = typeof data?.response === 'string'
+                ? data.response
+                : (typeof data?.answer === 'string' ? data.answer : '');
+            const result = rawResult.trim();
+
+            if (!result) {
+                return 'Aillame Nano şu an anlamlı bir yanıt üretemedi. Lütfen isteği biraz daha netleştirip tekrar deneyin.';
+            }
 
             if (onToken) {
                 for (const char of result) {
                     if (signal?.aborted) throw new Error('AbortError');
                     onToken(char);
-                    await new Promise((r) => setTimeout(r, 10));
+                    // await new Promise((r) => setTimeout(r, 10)); // [NANO-F2] Eski yapay gecikme
+                    await Promise.resolve(); // [NANO-F2] Yapay gecikme kaldırıldı
                 }
             }
 
