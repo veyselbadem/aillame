@@ -12,6 +12,7 @@ import type { InternalTextRuntimeStatus } from '../internal-text-runtime/model-t
 import { listLocalModels, getDefaultModelPreferences } from '../model-library';
 import { isFallbackPolicyReady } from '../inference/fallback-policy';
 import { getRuntimeEventLogSummary } from './runtime-event-log';
+import { getAllowedGemmaModelRoots } from '../local-runtime/gemma-model-preflight';
 
 export type AiLabModelLibrarySummary = {
   totalModels: number;
@@ -39,6 +40,11 @@ export type AiLabModelLibrarySummary = {
   runtimeEventLogReady: boolean;
   recentRuntimeEventsCount: number;
   lastRuntimeEventAt: string | null;
+  gemmaSwitchPreflightReady: boolean;
+  gemmaSwitchDryRunOnly: boolean;
+  gemmaRuntimeRestartReady: boolean;
+  gemmaAllowedRootsCount: number;
+  gemmaGgufValidationReady: boolean;
 };
 
 export function getAiLabModelLibrarySummary(): AiLabModelLibrarySummary {
@@ -48,6 +54,7 @@ export function getAiLabModelLibrarySummary(): AiLabModelLibrarySummary {
     const models = listLocalModels();
     const preferences = getDefaultModelPreferences();
     const eventLogSummary = getRuntimeEventLogSummary();
+    const gemmaAllowedRootsCount = getAllowedGemmaModelRoots().length;
     const availableModels = models.filter((model) => model.status === 'available').length;
     const missingModels = models.filter((model) => model.status === 'missing' || model.status === 'failed').length;
     const providers = Array.from(new Set(models.map((model) => model.provider))).sort();
@@ -91,6 +98,11 @@ export function getAiLabModelLibrarySummary(): AiLabModelLibrarySummary {
       runtimeEventLogReady: eventLogSummary.ready,
       recentRuntimeEventsCount: eventLogSummary.count,
       lastRuntimeEventAt: eventLogSummary.lastEventAt,
+      gemmaSwitchPreflightReady: true,
+      gemmaSwitchDryRunOnly: true,
+      gemmaRuntimeRestartReady: false,
+      gemmaAllowedRootsCount,
+      gemmaGgufValidationReady: true,
     };
   } catch (error) {
     return {
@@ -119,6 +131,11 @@ export function getAiLabModelLibrarySummary(): AiLabModelLibrarySummary {
       runtimeEventLogReady: false,
       recentRuntimeEventsCount: 0,
       lastRuntimeEventAt: null,
+      gemmaSwitchPreflightReady: false,
+      gemmaSwitchDryRunOnly: true,
+      gemmaRuntimeRestartReady: false,
+      gemmaAllowedRootsCount: 0,
+      gemmaGgufValidationReady: false,
     };
   }
 }
