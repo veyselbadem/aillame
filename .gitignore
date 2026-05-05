@@ -24,6 +24,10 @@ tmp-*.js
 tmp-*.ts
 tmp-test/
 scratch/
+check.py
+start_training.bat
+test-bpe.js
+test-f4b.js
 
 # ---- Build logları (repo kökünde biriken) ------------------
 build-*.log
