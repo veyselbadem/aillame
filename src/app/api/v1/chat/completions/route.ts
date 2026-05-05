@@ -3,6 +3,8 @@ import { validateExternalClientRequest } from '@core/external-auth/client-auth';
 import { getDefaultModelForMode } from '@core/models/model-policy';
 import { getEnabledModels } from '@core/models/registry';
 import { generateWithTextRuntimeRouter } from '@core/inference/text-runtime-router';
+import { listLocalModels, createRuntimeModelSelection, resolveRuntimeModelSelection } from '@core/model-library';
+import { ensureSafeModelId, normalizeInferenceModelSelection } from '@core/inference/model-selection';
 import {
   buildPromptFromMessages,
   normalizeOpenAIChatMessages,
@@ -80,6 +82,16 @@ function isChatCompatibleModel(model: ManagedModel): boolean {
     && model.capabilities.includes('chat');
 }
 
+function pickPreferredProvider(
+  requestedModelId: string | undefined,
+  modelLibraryProvider: string | undefined,
+): 'ollama' | 'gemma' | undefined {
+  if (modelLibraryProvider === 'ollama') return 'ollama';
+  if (requestedModelId?.toLowerCase().includes('ollama')) return 'ollama';
+  if (requestedModelId?.toLowerCase().includes('gemma')) return 'gemma';
+  return undefined;
+}
+
 export async function POST(request: NextRequest) {
   const authResult = await validateExternalClientRequest(request);
   if (!authResult.success || !authResult.client) {
@@ -108,17 +120,53 @@ export async function POST(request: NextRequest) {
   }
 
   const chatModels = getEnabledModels().filter((model) => isChatCompatibleModel(model));
-  const selectedModel = parsed.body.model || getDefaultModelForMode('general');
+  const defaultModel = getDefaultModelForMode('general');
+  const requestedModelId = ensureSafeModelId(parsed.body.model);
+
+  let localModels = [] as ReturnType<typeof listLocalModels>;
+  try {
+    localModels = listLocalModels();
+  } catch {
+    localModels = [];
+  }
+
+  const normalizedSelection = normalizeInferenceModelSelection({
+    modelId: requestedModelId,
+    capability: 'text',
+    source: 'v1-chat',
+  });
+
+  const resolvedSelection = resolveRuntimeModelSelection(
+    createRuntimeModelSelection({
+      modelId: normalizedSelection.modelId,
+      capability: 'text',
+      source: 'request',
+    }),
+    localModels,
+  );
+
+  const registryRequestedModel = requestedModelId
+    ? chatModels.find((model) => model.id === requestedModelId)
+    : undefined;
+
+  const selectedModel = registryRequestedModel?.id
+    || (resolvedSelection.ok ? resolvedSelection.model?.id : undefined)
+    || defaultModel;
 
   if (!selectedModel) {
     return jsonOpenAIError('No default model is configured.', 'model_not_configured', 500);
   }
 
-  if (!chatModels.some((model) => model.id === selectedModel)) {
-    return jsonOpenAIError('Requested model is not available for chat.', 'model_unavailable', 400);
+  const modelWarnings: string[] = [];
+  if (requestedModelId && requestedModelId !== selectedModel) {
+    modelWarnings.push(`Requested model '${requestedModelId}' is unavailable; defaulted to '${selectedModel}'.`);
   }
 
   const prompt = buildPromptFromMessages(normalized.messages);
+  const preferredProvider = pickPreferredProvider(
+    requestedModelId,
+    resolvedSelection.ok ? resolvedSelection.model?.provider : undefined,
+  );
 
   try {
     const generation = await generateWithTextRuntimeRouter({
@@ -127,21 +175,23 @@ export async function POST(request: NextRequest) {
       maxTokens: parsed.body.maxTokens,
       temperature: parsed.body.temperature,
       modelId: selectedModel,
+      preferredProvider,
     });
 
     if (!generation.success || !generation.answer) {
       return jsonOpenAIError(generation.error || 'Text generation failed.', generation.code || 'generation_failed', 503);
     }
 
-    const warnings = generation.usedFallback
-      ? ['Primary provider unavailable; fallback provider used.']
-      : undefined;
+    const warnings = [
+      ...(generation.usedFallback ? ['Primary provider unavailable; fallback provider used.'] : []),
+      ...modelWarnings,
+    ];
 
     return NextResponse.json(
       toOpenAIChatCompletion({
         model: selectedModel,
         content: generation.answer,
-        warnings,
+        warnings: warnings.length > 0 ? warnings : undefined,
       }),
       { status: 200 },
     );
