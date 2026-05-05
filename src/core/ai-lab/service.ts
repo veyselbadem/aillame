@@ -11,6 +11,7 @@ import { generateWithTextRuntimeRouter, getTextRuntimeRouterStatus } from '../in
 import type { InternalTextRuntimeStatus } from '../internal-text-runtime/model-types';
 import { listLocalModels, getDefaultModelPreferences } from '../model-library';
 import { isFallbackPolicyReady } from '../inference/fallback-policy';
+import { getRuntimeEventLogSummary } from './runtime-event-log';
 
 export type AiLabModelLibrarySummary = {
   totalModels: number;
@@ -35,6 +36,9 @@ export type AiLabModelLibrarySummary = {
   gemmaStaticRuntime: boolean;
   gemmaModelSwitchingReady: boolean;
   v1ChatModelFieldReady: boolean;
+  runtimeEventLogReady: boolean;
+  recentRuntimeEventsCount: number;
+  lastRuntimeEventAt: string | null;
 };
 
 export function getAiLabModelLibrarySummary(): AiLabModelLibrarySummary {
@@ -43,6 +47,7 @@ export function getAiLabModelLibrarySummary(): AiLabModelLibrarySummary {
   try {
     const models = listLocalModels();
     const preferences = getDefaultModelPreferences();
+    const eventLogSummary = getRuntimeEventLogSummary();
     const availableModels = models.filter((model) => model.status === 'available').length;
     const missingModels = models.filter((model) => model.status === 'missing' || model.status === 'failed').length;
     const providers = Array.from(new Set(models.map((model) => model.provider))).sort();
@@ -83,6 +88,9 @@ export function getAiLabModelLibrarySummary(): AiLabModelLibrarySummary {
       gemmaStaticRuntime: true,
       gemmaModelSwitchingReady: false,
       v1ChatModelFieldReady: true,
+      runtimeEventLogReady: eventLogSummary.ready,
+      recentRuntimeEventsCount: eventLogSummary.count,
+      lastRuntimeEventAt: eventLogSummary.lastEventAt,
     };
   } catch (error) {
     return {
@@ -108,6 +116,9 @@ export function getAiLabModelLibrarySummary(): AiLabModelLibrarySummary {
       gemmaStaticRuntime: true,
       gemmaModelSwitchingReady: false,
       v1ChatModelFieldReady: false,
+      runtimeEventLogReady: false,
+      recentRuntimeEventsCount: 0,
+      lastRuntimeEventAt: null,
     };
   }
 }
