@@ -1,3 +1,5 @@
+import { ensureSafeModelId } from './model-selection';
+
 export type OllamaRequest = {
   prompt: string;
   messages?: any[];
@@ -120,7 +122,8 @@ export async function generateOllamaResponse({
   model
 }: OllamaRequest): Promise<string> {
   const baseUrl = normalizeOllamaBaseUrl(process.env.AILLAME_OLLAMA_BASE_URL || 'http://127.0.0.1:11434');
-  const modelId = model || process.env.AILLAME_OLLAMA_TEXT_MODEL || 'gemma:2b'; // Default to a standard Ollama model
+  const requestedModelId = ensureSafeModelId(model);
+  const modelId = requestedModelId || process.env.AILLAME_OLLAMA_TEXT_MODEL || 'gemma:2b'; // Default to a standard Ollama model
 
   const chatMessages = messages.length > 0 ? messages : [{ role: 'user', content: prompt }];
   const generatePrompt = getGeneratePrompt(prompt, chatMessages);

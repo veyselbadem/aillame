@@ -1,10 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { generateOllamaResponse, OllamaProviderError } from '@/core/inference/ollama';
 import { generateWithTextRuntimeRouter } from '@/core/inference/text-runtime-router';
+import { ensureSafeModelId, getRequestedModelIdFromPayload } from '@/core/inference/model-selection';
 
 export async function POST(req: NextRequest) {
   try {
-    const { prompt, messages, temperature, maxTokens, model } = await req.json();
+    const body = await req.json();
+    const prompt = typeof body?.prompt === 'string' ? body.prompt : '';
+    const messages = Array.isArray(body?.messages) ? body.messages : [];
+    const temperature = typeof body?.temperature === 'number' ? body.temperature : undefined;
+    const maxTokens = typeof body?.maxTokens === 'number' ? body.maxTokens : undefined;
+    const requestedModelId = getRequestedModelIdFromPayload(body);
+    const modelId = ensureSafeModelId(requestedModelId)
+      || ensureSafeModelId(process.env.AILLAME_OLLAMA_TEXT_MODEL)
+      || 'gemma:2b';
 
     if (process.env.AILLAME_OLLAMA_ENABLED === 'false') {
       return NextResponse.json(
@@ -12,8 +21,6 @@ export async function POST(req: NextRequest) {
         { status: 403 }
       );
     }
-
-    const modelId = model || process.env.AILLAME_OLLAMA_TEXT_MODEL || 'gemma:2b';
 
     const runtimeResult = await generateWithTextRuntimeRouter({
       prompt,
