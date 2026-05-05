@@ -19,6 +19,12 @@ export type AiLabModelLibrarySummary = {
   lastCheckedAt: string;
   degraded?: boolean;
   error?: string;
+  availableTextModels: number;
+  availableImageModels: number;
+  defaultTextModelId: string | null;
+  defaultImageModelId: string | null;
+  runtimeSelectionReady: boolean;
+  externalApiModelsCount: number;
 };
 
 export function getAiLabModelLibrarySummary(): AiLabModelLibrarySummary {
@@ -30,12 +36,32 @@ export function getAiLabModelLibrarySummary(): AiLabModelLibrarySummary {
     const missingModels = models.filter((model) => model.status === 'missing' || model.status === 'failed').length;
     const providers = Array.from(new Set(models.map((model) => model.provider))).sort();
 
+    const availableList = models.filter((m) => m.status === 'available');
+    const availableTextModels = availableList.filter((m) =>
+      m.capabilities.includes('text') || m.capabilities.includes('unknown'),
+    ).length;
+    const availableImageModels = availableList.filter((m) =>
+      m.capabilities.includes('image'),
+    ).length;
+    const defaultTextModel = availableList.find((m) =>
+      m.capabilities.includes('text'),
+    );
+    const defaultImageModel = availableList.find((m) =>
+      m.capabilities.includes('image'),
+    );
+
     return {
       totalModels: models.length,
       availableModels,
       missingModels,
       providers,
       lastCheckedAt: now,
+      availableTextModels,
+      availableImageModels,
+      defaultTextModelId: defaultTextModel?.id ?? null,
+      defaultImageModelId: defaultImageModel?.id ?? null,
+      runtimeSelectionReady: availableModels > 0,
+      externalApiModelsCount: availableModels,
     };
   } catch (error) {
     return {
@@ -46,6 +72,12 @@ export function getAiLabModelLibrarySummary(): AiLabModelLibrarySummary {
       lastCheckedAt: now,
       degraded: true,
       error: error instanceof Error ? error.message : 'Model library summary unavailable.',
+      availableTextModels: 0,
+      availableImageModels: 0,
+      defaultTextModelId: null,
+      defaultImageModelId: null,
+      runtimeSelectionReady: false,
+      externalApiModelsCount: 0,
     };
   }
 }

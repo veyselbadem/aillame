@@ -146,7 +146,7 @@ export async function fetchModelLibrarySummary(): Promise<ModelLibrarySummary> {
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const json = await res.json();
     if (!json.success) throw new Error(json.error ?? 'Özet alınamadı.');
-    const s = json.summary;
+    const s = json.data;
     return {
       totalModels: s?.totalModels ?? 0,
       availableModels: s?.availableModels ?? 0,
