@@ -9,7 +9,8 @@ import type { NanoLearningSuggestion } from '../nano-cognitive/types';
 import { buildAnswerStyleGuide, normalizeAssistantAnswer } from '../conversation/conversation-quality';
 import { generateWithTextRuntimeRouter, getTextRuntimeRouterStatus } from '../inference/text-runtime-router';
 import type { InternalTextRuntimeStatus } from '../internal-text-runtime/model-types';
-import { listLocalModels } from '../model-library';
+import { listLocalModels, getDefaultModelPreferences } from '../model-library';
+import { isFallbackPolicyReady } from '../inference/fallback-policy';
 
 export type AiLabModelLibrarySummary = {
   totalModels: number;
@@ -22,9 +23,14 @@ export type AiLabModelLibrarySummary = {
   availableTextModels: number;
   availableImageModels: number;
   defaultTextModelId: string | null;
+  defaultCodeModelId: string | null;
   defaultImageModelId: string | null;
+  preferenceSource: 'default' | 'admin' | 'system';
+  defaultPreferencesReady: boolean;
   runtimeSelectionReady: boolean;
   externalApiModelsCount: number;
+  fallbackPolicyReady: boolean;
+  ollamaAvailabilityPreflightReady: boolean;
   ollamaModelForwardingReady: boolean;
   gemmaStaticRuntime: boolean;
   gemmaModelSwitchingReady: boolean;
@@ -36,6 +42,7 @@ export function getAiLabModelLibrarySummary(): AiLabModelLibrarySummary {
 
   try {
     const models = listLocalModels();
+    const preferences = getDefaultModelPreferences();
     const availableModels = models.filter((model) => model.status === 'available').length;
     const missingModels = models.filter((model) => model.status === 'missing' || model.status === 'failed').length;
     const providers = Array.from(new Set(models.map((model) => model.provider))).sort();
@@ -47,12 +54,13 @@ export function getAiLabModelLibrarySummary(): AiLabModelLibrarySummary {
     const availableImageModels = availableList.filter((m) =>
       m.capabilities.includes('image'),
     ).length;
-    const defaultTextModel = availableList.find((m) =>
+
+    const discoveredTextModel = availableList.find((m) =>
       m.capabilities.includes('text'),
-    );
-    const defaultImageModel = availableList.find((m) =>
+    )?.id;
+    const discoveredImageModel = availableList.find((m) =>
       m.capabilities.includes('image'),
-    );
+    )?.id;
 
     return {
       totalModels: models.length,
@@ -62,10 +70,15 @@ export function getAiLabModelLibrarySummary(): AiLabModelLibrarySummary {
       lastCheckedAt: now,
       availableTextModels,
       availableImageModels,
-      defaultTextModelId: defaultTextModel?.id ?? null,
-      defaultImageModelId: defaultImageModel?.id ?? null,
+      defaultTextModelId: preferences.textModelId ?? discoveredTextModel ?? null,
+      defaultCodeModelId: preferences.codeModelId ?? null,
+      defaultImageModelId: preferences.imageModelId ?? discoveredImageModel ?? null,
+      preferenceSource: preferences.source,
+      defaultPreferencesReady: true,
       runtimeSelectionReady: availableModels > 0,
       externalApiModelsCount: availableModels,
+      fallbackPolicyReady: isFallbackPolicyReady(),
+      ollamaAvailabilityPreflightReady: true,
       ollamaModelForwardingReady: true,
       gemmaStaticRuntime: true,
       gemmaModelSwitchingReady: false,
@@ -83,9 +96,14 @@ export function getAiLabModelLibrarySummary(): AiLabModelLibrarySummary {
       availableTextModels: 0,
       availableImageModels: 0,
       defaultTextModelId: null,
+      defaultCodeModelId: null,
       defaultImageModelId: null,
+      preferenceSource: 'default',
+      defaultPreferencesReady: false,
       runtimeSelectionReady: false,
       externalApiModelsCount: 0,
+      fallbackPolicyReady: false,
+      ollamaAvailabilityPreflightReady: false,
       ollamaModelForwardingReady: false,
       gemmaStaticRuntime: true,
       gemmaModelSwitchingReady: false,
