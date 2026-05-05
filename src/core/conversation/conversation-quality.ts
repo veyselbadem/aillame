@@ -9,6 +9,8 @@ export type ConversationIntent =
   | 'ai_lab_analysis'
   | 'default';
 
+import { buildDynamicContext, injectMemories, ContextMessage } from './context-manager'; // [NANO-F3]
+
 type ChatMessageLike = {
   role?: string;
   content?: string;
@@ -92,8 +94,7 @@ export function detectUserIntent(prompt: string): ConversationIntent {
   }
 
   if (
-    includesAny(text, ['merhaba', 'selam', 'nasılsın', 'kimsin', 'ne yapabiliyorsun', 'kendini tanıt', 'teşekkür']) ||
-    text.length < 16
+    includesAny(text, ['merhaba', 'selam', 'nasılsın', 'kimsin', 'ne yapabiliyorsun', 'kendini tanıt', 'teşekkür'])
   ) {
     return 'casual_chat';
   }
@@ -106,10 +107,11 @@ export function shouldUseDetailedExplanation(intent: ConversationIntent): boolea
 }
 
 export function shouldAskFollowUp(prompt: string, intent: ConversationIntent): boolean {
+  // Takip sorusu sorma mantığını esnetiyoruz; AI modelinin kendisi karar vermeli.
+  // Sadece çok belirsiz 'default' durumlarda ve çok kısa girdilerde sorulabilir.
   const text = prompt.trim();
-  if (intent === 'casual_chat' || intent === 'troubleshooting') return false;
-  if (text.length < 18) return true;
-  return intent === 'default' && text.split(/\s+/).length < 4;
+  if (intent !== 'default') return false;
+  return text.length < 10 && text.split(/\s+/).length < 2;
 }
 
 export function getRecommendedMaxTokens(intent: ConversationIntent): number {
@@ -182,12 +184,29 @@ export function buildAnswerStyleGuide(intent: ConversationIntent): string {
   return [...common, ...intentRules[intent]].map((rule) => `- ${rule}`).join('\n');
 }
 
-export function enrichPromptForConversation(prompt: string, messages: ChatMessageLike[] = []): string {
+// [NANO-F3] Context Manager entegrasyonu
+export function enrichPromptForConversation(
+  prompt: string, 
+  messages: ChatMessageLike[] = [],
+  relevantMemories: string[] = [] // [NANO-F3]
+): string {
   const intent = detectUserIntent(prompt);
-  const recentContext = messages
-    .filter((message) => typeof message?.content === 'string' && message.content.trim())
-    .slice(-4)
-    .map((message) => `${message.role || 'unknown'}: ${message.content!.trim().slice(0, 600)}`)
+  
+  // [NANO-F3] Dinamik bağlam oluşturma
+  const history = messages.map(m => ({
+    role: (m.role || 'user') as 'user' | 'assistant' | 'system',
+    content: m.content || ''
+  })) as ContextMessage[];
+
+  const contextResult = buildDynamicContext(history, relevantMemories, {
+    maxChars: 4000,
+    memoryReserveChars: 800,
+  });
+
+  const finalContext = injectMemories(contextResult, relevantMemories);
+
+  const recentContext = finalContext.messages
+    .map((message) => `${message.role}: ${message.content.trim().slice(0, 600)}`)
     .join('\n');
 
   return [
@@ -284,17 +303,7 @@ export function buildConversationAnswer(prompt: string, messages: ChatMessageLik
       if (text === 'tamam' || text === 'peki' || text === 'olur') {
         return 'Tamamdır. Devam etmek istediğin noktayı yaz, ben oradan sürdüreyim.';
       }
-      return [
-        'Merhaba, ben Aillame. Yerel Nano katmanı, Gemma/Ollama entegrasyonları ve gerektiğinde web araştırmasıyla sana yardımcı olmak için buradayım.',
-        '',
-        'Şunlarda özellikle işine yararım:',
-        '- Kod ve proje sorularını adım adım açıklamak',
-        '- Aillame, BOSS AI veya provider entegrasyonu için uygulanabilir plan çıkarmak',
-        '- SEO, içerik, müzik promptu ve araştırma taslakları hazırlamak',
-        '- Gemma/Ollama gibi yerel runtime sorunlarını teşhis etmek',
-        '',
-        'İstersen doğrudan bir konu yaz; ben kısa cevap mı, detaylı açıklama mı gerektiğini ona göre ayarlarım.',
-      ].join('\n');
+      return null;
 
     case 'coding_help':
       if (text.includes('foreach') && text.includes('map')) {
