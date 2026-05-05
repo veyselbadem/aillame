@@ -9,6 +9,46 @@ import type { NanoLearningSuggestion } from '../nano-cognitive/types';
 import { buildAnswerStyleGuide, normalizeAssistantAnswer } from '../conversation/conversation-quality';
 import { generateWithTextRuntimeRouter, getTextRuntimeRouterStatus } from '../inference/text-runtime-router';
 import type { InternalTextRuntimeStatus } from '../internal-text-runtime/model-types';
+import { listLocalModels } from '../model-library';
+
+export type AiLabModelLibrarySummary = {
+  totalModels: number;
+  availableModels: number;
+  missingModels: number;
+  providers: string[];
+  lastCheckedAt: string;
+  degraded?: boolean;
+  error?: string;
+};
+
+export function getAiLabModelLibrarySummary(): AiLabModelLibrarySummary {
+  const now = new Date().toISOString();
+
+  try {
+    const models = listLocalModels();
+    const availableModels = models.filter((model) => model.status === 'available').length;
+    const missingModels = models.filter((model) => model.status === 'missing' || model.status === 'failed').length;
+    const providers = Array.from(new Set(models.map((model) => model.provider))).sort();
+
+    return {
+      totalModels: models.length,
+      availableModels,
+      missingModels,
+      providers,
+      lastCheckedAt: now,
+    };
+  } catch (error) {
+    return {
+      totalModels: 0,
+      availableModels: 0,
+      missingModels: 0,
+      providers: [],
+      lastCheckedAt: now,
+      degraded: true,
+      error: error instanceof Error ? error.message : 'Model library summary unavailable.',
+    };
+  }
+}
 
 
 export async function createSession(input: CreateSessionInput & { goal?: string }): Promise<LabSession> {
