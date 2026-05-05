@@ -50,8 +50,8 @@ export function createNativeApiError(message: string, code: string): NativeApiEr
   };
 }
 
-export function jsonOpenAIError(message: string, code: string, status = 400) {
-  return NextResponse.json(createOpenAIError(message, code, status), { status });
+export function jsonOpenAIError(message: string, code: string, status = 400, headers?: HeadersInit) {
+  return NextResponse.json(createOpenAIError(message, code, status), { status, headers });
 }
 
 export function jsonNativeApiError(message: string, code: string, status = 400) {

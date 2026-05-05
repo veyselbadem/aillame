@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { validateExternalClientRequest } from '@core/external-auth/client-auth';
+import {
+  createExternalApiResponseHeaders,
+  validateExternalApiRequest,
+} from '@core/external-api/auth';
 import { getModelsWithStatus } from '@core/models/model-manager';
 import { jsonOpenAIError } from '@core/external-api/error-format';
 import type { ManagedModel } from '@core/models/types';
@@ -19,9 +22,14 @@ function isChatCompatibleModel(model: ManagedModel): boolean {
 }
 
 export async function GET(request: NextRequest) {
-  const authResult = await validateExternalClientRequest(request);
+  const authResult = await validateExternalApiRequest(request);
   if (!authResult.success || !authResult.client) {
-    return jsonOpenAIError(authResult.error || 'Unauthorized external client request.', 'unauthorized', authResult.statusCode || 401);
+    return jsonOpenAIError(
+      authResult.error || 'Unauthorized external client request.',
+      'unauthorized',
+      authResult.statusCode || 401,
+      createExternalApiResponseHeaders(authResult),
+    );
   }
 
   try {
@@ -39,7 +47,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(
       buildExternalApiModelList(compatibleModels, localModels),
-      { status: 200 },
+      { status: 200, headers: createExternalApiResponseHeaders(authResult) },
     );
   } catch {
     return jsonOpenAIError('Internal server error.', 'internal_error', 500);

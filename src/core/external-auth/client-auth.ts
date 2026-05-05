@@ -17,6 +17,9 @@ export type ExternalClientAuthResult = {
   client?: Omit<ApiClient, 'apiKeyHash'>;
   error?: string;
   statusCode?: number;
+  rateLimitRemaining?: number;
+  rateLimitResetAt?: number;
+  authWarning?: string;
 };
 
 export function getExternalApiKeyFromRequest(request: NextRequest): string | undefined {
@@ -99,10 +102,18 @@ export async function validateExternalClientRequest(request: NextRequest): Promi
         success: false,
         error: 'Rate limit aşıldı. Lütfen daha sonra tekrar deneyin.',
         statusCode: 429,
+        rateLimitRemaining: rlStatus.remaining,
+        rateLimitResetAt: rlStatus.resetAt,
       };
     }
     
-    return { success: true, client: sanitizeExternalClient(client) };
+    return {
+      success: true,
+      client: sanitizeExternalClient(client),
+      rateLimitRemaining: rlStatus.remaining,
+      rateLimitResetAt: rlStatus.resetAt,
+      authWarning: client.id === LEGACY_CLIENT_ID ? 'legacy-external-key' : undefined,
+    };
   }
 
   if (authResult.statusCode === 403) {

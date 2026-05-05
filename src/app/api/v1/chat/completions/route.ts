@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { validateExternalClientRequest } from '@core/external-auth/client-auth';
 import { getDefaultModelForMode } from '@core/models/model-policy';
 import { getEnabledModels } from '@core/models/registry';
 import { generateWithTextRuntimeRouter } from '@core/inference/text-runtime-router';
@@ -14,6 +13,11 @@ import {
   buildPromptFromMessages,
   normalizeOpenAIChatMessages,
 } from '@core/external-api/chat-normalizer';
+import {
+  assertExternalApiContextAccess,
+  createExternalApiResponseHeaders,
+  validateExternalApiRequest,
+} from '@core/external-api/auth';
 import {
   extractExternalProviderContext,
   summarizeExternalProviderContext,
@@ -140,9 +144,14 @@ function logModelSelectionDecision(input: {
 }
 
 export async function POST(request: NextRequest) {
-  const authResult = await validateExternalClientRequest(request);
+  const authResult = await validateExternalApiRequest(request);
   if (!authResult.success || !authResult.client) {
-    return jsonOpenAIError(authResult.error || 'Unauthorized external client request.', 'unauthorized', authResult.statusCode || 401);
+    return jsonOpenAIError(
+      authResult.error || 'Unauthorized external client request.',
+      'unauthorized',
+      authResult.statusCode || 401,
+      createExternalApiResponseHeaders(authResult),
+    );
   }
 
   let payload: unknown;
@@ -154,6 +163,16 @@ export async function POST(request: NextRequest) {
 
   const externalContext = extractExternalProviderContext(payload);
   const externalContextSummary = summarizeExternalProviderContext(externalContext);
+  const contextAccess = assertExternalApiContextAccess(authResult.client, externalContext);
+  if (!contextAccess.success) {
+    return jsonOpenAIError(
+      contextAccess.error,
+      'forbidden_context',
+      contextAccess.statusCode,
+      createExternalApiResponseHeaders(authResult),
+    );
+  }
+  const responseHeaders = createExternalApiResponseHeaders(authResult);
 
   const parsed = parseChatBody(payload);
   if (!parsed.success) {
@@ -270,7 +289,7 @@ export async function POST(request: NextRequest) {
         content: generation.answer,
         warnings: warnings.length > 0 ? warnings : undefined,
       }),
-      { status: 200 },
+      { status: 200, headers: responseHeaders },
     );
   } catch {
     return jsonOpenAIError('Internal server error.', 'internal_error', 500);
