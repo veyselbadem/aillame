@@ -124,4 +124,8 @@ training_log.txt
 # ---- Model ve checkpoint klasörleri -----------------------
 # src/core/engine/checkpoints/ altındaki ağırlık dosyaları zaten *.safetensors ile kapsanır.
 # Aşağıdaki satırlar ek koruma sağlar:
+models/
+local-models/
+runtime/models/
+runtime/checkpoints/
 logs/
