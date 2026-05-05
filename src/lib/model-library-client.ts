@@ -140,6 +140,104 @@ export async function dryRunRemoveModel(modelId: string): Promise<ModelLibraryAc
   }
 }
 
+// ── Preferences types ─────────────────────────────────────────────────────
+
+export type DefaultModelCapabilityUi =
+  | 'text'
+  | 'code'
+  | 'image'
+  | 'vision'
+  | 'embedding';
+
+export interface DefaultModelPreferencesUi {
+  textModelId?: string;
+  codeModelId?: string;
+  imageModelId?: string;
+  visionModelId?: string;
+  embeddingModelId?: string;
+  updatedAt: string;
+  source: string;
+}
+
+export interface ModelPreferenceUpdateResult {
+  ok: boolean;
+  message: string;
+  preferences?: DefaultModelPreferencesUi;
+}
+
+const ALLOWED_CAPABILITIES_UI: ReadonlySet<DefaultModelCapabilityUi> = new Set([
+  'text',
+  'code',
+  'image',
+  'vision',
+  'embedding',
+]);
+
+// ── Preference API calls ──────────────────────────────────────────────────
+
+export async function fetchModelPreferences(): Promise<DefaultModelPreferencesUi> {
+  try {
+    const res = await adminFetch('/api/admin/model-library/preferences');
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const json = await res.json();
+    if (!json.success) throw new Error(json.error ?? 'Tercihler alınamadı.');
+    const d = json.data as Partial<DefaultModelPreferencesUi>;
+    return {
+      textModelId: typeof d?.textModelId === 'string' ? d.textModelId : undefined,
+      codeModelId: typeof d?.codeModelId === 'string' ? d.codeModelId : undefined,
+      imageModelId: typeof d?.imageModelId === 'string' ? d.imageModelId : undefined,
+      visionModelId: typeof d?.visionModelId === 'string' ? d.visionModelId : undefined,
+      embeddingModelId: typeof d?.embeddingModelId === 'string' ? d.embeddingModelId : undefined,
+      updatedAt: typeof d?.updatedAt === 'string' ? d.updatedAt : new Date().toISOString(),
+      source: typeof d?.source === 'string' ? d.source : 'default',
+    };
+  } catch (err) {
+    console.error('[model-library-client] fetchModelPreferences:', err);
+    return { updatedAt: new Date().toISOString(), source: 'default' };
+  }
+}
+
+export async function updateModelPreference(
+  capability: DefaultModelCapabilityUi,
+  modelId?: string,
+): Promise<ModelPreferenceUpdateResult> {
+  if (!ALLOWED_CAPABILITIES_UI.has(capability)) {
+    return { ok: false, message: 'Geçersiz capability değeri.' };
+  }
+  try {
+    const res = await adminFetch('/api/admin/model-library/preferences', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ capability, modelId: modelId ?? null, source: 'admin' }),
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const json = await res.json();
+    if (!json.success) throw new Error(json.error ?? 'Tercih güncellenemedi.');
+    const d = json.data as Partial<DefaultModelPreferencesUi>;
+    return {
+      ok: true,
+      message: 'Varsayılan model güncellendi.',
+      preferences: {
+        textModelId: typeof d?.textModelId === 'string' ? d.textModelId : undefined,
+        codeModelId: typeof d?.codeModelId === 'string' ? d.codeModelId : undefined,
+        imageModelId: typeof d?.imageModelId === 'string' ? d.imageModelId : undefined,
+        visionModelId: typeof d?.visionModelId === 'string' ? d.visionModelId : undefined,
+        embeddingModelId: typeof d?.embeddingModelId === 'string' ? d.embeddingModelId : undefined,
+        updatedAt: typeof d?.updatedAt === 'string' ? d.updatedAt : new Date().toISOString(),
+        source: typeof d?.source === 'string' ? d.source : 'admin',
+      },
+    };
+  } catch (err) {
+    return { ok: false, message: `Tercih güncellenemedi: ${formatError(err)}` };
+  }
+}
+
+export async function clearModelPreference(
+  capability: DefaultModelCapabilityUi,
+): Promise<ModelPreferenceUpdateResult> {
+  return updateModelPreference(capability, undefined);
+}
+
 export async function fetchModelLibrarySummary(): Promise<ModelLibrarySummary> {
   try {
     const res = await adminFetch('/api/admin/ai-lab/model-library-summary');
