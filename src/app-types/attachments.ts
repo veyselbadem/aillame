@@ -1,10 +1,14 @@
 export type ImageAttachment = {
   id: string;
   name: string;
-  mimeType: 'image/png' | 'image/jpeg' | 'image/webp';
-  size: number;
-  dataUrl: string;
-  uploadedAt: number;
+  mimeType: string;
+  size?: number;
+  dataUrl?: string;
+  data?: string; // Standardized for core logic
+  width?: number;
+  height?: number;
+  uploadedAt?: number;
+  metadata?: Record<string, string | number | boolean | null>;
 };
 
 export const SUPPORTED_IMAGE_MIME_TYPES = [

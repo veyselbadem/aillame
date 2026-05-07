@@ -1,4 +1,4 @@
-import type { ModelCapability } from '@core/models/registry';
+import { type ModelCapability } from '@core/models/registry';
 import type {
   AdapterMetadata,
   ModelAdapter,

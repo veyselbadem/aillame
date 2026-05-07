@@ -5,6 +5,8 @@ import type { ModelCapability } from '@core/models/registry';
 export type ModelAdapterId =
   | 'qwen-text'
   | 'sdxl-image'
+  | 'local-text'
+  | 'local-image'
   | 'vision-placeholder';
 
 export type AdapterMetadataValue =

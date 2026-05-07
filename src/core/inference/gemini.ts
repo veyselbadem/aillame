@@ -93,7 +93,10 @@ function buildGeminiUrl(model: string, apiKey: string): string {
 }
 
 function imageToGeminiPart(image: ImageAttachment) {
-  const match = image.dataUrl.match(/^data:([^;]+);base64,(.+)$/);
+  const dataUrl = image.dataUrl || image.data;
+  if (!dataUrl) return null;
+
+  const match = dataUrl.match(/^data:([^;]+);base64,(.+)$/);
   if (!match) return null;
 
   return {

@@ -1,0 +1,41 @@
+import * as path from "path";
+import { getDefaultModelDir } from "./gguf-worker-config";
+
+export type AillameGgufPathPolicyResult = {
+  allowed: boolean;
+  reason?: string;
+  isExternal: boolean;
+  normalizedPath: string;
+};
+
+export function validateGgufModelPath(modelPath: string | undefined): AillameGgufPathPolicyResult {
+  if (!modelPath) {
+    return { allowed: false, reason: "No path provided", isExternal: false, normalizedPath: "" };
+  }
+
+  const normalized = path.resolve(modelPath);
+  const defaultDir = path.resolve(getDefaultModelDir());
+  
+  // Rule 1: Models should ideally be in the project's models/gguf folder
+  const isInsideDefault = normalized.startsWith(defaultDir);
+  
+  // Rule 2: Prevent relative path traversal outside root (basic check via resolve)
+  const isInsideProject = normalized.startsWith(path.resolve(process.cwd()));
+
+  if (isInsideDefault || isInsideProject) {
+    return {
+      allowed: true,
+      isExternal: !isInsideDefault,
+      normalizedPath: normalized,
+    };
+  }
+
+  // If external models are explicitly allowed by config, we could relax this,
+  // but for the prototype, we default to "project-only" security.
+  return {
+    allowed: false,
+    reason: "Model path is outside the allowed project workspace. Move GGUF models to models/gguf/ directory.",
+    isExternal: true,
+    normalizedPath: normalized,
+  };
+}

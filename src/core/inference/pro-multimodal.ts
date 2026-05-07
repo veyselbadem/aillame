@@ -22,15 +22,16 @@ function validateImages(images: ImageAttachment[] = []) {
   }
 
   for (const image of images) {
-    if (!SUPPORTED_IMAGE_MIME_TYPES.includes(image.mimeType)) {
+    if (!(SUPPORTED_IMAGE_MIME_TYPES as readonly string[]).includes(image.mimeType)) {
       throw new Error('Desteklenen görsel formatları: PNG, JPG, JPEG, WEBP.');
     }
 
-    if (image.size > MAX_IMAGE_ATTACHMENT_BYTES) {
+    if (image.size && image.size > MAX_IMAGE_ATTACHMENT_BYTES) {
       throw new Error('Her görsel en fazla 10 MB olabilir.');
     }
 
-    if (!image.dataUrl.startsWith(`data:${image.mimeType};base64,`)) {
+    const dataUrl = image.dataUrl || image.data;
+    if (!dataUrl || !dataUrl.startsWith(`data:${image.mimeType};base64,`)) {
       throw new Error('Görsel verisi geçersiz.');
     }
   }
@@ -56,7 +57,7 @@ export async function generateProMultimodalResponse({
     images: images.map((image) => ({
       name: image.name,
       mimeType: image.mimeType,
-      dataUrl: image.dataUrl,
+      dataUrl: image.dataUrl || image.data,
     })),
     maxNewTokens: maxTokens,
     temperature,

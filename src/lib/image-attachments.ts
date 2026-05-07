@@ -2,7 +2,7 @@ import type { ImageAttachment } from '@apptypes/attachments';
 import { MAX_IMAGE_ATTACHMENT_BYTES, SUPPORTED_IMAGE_MIME_TYPES } from '@apptypes/attachments';
 
 export function isSupportedImageType(type: string): type is ImageAttachment['mimeType'] {
-  return SUPPORTED_IMAGE_MIME_TYPES.includes(type as ImageAttachment['mimeType']);
+  return (SUPPORTED_IMAGE_MIME_TYPES as readonly string[]).includes(type);
 }
 
 export function validateImageFile(file: File): string | null {

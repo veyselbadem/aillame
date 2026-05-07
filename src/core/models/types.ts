@@ -46,7 +46,9 @@ export type ModelCapability =
   | 'multimodal'          // mixed modality input
   | 'embedding'           // vector embedding (future)
   | 'vision-image-understanding'  // legacy alias
-  | 'multimodal-input';           // legacy alias
+  | 'multimodal-input'           // legacy alias
+  | 'agent-task'
+  | 'analysis';
 
 /**
  * Central model descriptor.

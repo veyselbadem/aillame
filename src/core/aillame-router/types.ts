@@ -1,4 +1,11 @@
 import type { ModelAdapterId } from '@core/model-adapters/base';
+import type {
+  AillameContentType,
+  AillameOutputType,
+  AillameRoutingDecision,
+  AillameTaskType,
+} from '@core/contracts/aillame-request';
+import type { ModelCapability as AillameModelCapability } from '@core/models/registry';
 
 export type AillameMode = 'general' | 'education' | 'code' | 'economy';
 
@@ -8,6 +15,8 @@ export type AillameIntent =
   | 'image_analysis'
   | 'mixed_text_image'
   | 'code'
+  | 'analysis'
+  | 'agent'
   | 'economy_analysis'
   | 'education_content'
   | 'unknown';
@@ -47,16 +56,30 @@ export type AillameRouteInput = {
   prompt: string;
   imageCount?: number;
   attachmentMimeTypes?: string[];
+  taskType?: AillameTaskType;
+  contentType?: AillameContentType;
+  outputType?: AillameOutputType;
+  preferredModelId?: string;
+  projectId?: string;
 };
 
 export type AillameRouteDecision = {
   selectedModes: AillameMode[];
   primaryMode: AillameMode;
   intent: AillameIntent;
+  taskType: AillameTaskType;
+  contentType: AillameContentType;
+  outputType: AillameOutputType;
+  selectedModelId?: string;
+  capabilities: AillameModelCapability[];
+  confidence: number;
+  reason: string;
+  warnings?: string[];
   requiredAdapters: AdapterRequirement[];
   memoryScopes: MemoryScopeReference[];
   safetyFlags: AillameSafetyFlags;
   debugMetadata: AillameDebugMetadata;
+  routingDecision: AillameRoutingDecision;
 };
 
 export type AillameModeDefinition = {

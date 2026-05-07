@@ -23,6 +23,7 @@ export const PRO_CHAT_MODEL_ID = 'qwen3-vl-8b-instruct';
 export const PRO_IMAGE_MODEL_ID = 'sdxl-base-1.0';
 export const INTERNAL_TEXT_GGUF_MODEL_ID = 'internal-text-gemma-gguf';
 export const OLLAMA_TEXT_MODEL_ID = 'ollama-text-default';
+export const AILLAME_NANO_MODEL_ID = NANO_CHAT_MODEL_ID;
 
 // ---- Central model registry ------------------------------------
 export const MODEL_REGISTRY: Record<string, ManagedModel> = {
@@ -190,6 +191,45 @@ export function getModelsByRuntime(runtime: ModelRuntime): ManagedModel[] {
 
 export function getEnabledModels(): ManagedModel[] {
   return Object.values(MODEL_REGISTRY).filter((m) => m.enabled !== false);
+}
+
+export function getModelById(id: string): ManagedModel | undefined {
+  return MODEL_REGISTRY[id];
+}
+
+export function listModels(): ManagedModel[] {
+  return Object.values(MODEL_REGISTRY);
+}
+
+function isUsableModel(model: ManagedModel): boolean {
+  return model.enabled !== false;
+}
+
+function hasCapabilities(
+  model: ManagedModel,
+  capabilities: readonly ModelCapability[]
+): boolean {
+  return capabilities.every((capability) => model.capabilities.includes(capability as any));
+}
+
+export function findBestModelForCapabilities(
+  capabilities: readonly ModelCapability[],
+  preferredModelId?: string
+): ManagedModel | undefined {
+  if (preferredModelId) {
+    const preferredModel = getModelById(preferredModelId);
+    if (preferredModel && isUsableModel(preferredModel) && hasCapabilities(preferredModel, capabilities)) {
+      return preferredModel;
+    }
+  }
+
+  return Object.values(MODEL_REGISTRY)
+    .filter((model) => isUsableModel(model) && hasCapabilities(model, capabilities))
+    .sort((a, b) => {
+        // Priority logic: nano < pro
+        const tierScore = (m: ManagedModel) => m.tier === 'pro' ? 2 : 1;
+        return tierScore(b) - tierScore(a);
+    })[0];
 }
 
 // ---- Backward-compat helpers (used by ChatShell etc.) ----------
