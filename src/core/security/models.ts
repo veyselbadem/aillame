@@ -17,21 +17,53 @@ export interface ProjectPermission {
   permissions: ApiKeyPermission[];
 }
 
+export type ApiKeyStatus = "active" | "revoked" | "expired" | "disabled";
+
 export interface AillameApiKey {
   id: string;
-  name: string;
+  label: string;
   scope: ApiKeyScope;
-  globalPermissions: ApiKeyPermission[];
-  projectPermissions: ProjectPermission[];
+  projectIds: string[]; // Projects this key can access
+  permissions: ApiKeyPermission[];
+  status: ApiKeyStatus;
   createdAt: number;
   lastUsedAt?: number;
-  isActive: boolean;
+  expiresAt?: number;
+  revokedAt?: number;
+  maskedKey: string; // e.g. "ail_...1234"
+}
+
+export interface AillameApiKeyRecord extends AillameApiKey {
+  keyHash: string; // Hashed plaintext key
+  keyPrefix: string; // e.g. "ail_"
+}
+
+export interface CreateApiKeyRequest {
+  label: string;
+  projectIds?: string[];
+  permissions?: ApiKeyPermission[];
+  expiresInDays?: number;
+}
+
+export interface CreateApiKeyResult {
+  success: boolean;
+  apiKey?: AillameApiKey;
+  plaintextKey?: string; // ONLY returned once upon creation
+  error?: string;
+}
+
+export interface ListApiKeysRequest {
+  status?: ApiKeyStatus;
+}
+
+export interface RevokeApiKeyRequest {
+  keyId: string;
 }
 
 export interface PermissionCheckRequest {
-  keyId?: string;
+  apiKey?: AillameApiKey;
   projectId?: string;
-  requiredPermissions: ApiKeyPermission[];
+  requiredScope: ApiKeyPermission;
 }
 
 export interface PermissionCheckResult {
@@ -43,4 +75,6 @@ export interface SecurityDiagnostics {
   authEnabled: boolean;
   missingKeyAction: "reject" | "allow-in-dev";
   activeKeysCount: number;
+  revokedKeysCount: number;
+  lastBackupAt?: number;
 }

@@ -74,3 +74,17 @@ Smoke testi için:
 ```bash
 npm run smoke:persistent-storage
 ```
+
+## Post-Beta Phase 2: API Security Hardening & Key Management
+
+Aillame, External Provider API yüzeyini gerçek projeler için sertleştirmiştir:
+- **Hashed API Keys:** API anahtarları plaintext olarak saklanmaz; SHA-256 HMAC ile hashlenerek `.aillame-data/api-keys.jsonl` içinde tutulur.
+- **Project-Scoped Permissions:** Her anahtar belirli projelere (`projectId`) ve yetki kapsamlarına (`scopes`: chat:write, project:read vb.) kısıtlanabilir.
+- **External Auth Guard:** Tüm `/api/external/v1/*` endpointleri API key kontrolü ve yetki denetiminden geçer.
+- **Rate Limiting:** Identifier tabanlı (API Key veya IP) istek sınırlama mekanizması devreye alınmıştır.
+- **Admin UI Control:** Admin paneli üzerinden yeni anahtar üretimi, iptali (revocation) ve güvenlik statüsü izlenebilir.
+
+Security smoke testi için:
+```bash
+npm run smoke:security-api-keys
+```

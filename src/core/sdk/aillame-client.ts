@@ -30,7 +30,10 @@ export class AillameClient {
   private headers(): HeadersInit {
     return {
       "content-type": "application/json",
-      ...(this.apiKey ? { "x-aillame-api-key": this.apiKey } : {}),
+      ...(this.apiKey ? { 
+        "x-aillame-api-key": this.apiKey,
+        "Authorization": `Bearer ${this.apiKey}` 
+      } : {}),
     };
   }
 
