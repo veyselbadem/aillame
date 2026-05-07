@@ -30,6 +30,8 @@
                     "smoke:live-image-runtime": "node scripts/smoke-live-image-runtime.mjs",
                     "smoke:live-text-runtime": "node scripts/smoke-live-text-runtime.mjs",
                     "smoke:desktop-readiness": "node scripts/smoke-desktop-readiness.mjs",
+                    "smoke:beta-rc": "node scripts/smoke-beta-rc.mjs",
+                    "qa:beta": "node scripts/run-beta-qa.mjs",
                     "eval:nano": "node scripts/evaluate-nano-pipeline.mjs",
                     "validate:nano-training-candidates": "node scripts/validate-nano-training-candidates.mjs",
                     "cli:aillame":  "node scripts/aillame-cli.mjs",

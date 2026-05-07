@@ -185,3 +185,21 @@ Desktop Readiness testi için:
 ```bash
 npm run smoke:desktop-readiness
 ```
+
+## Post-Beta Phase 10: Beta QA + Release Candidate (RC)
+
+Aillame, tüm Post-Beta geliştirme fazlarının ardından "Beta Foundation Release Candidate" (RC1) aşamasına ulaştı:
+- **Full QA Smoke Chain:** Tüm foundation ve runtime testlerini tek komutla çalıştıran `qa:beta` orkestrasyon scripti eklendi.
+- **Beta RC Report:** Security, Provider, RAG, Code Agent ve Nano katmanları için detaylı QA checklist raporlaması kuruldu.
+- **Release Candidate UI:** Admin panelinde sistemin yayına hazır olma durumunu, engelleyicileri (blockers) ve bilinen sorunları (known issues) gösteren dashboard eklendi.
+- **Release Notes:** [Beta Foundation RC1](docs/releases/beta-foundation-rc.md) belgesi ile projenin güncel durumu ve final kabul kriterleri kayıt altına alındı.
+
+Tüm sistemi doğrulamak için:
+```bash
+npm run qa:beta
+```
+
+Beta RC testi için:
+```bash
+npm run smoke:beta-rc
+```
