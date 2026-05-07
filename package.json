@@ -11,6 +11,7 @@
                     "validate:nano-data":  "node scripts/validate-nano-data.mjs",
                     "diagnostic:nano-tokenizer":  "node scripts/nano-tokenizer-diagnostic.mjs",
                     "smoke:foundation":  "node scripts/aillame-foundation-smoke.mjs",
+                    "smoke:project-provider":  "node scripts/smoke-project-provider-api.mjs",
                     "smoke:external-api":  "node scripts/smoke-external-api.mjs",
                     "core:build":  "napi build --platform --release --cargo-cwd aillame-core",
                     "core:dev":  "napi build --cargo-cwd aillame-core",

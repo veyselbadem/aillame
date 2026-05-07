@@ -70,6 +70,27 @@ export type NanoLongTermCapabilityHooks = {
   diagnosticsOnly: true;
 };
 
+export type NanoProjectRuntimeDecisionMetadata = {
+  projectId: string;
+  mode?: string;
+  intent: NanoTaskKind | string;
+  taskType: string;
+  taskScore: number;
+  riskLevel: NanoRiskLevel;
+  needsMemory: boolean;
+  memoryScope: "none" | "global" | "project" | "session";
+  needsRuntime: boolean;
+  requiredCapabilities: string[];
+  fallbackRecommended: boolean;
+  confidence: number;
+  diagnostics: {
+    advisoryOnly: true;
+    reason?: string;
+    warnings?: string[];
+  };
+  longTermCapabilityHooks: NanoLongTermCapabilityHooks;
+};
+
 export type NanoAnswer = {
   content: string;
   plan: NanoControlPlan;

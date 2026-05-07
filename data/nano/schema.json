@@ -13,13 +13,15 @@
     "expectedOutput": { "type": "string", "minLength": 1 },
     "mode": {
       "type": "string",
-      "enum": ["general", "education", "code", "economy"]
+      "enum": ["general", "education", "code", "economy", "finance", "provider", "game-dev", "classroom"]
     },
     "intent": {
       "type": "string",
       "enum": ["conversation", "analysis", "planning", "coding", "math", "research", "education", "creative", "image", "safety", "fallback", "unknown"]
     },
     "projectId": { "type": "string" },
+    "context": { "type": "string" },
+    "expectedDecision": { "type": "object" },
     "input": {},
     "metadata": { "type": "object" },
     "source": { "type": "string" },

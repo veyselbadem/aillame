@@ -9,18 +9,39 @@ export type NanoConstrainedDecisionDecodeInput = {
     outputType?: string;
     domain?: string;
     requiredCapabilities?: string[];
+    memoryScope?: string;
   };
 };
 
 export type NanoConstrainedDecisionDecodeResult = {
   success: boolean;
   decision: {
+    projectId: string;
+    mode?: string;
+    intent: string;
     taskType: string;
     contentType: string;
     outputType: string;
     domain: string;
+    taskScore: number;
+    riskLevel: "low" | "medium" | "high";
+    needsMemory: boolean;
+    memoryScope: "none" | "global" | "project" | "session";
+    needsRuntime: boolean;
     requiredCapabilities: string[];
+    fallbackRecommended: boolean;
+    confidence: number;
     decision: string;
+    longTermCapabilityHooks: {
+      planningReady: boolean;
+      toolUseReady: boolean;
+      memoryUseReady: boolean;
+      codeUseReady: boolean;
+      multimodalReady: boolean;
+      selfImproveReady: boolean;
+      autonomousActionsEnabled: false;
+      diagnosticsOnly: true;
+    };
   };
   source: "nano-json" | "nano-assisted" | "router-fallback";
   diagnostics: {
@@ -37,6 +58,8 @@ const TASK_TYPES = ["chat", "text", "code", "analysis", "image", "vision", "agen
 const CONTENT_TYPES = ["text", "image", "code", "project", "mixed"] as const;
 const OUTPUT_TYPES = ["text", "image", "json", "patch", "report", "mixed"] as const;
 const DOMAINS = ["general", "education", "code", "economy"] as const;
+const MEMORY_SCOPES = ["none", "global", "project", "session"] as const;
+const RISK_LEVELS = ["low", "medium", "high"] as const;
 const CAPABILITIES = [
   "text-generation",
   "chat",
@@ -82,6 +105,19 @@ function defaultCapabilityForTask(taskType: string): string[] {
   return ["text-generation"];
 }
 
+function defaultHooks(): DecisionObject["longTermCapabilityHooks"] {
+  return {
+    planningReady: true,
+    toolUseReady: false,
+    memoryUseReady: true,
+    codeUseReady: false,
+    multimodalReady: false,
+    selfImproveReady: false,
+    autonomousActionsEnabled: false,
+    diagnosticsOnly: true,
+  };
+}
+
 function fallbackDecision(input: NanoConstrainedDecisionDecodeInput): DecisionObject {
   const taskType = pickAllowed(input.routerFallback?.taskType, TASK_TYPES, "text");
   const contentType = pickAllowed(input.routerFallback?.contentType, CONTENT_TYPES, "text");
@@ -93,12 +129,23 @@ function fallbackDecision(input: NanoConstrainedDecisionDecodeInput): DecisionOb
   );
 
   return {
+    projectId: input.projectId ?? "general",
+    mode: input.mode,
+    intent: taskType,
     taskType,
     contentType,
     outputType,
     domain,
+    taskScore: 0.5,
+    riskLevel: "low",
+    needsMemory: taskType !== "image",
+    memoryScope: pickAllowed(input.routerFallback?.memoryScope, MEMORY_SCOPES, input.projectId ? "project" : "session") as DecisionObject["memoryScope"],
+    needsRuntime: true,
     requiredCapabilities,
+    fallbackRecommended: true,
+    confidence: 0.5,
     decision: "router fallback decision used because Nano output was not valid decision JSON",
+    longTermCapabilityHooks: defaultHooks(),
   };
 }
 
@@ -130,6 +177,8 @@ function buildDecisionFromObject(
   const outputType = pickAllowed(value.outputType, OUTPUT_TYPES, fallback.outputType);
   const domain = pickAllowed(value.domain, DOMAINS, fallback.domain);
   const requiredCapabilities = pickCapabilities(value.requiredCapabilities, fallback.requiredCapabilities);
+  const taskScore = typeof value.taskScore === "number" && Number.isFinite(value.taskScore) ? Math.max(0, Math.min(1, value.taskScore)) : fallback.taskScore;
+  const confidence = typeof value.confidence === "number" && Number.isFinite(value.confidence) ? Math.max(0, Math.min(1, value.confidence)) : fallback.confidence;
   const decision = typeof value.decision === "string" && value.decision.trim()
     ? value.decision.trim()
     : "Nano JSON decision repaired with fallback fields";
@@ -152,8 +201,19 @@ function buildDecisionFromObject(
       contentType,
       outputType,
       domain,
+      projectId: typeof value.projectId === "string" && value.projectId.trim() ? value.projectId.trim() : fallback.projectId,
+      mode: typeof value.mode === "string" && value.mode.trim() ? value.mode.trim() : fallback.mode,
+      intent: typeof value.intent === "string" && value.intent.trim() ? value.intent.trim() : fallback.intent,
+      taskScore,
+      riskLevel: pickAllowed(value.riskLevel, RISK_LEVELS, fallback.riskLevel) as DecisionObject["riskLevel"],
+      needsMemory: typeof value.needsMemory === "boolean" ? value.needsMemory : fallback.needsMemory,
+      memoryScope: pickAllowed(value.memoryScope, MEMORY_SCOPES, fallback.memoryScope) as DecisionObject["memoryScope"],
+      needsRuntime: typeof value.needsRuntime === "boolean" ? value.needsRuntime : fallback.needsRuntime,
       requiredCapabilities,
+      fallbackRecommended: typeof value.fallbackRecommended === "boolean" ? value.fallbackRecommended : fallback.fallbackRecommended,
+      confidence,
       decision,
+      longTermCapabilityHooks: defaultHooks(),
     },
   };
 }
@@ -186,6 +246,7 @@ function inferFromNanoHints(raw: string, fallback: DecisionObject): DecisionObje
   return {
     ...fallback,
     taskType,
+    intent: taskType,
     requiredCapabilities: containsAny(normalized, ["text-generation", "image-generation", "code-generation", "analysis", "image-understanding", "agent-task"])
       ? defaultCapabilityForTask(taskType)
       : fallback.requiredCapabilities,

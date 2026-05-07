@@ -22,7 +22,8 @@ const allowedTypes = new Set([
   "feedback-candidate",
 ]);
 
-const allowedModes = new Set(["general", "education", "code", "economy"]);
+const safeProjectIdPattern = /^[a-z0-9][a-z0-9_-]{0,63}$/;
+const allowedModes = new Set(["general", "education", "code", "economy", "finance", "provider", "game-dev", "classroom"]);
 const allowedIntents = new Set([
   "conversation",
   "analysis",
@@ -87,6 +88,17 @@ function validateRecord(record, location) {
 
   if (record.type === "project-aware" && !hasText(record.projectId)) {
     errors.push(`${location}: project-aware records require projectId.`);
+  }
+
+  if (hasText(record.projectId) && !safeProjectIdPattern.test(record.projectId)) {
+    errors.push(`${location}: invalid projectId '${record.projectId}'.`);
+  }
+
+  if (record.type === "project-aware") {
+    if (!hasText(record.context)) errors.push(`${location}: project-aware records require context.`);
+    if (!record.expectedDecision || typeof record.expectedDecision !== "object" || Array.isArray(record.expectedDecision)) {
+      errors.push(`${location}: project-aware records require expectedDecision object.`);
+    }
   }
 
   const serialized = JSON.stringify(record);
