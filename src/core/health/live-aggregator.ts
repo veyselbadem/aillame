@@ -78,9 +78,15 @@ export class LiveHealthAggregator implements HealthAggregator {
             mode: "foundation-safety"
           }
         },
-        imageWorkflow: {
-          name: "Image Workflow",
-          status: "not-configured"
+        imageGeneration: {
+          name: "Image Generation (IGM)",
+          status: "not-configured",
+          diagnostics: {
+            detail: "Local Diffusion runtime foundation active",
+            finalAcceptanceRequired: true,
+            isolation: "project-based",
+            offline: true
+          }
         },
         vectorMemory: {
           name: "Vector Memory",

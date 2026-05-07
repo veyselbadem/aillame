@@ -19,7 +19,7 @@ export interface SystemHealth {
     projectMemory: HealthComponent;
     externalProvider: HealthComponent;
     codeAgent: HealthComponent;
-    imageWorkflow: HealthComponent;
+    imageGeneration: HealthComponent;
     vectorMemory: HealthComponent;
     nanoIntelligence: HealthComponent;
     security: HealthComponent;

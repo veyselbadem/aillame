@@ -157,3 +157,17 @@ RAG/Document Library testi için:
 ```bash
 npm run smoke:rag-document-library
 ```
+
+## Post-Beta Phase 8: Live Image Runtime + Asset Manager
+
+Aillame, görsel üretim (image generation) akışında iskelet aşamasından gerçek ürün altyapısına taşındı:
+- **Image Asset Manager:** Üretilen görsellerin meta verileriyle birlikte kalıcı (persistent) olarak saklandığı ve yönetildiği bir sistem kuruldu.
+- **Image Job History:** Görsel üretim işlerinin (jobs) geçmişi ve durumları (queued, running, completed, failed) kalıcı hale getirildi.
+- **IGM Runtime Readiness:** Yerel bir görsel üretim modelinin (Diffusion) aktif olup olmadığını ve final kabul kriterlerini karşılayıp karşılamadığını ölçen teşhis sistemi eklendi.
+- **Local IGM Worker Contract:** ComfyUI veya dış servis bağımlılığı olmadan, Aillame tarafından kontrol edilen yerel görsel üretim işçisi (worker) kontratı tanımlandı.
+- **Final Acceptance Reporting:** Sistemin final yayına hazır olup olmadığını raporlayan `smoke:live-image-runtime` kabul testi eklendi.
+
+Image Runtime/Asset testi için:
+```bash
+npm run smoke:image-runtime-assets
+```
