@@ -24,6 +24,7 @@ export interface SystemHealth {
     nanoIntelligence: HealthComponent;
     security: HealthComponent;
     modelDiscovery: HealthComponent;
+    documentLibrary: HealthComponent;
     desktopReadiness: HealthComponent;
   };
 }

@@ -111,6 +111,15 @@ export class LiveHealthAggregator implements HealthAggregator {
             offline: true
           }
         },
+        documentLibrary: {
+          name: "Document Library & RAG",
+          status: "ready",
+          diagnostics: {
+            detail: "Persistent RAG index active",
+            formats: ["text", "markdown", "json", "code"],
+            isolation: "project-based"
+          }
+        },
         desktopReadiness: {
           name: "Desktop Readiness",
           status: "planned"

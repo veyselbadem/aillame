@@ -25,6 +25,7 @@
                     "smoke:code-agent-patch-workflow": "node scripts/smoke-code-agent-patch-workflow.mjs",
                     "smoke:model-discovery-runtime": "node scripts/smoke-model-discovery-runtime.mjs",
                     "smoke:nano-eval-training": "node scripts/smoke-nano-eval-training.mjs",
+                    "smoke:rag-document-library": "node scripts/smoke-rag-document-library.mjs",
                     "eval:nano": "node scripts/evaluate-nano-pipeline.mjs",
                     "validate:nano-training-candidates": "node scripts/validate-nano-training-candidates.mjs",
                     "cli:aillame":  "node scripts/aillame-cli.mjs",

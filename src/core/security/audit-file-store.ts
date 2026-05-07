@@ -76,4 +76,19 @@ export class AuditFileStore {
       totalEventsLogged: diag.lines
     };
   }
+
+  log(event: { action: AuditAction; status?: string; metadata?: any; severity?: AuditSeverity }): void {
+    this.appendAuditEvent({
+      id: Math.random().toString(36).substring(7),
+      timestamp: Date.now(),
+      actor: { type: 'system', id: 'aillame-core' },
+      action: event.action,
+      resource: { type: 'system' },
+      severity: event.severity || 'info',
+      details: { status: event.status, ...event.metadata },
+      sanitized: false
+    });
+  }
 }
+
+export const auditLogStore = new AuditFileStore();

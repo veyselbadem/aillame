@@ -1,6 +1,6 @@
 import type { MemoryScope } from "../project-memory-types";
 
-export type AttributionSource = "project-memory" | "vector-memory" | "document" | "feedback" | "system" | "unknown";
+export type AttributionSource = "project-memory" | "vector-memory" | "document" | "document-chunk" | "knowledge-base" | "feedback" | "system" | "unknown";
 export type AttributionConfidence = "low" | "medium" | "high";
 export type AttributionScope = MemoryScope;
 

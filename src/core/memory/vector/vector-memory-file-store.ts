@@ -110,3 +110,5 @@ export class VectorMemoryFileStore implements VectorStoreAdapter {
     };
   }
 }
+
+export const vectorMemoryStore = new VectorMemoryFileStore();

@@ -143,3 +143,17 @@ Nano Eval/Training testi için:
 ```bash
 npm run smoke:nano-eval-training
 ```
+
+## Post-Beta Phase 7: RAG Persistent Memory + Document Library
+
+Aillame, yerel belge hafızası ve RAG (Retrieval-Augmented Generation) altyapısında ürün seviyesine taşındı:
+- **Document Library:** Belgelerin projectId ve memoryScope bazlı izole edildiği, kalıcı (persistent) bir belge kütüphanesi kuruldu.
+- **Safe Ingestion Pipeline:** TXT, Markdown, JSON ve kod dosyaları için güvenlik denetimli (secret/token detection) bir alım (ingestion) hattı oluşturuldu.
+- **Document Chunking & Vector Binding:** Belgeler otomatik olarak anlamlı parçalara (chunks) ayrılıp vektör hafızasına (vector memory) bağlandı.
+- **Project-Aware Retrieval:** Aillame, BOSS AI veya Badem Akademi gibi projelerin belgeleri birbirinden izole edilerek sadece ilgili bağlamda erişilebilir hale getirildi.
+- **Memory Attribution:** Üretilen cevaplarda hangi belgenin hangi parçasının kullanıldığına dair gerçek kaynak gösterimi (attribution) foundation katmanı tamamlandı.
+
+RAG/Document Library testi için:
+```bash
+npm run smoke:rag-document-library
+```

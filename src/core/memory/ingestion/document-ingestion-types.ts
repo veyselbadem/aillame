@@ -13,6 +13,7 @@ export type DocumentMetadata = {
   memoryScope: MemoryScope;
   createdAt: string;
   tags?: string[];
+  documentTitle?: string;
 };
 
 export type DocumentChunk = {
