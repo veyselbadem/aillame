@@ -44,22 +44,74 @@ export function createGgufWorkerRuntime(): AillameTextRuntime {
       };
     },
     async generate(request: AillameTextGenerateRequest): Promise<AillameTextGenerateResult> {
-      // Faz 1: Implementation of actual spawn/generation logic is pending.
-      // This bridges the readiness/config to the router.
-      return {
-        success: false,
-        modelId: model.id,
-        runtimeKind: model.runtimeKind,
-        content: "",
-        finishReason: "unsupported",
-        usedLocalRuntime: false,
-        degraded: true,
-        warnings: ["GGUF generation implementation is pending in this foundation phase."],
-        error: {
-          code: "GGUF_GENERATION_PENDING",
-          message: "GGUF worker readiness is established, but generation is not yet implemented.",
-        },
-      };
+      const currentReadiness = checkGgufWorkerReadiness();
+      if (!currentReadiness.canGenerate || !currentReadiness.manifest.modelPath) {
+        return {
+          success: false,
+          modelId: model.id,
+          runtimeKind: model.runtimeKind,
+          content: "",
+          finishReason: "error",
+          usedLocalRuntime: false,
+          degraded: true,
+          warnings: [],
+          error: {
+            code: "GGUF_RUNTIME_NOT_READY",
+            message: currentReadiness.blockedReasons.join("; ") || "GGUF runtime is not ready.",
+          },
+        };
+      }
+
+      // In this phase, we assume the server is either already running or we use a basic fetch
+      // to the configured URL. A more robust lifecycle manager will be added in Faz 2.
+      const port = process.env.AILLAME_GEMMA_PORT || "8080";
+      const url = `http://127.0.0.1:${port}/completion`;
+
+      try {
+        const response = await fetch(url, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            prompt: request.prompt,
+            n_predict: request.maxTokens || 1024,
+            temperature: request.temperature || 0.7,
+            stop: ["\n\n", "###", "Instruction:", "Response:"],
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error(`GGUF server returned ${response.status}`);
+        }
+
+        const json = await response.json() as any;
+        const content = json.content || "";
+
+        return {
+          success: true,
+          modelId: model.id,
+          runtimeKind: model.runtimeKind,
+          content,
+          finishReason: "stop",
+          usedLocalRuntime: true,
+          degraded: false,
+          warnings: [],
+        };
+      } catch (err: any) {
+        return {
+          success: false,
+          modelId: model.id,
+          runtimeKind: model.runtimeKind,
+          content: "",
+          finishReason: "error",
+          usedLocalRuntime: false,
+          degraded: true,
+          warnings: [],
+          error: {
+            code: "GGUF_GENERATION_FAILED",
+            message: err.message || "Failed to communicate with GGUF worker.",
+          },
+        };
+      }
     },
   };
 }

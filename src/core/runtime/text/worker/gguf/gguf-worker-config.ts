@@ -14,15 +14,21 @@ export type AillameGgufWorkerConfig = {
 
 export function getGgufWorkerConfig(): AillameGgufWorkerConfig {
   const enabled = process.env.AILLAME_GGUF_RUNTIME_ENABLED === "true"
-    || process.env.AILLAME_GGUF_WORKER_ENABLED === "true";
-  const runtimeBinary = process.env.AILLAME_GGUF_RUNTIME_BINARY;
+    || process.env.AILLAME_GGUF_WORKER_ENABLED === "true"
+    || process.env.AILLAME_GEMMA_ENABLED === "true"; // Legacy fallback
+    
+  const runtimeBinary = process.env.AILLAME_GGUF_RUNTIME_BINARY
+    || process.env.AILLAME_GEMMA_LLAMA_SERVER_EXE; // Legacy fallback
   
   const modelDir = process.env.AILLAME_GGUF_MODEL_DIR;
-  const activeModel = process.env.AILLAME_GGUF_ACTIVE_MODEL;
-  const directPath = process.env.AILLAME_GGUF_MODEL_PATH;
+  const activeModel = process.env.AILLAME_GGUF_ACTIVE_MODEL 
+    || process.env.AILLAME_GEMMA_MODEL_ID; // Legacy fallback
+    
+  const directPath = process.env.AILLAME_GGUF_MODEL_PATH 
+    || process.env.AILLAME_GEMMA_GGUF_FILE; // Legacy fallback
 
   // Priority: 
-  // 1. AILLAME_GGUF_MODEL_PATH
+  // 1. AILLAME_GGUF_MODEL_PATH (or GEMMA_GGUF_FILE)
   // 2. AILLAME_GGUF_MODEL_DIR + AILLAME_GGUF_ACTIVE_MODEL
   // 3. active-gguf-model.json (Store)
   let modelPath = directPath ?? (modelDir && activeModel ? path.join(modelDir, activeModel) : undefined);
@@ -35,7 +41,10 @@ export function getGgufWorkerConfig(): AillameGgufWorkerConfig {
   }
 
   const autoEnable = process.env.AILLAME_GGUF_AUTO_ENABLE === "true";
-  const allowExternalModels = process.env.AILLAME_GGUF_ALLOW_EXTERNAL === "true";
+  
+  // Auto-allow external models if legacy GEMMA paths are detected (which are usually external)
+  const allowExternalModels = process.env.AILLAME_GGUF_ALLOW_EXTERNAL === "true"
+    || !!process.env.AILLAME_GEMMA_GGUF_FILE;
   const maxMemoryGb = parseInt(process.env.AILLAME_GGUF_MAX_MEMORY_GB || "8", 10);
 
   return {

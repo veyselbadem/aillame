@@ -10,7 +10,7 @@ import { getCombinedLiveRuntimeAcceptanceReport } from './live-runtime-acceptanc
 async function main() {
   console.log("Running Combined Live Runtime Acceptance Check...\n");
 
-  const combined = getCombinedLiveRuntimeAcceptanceReport();
+  const combined = await getCombinedLiveRuntimeAcceptanceReport();
 
   console.log(JSON.stringify(combined, null, 2));
 

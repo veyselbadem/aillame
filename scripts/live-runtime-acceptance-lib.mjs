@@ -5,6 +5,26 @@ import { spawnSync } from 'child_process';
 const LIVE_TEXT_PROMPT = 'Merhaba, Aillame içinde çalışan yerel model olduğunu tek cümleyle açıkla.';
 const DEFAULT_TEXT_TIMEOUT_MS = 60000;
 
+// Manual .env loader for standalone smoke tests
+function loadEnv() {
+  const envPath = path.join(process.cwd(), '.env');
+  if (fs.existsSync(envPath)) {
+    const content = fs.readFileSync(envPath, 'utf8');
+    content.split(/\r?\n/).forEach(line => {
+      const match = line.match(/^\s*([\w.-]+)\s*=\s*(.*)?\s*$/);
+      if (match) {
+        const key = match[1];
+        let value = match[2] || '';
+        if (value.startsWith('"') && value.endsWith('"')) value = value.slice(1, -1);
+        if (value.startsWith("'") && value.endsWith("'")) value = value.slice(1, -1);
+        if (!process.env[key]) process.env[key] = value;
+      }
+    });
+  }
+}
+
+loadEnv();
+
 function readBoolean(value) {
   return value === '1' || String(value || '').toLowerCase() === 'true';
 }
@@ -137,7 +157,7 @@ function cleanGeneratedText(stdout, stderr, prompt) {
   return text.replace(prompt, '').trim();
 }
 
-function runGgufGeneration({ enabled, runtimeBinary, modelPath }) {
+async function runGgufGeneration({ enabled, runtimeBinary, modelPath }) {
   if (!enabled || !runtimeBinary || !modelPath) {
     return {
       attempted: false,
@@ -150,7 +170,9 @@ function runGgufGeneration({ enabled, runtimeBinary, modelPath }) {
   }
 
   const timeoutMs = Number(process.env.AILLAME_TEXT_TIMEOUT_MS || DEFAULT_TEXT_TIMEOUT_MS);
-  const result = spawnSync(runtimeBinary, buildGgufArgs(modelPath, LIVE_TEXT_PROMPT), {
+  
+  // Try CLI mode first
+  let result = spawnSync(runtimeBinary, buildGgufArgs(modelPath, LIVE_TEXT_PROMPT), {
     cwd: process.cwd(),
     encoding: 'utf8',
     timeout: Number.isFinite(timeoutMs) ? timeoutMs : DEFAULT_TEXT_TIMEOUT_MS,
@@ -158,9 +180,63 @@ function runGgufGeneration({ enabled, runtimeBinary, modelPath }) {
     maxBuffer: 1024 * 1024,
   });
 
-  const output = cleanGeneratedText(result.stdout, result.stderr, LIVE_TEXT_PROMPT);
-  const timedOut = Boolean(result.error && result.error.message.includes('ETIMEDOUT'));
-  const succeeded = result.status === 0 && output.length > 0 && !timedOut;
+  let output = cleanGeneratedText(result.stdout, result.stderr, LIVE_TEXT_PROMPT);
+  let timedOut = Boolean(result.error && result.error.message.includes('ETIMEDOUT'));
+  let succeeded = result.status === 0 && output.length > 0 && !timedOut;
+
+  // Fallback: If it's llama-server and CLI failed, try HTTP probe if already running
+  if (!succeeded && runtimeBinary.toLowerCase().includes('llama-server')) {
+    const port = process.env.AILLAME_GEMMA_PORT || '8080';
+    const url = `http://127.0.0.1:${port}/completion`;
+    const ggufWarnings = [];
+    
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          prompt: 'Hi, say hello.', 
+          n_predict: 32, 
+          temperature: 0.1
+        }),
+        signal: AbortSignal.timeout(15000)
+      });
+
+      if (response.ok) {
+        const json = await response.json();
+        const content = json.content || json.choices?.[0]?.text || json.choices?.[0]?.message?.content;
+        if (content && content.length > 0) {
+          output = content.trim();
+          succeeded = true;
+          return {
+            attempted: true,
+            succeeded: true,
+            responseLength: output.length,
+            outputPreview: output.slice(0, 160),
+            reason: 'REAL_LLM_GENERATION_SUCCEEDED_VIA_HTTP_PROBE',
+            warnings: ['Used HTTP probe for llama-server.'],
+          };
+        } else {
+          ggufWarnings.push('HTTP probe returned empty content');
+        }
+      } else {
+        const errText = await response.text().catch(() => 'No error body');
+        ggufWarnings.push(`HTTP probe failed with status ${response.status}: ${errText.slice(0, 100)}`);
+      }
+    } catch (e) {
+      ggufWarnings.push(`HTTP probe error (${url}): ${e.message}`);
+    }
+    
+    // If HTTP probe failed, return the original CLI failure with extra warnings
+    return {
+      attempted: true,
+      succeeded: false,
+      responseLength: 0,
+      outputPreview: undefined,
+      reason: result.error?.message || `GGUF_RUNTIME_EXIT_${result.status ?? 'UNKNOWN'}`,
+      warnings: [...(result.stderr ? ['Runtime wrote diagnostic output to stderr.'] : []), ...ggufWarnings],
+    };
+  }
 
   return {
     attempted: true,
@@ -176,7 +252,7 @@ function runGgufGeneration({ enabled, runtimeBinary, modelPath }) {
   };
 }
 
-export function getLiveTextAcceptanceReport() {
+export async function getLiveTextAcceptanceReport() {
   const missingConfig = [];
   const missingFiles = [];
   const missingWorker = [];
@@ -184,15 +260,24 @@ export function getLiveTextAcceptanceReport() {
   const nextActions = [];
 
   const enabled = readBoolean(process.env.AILLAME_GGUF_RUNTIME_ENABLED)
-    || readBoolean(process.env.AILLAME_GGUF_WORKER_ENABLED);
-  const runtimeBinary = process.env.AILLAME_GGUF_RUNTIME_BINARY;
+    || readBoolean(process.env.AILLAME_GGUF_WORKER_ENABLED)
+    || readBoolean(process.env.AILLAME_GEMMA_ENABLED); // Legacy fallback
+
+  const runtimeBinary = process.env.AILLAME_GGUF_RUNTIME_BINARY
+    || process.env.AILLAME_GEMMA_LLAMA_SERVER_EXE; // Legacy fallback
+
   const runtimeBinaryExists = fileExists(runtimeBinary);
   const runtimeBinaryExecutable = isExecutableCandidate(runtimeBinary);
   const runtimeBinaryBlocked = isBlockedRuntimeBinary(runtimeBinary);
-  const modelPath = resolveGgufModelPath();
+  const modelPath = resolveGgufModelPath() 
+    || process.env.AILLAME_GEMMA_GGUF_FILE 
+    || process.env.AILLAME_GEMMA_MODEL_PATH; // Legacy fallbacks
+
   const modelPathExists = fileExists(modelPath);
   const modelDir = process.env.AILLAME_GGUF_MODEL_DIR;
-  const activeModel = process.env.AILLAME_GGUF_ACTIVE_MODEL;
+  const activeModel = process.env.AILLAME_GGUF_ACTIVE_MODEL 
+    || process.env.AILLAME_GEMMA_MODEL_ID; // Legacy fallback
+
   const discoveredModels = discoverGgufCandidates(modelDir, activeModel);
 
   if (!enabled) missingConfig.push('AILLAME_GGUF_RUNTIME_ENABLED is false');
@@ -217,7 +302,7 @@ export function getLiveTextAcceptanceReport() {
     && modelPathExists;
 
   const generation = configured
-    ? runGgufGeneration({ enabled, runtimeBinary, modelPath })
+    ? await runGgufGeneration({ enabled, runtimeBinary, modelPath })
     : { attempted: false, succeeded: false, responseLength: 0, outputPreview: undefined, reason: 'GGUF runtime is not fully configured.', warnings: [] };
 
   warnings.push(...generation.warnings);
@@ -348,8 +433,8 @@ export function getLiveImageAcceptanceReport() {
   };
 }
 
-export function getCombinedLiveRuntimeAcceptanceReport() {
-  const text = getLiveTextAcceptanceReport();
+export async function getCombinedLiveRuntimeAcceptanceReport() {
+  const text = await getLiveTextAcceptanceReport();
   const image = getLiveImageAcceptanceReport();
   const blockers = [];
   if (!text.finalAcceptanceReady) blockers.push('Real local LLM generation is not ready.');

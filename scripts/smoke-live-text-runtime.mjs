@@ -11,7 +11,7 @@ import { getLiveTextAcceptanceReport } from './live-runtime-acceptance-lib.mjs';
 async function runAcceptanceTest() {
   console.log("Running Live Text Runtime Acceptance Check...\n");
 
-  const text = getLiveTextAcceptanceReport();
+  const text = await getLiveTextAcceptanceReport();
 
   console.log("Diagnostics:");
   console.log(`- Runtime: ${text.selectedRuntime}`);
