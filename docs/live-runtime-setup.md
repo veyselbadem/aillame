@@ -28,6 +28,17 @@ Alternatif olarak tek dosya yolu:
 AILLAME_GGUF_MODEL_PATH=C:\AillameModels\gguf\local-model.gguf
 ```
 
+Alanlar:
+
+- `AILLAME_GGUF_MODEL_DIR`: GGUF dosyalarinin bulundugu klasor.
+- `AILLAME_GGUF_ACTIVE_MODEL`: calistirilacak GGUF dosya adi.
+- `AILLAME_GGUF_RUNTIME_BINARY`: modeli calistiracak Aillame-controlled yerel
+  binary.
+- `AILLAME_GGUF_RUNTIME_ARGS`: opsiyonel arguman sablonu. Varsayilan
+  `-m {model} -p {prompt} -n {maxTokens} --temp {temperature}` seklindedir.
+- `AILLAME_GGUF_ALLOW_EXTERNAL`: model dosyasi repo disindaysa acik ve bilincli
+  local path izni icin `true` yapilabilir.
+
 Acceptance komutu:
 
 ```bash
@@ -42,6 +53,16 @@ Success icin beklenen ozet:
 - `fallbackUsed=false`
 - `degraded=false`
 - `finalAcceptanceReady=true`
+
+`smoke:live-text-runtime` GGUF model dizininde adaylari listeler. Birden fazla
+GGUF varsa otomatik secim yapmadan `AILLAME_GGUF_ACTIVE_MODEL` bekler.
+
+### Model candidate guidance
+
+Ilk acceptance icin 3B-4B sinifi GGUF modellerin Q4_K_M veya Q5_K_M
+quantization dosyalari pratik baslangic adaylaridir. 7B ve uzeri modeller daha
+fazla RAM/VRAM ve daha uzun calisma suresi isteyebilir. Aillame model indirmez;
+kullanici model dosyasini yerel olarak saglamalidir.
 
 ## 2. Yerel IGM / Diffusion Worker
 

@@ -8,7 +8,9 @@ export function checkGgufWorkerReadiness(): AillameGgufWorkerReadinessResult {
   const warnings: string[] = [];
   const blockedReasons: string[] = [];
 
-  const pathValidation = validateGgufModelPath(config.modelPath);
+  const pathValidation = validateGgufModelPath(config.modelPath, {
+    allowExternalModels: config.allowExternalModels,
+  });
   
   let modelPathExists = false;
   if (pathValidation.allowed && pathValidation.normalizedPath) {
@@ -16,6 +18,14 @@ export function checkGgufWorkerReadiness(): AillameGgufWorkerReadinessResult {
       modelPathExists = fs.existsSync(pathValidation.normalizedPath);
     } catch {
       modelPathExists = false;
+    }
+  }
+  let runtimeBinaryExists = false;
+  if (config.runtimeBinary) {
+    try {
+      runtimeBinaryExists = fs.existsSync(config.runtimeBinary);
+    } catch {
+      runtimeBinaryExists = false;
     }
   }
 
@@ -34,7 +44,7 @@ export function checkGgufWorkerReadiness(): AillameGgufWorkerReadinessResult {
 
   if (!config.modelPath) {
     state = "model-path-missing";
-    blockedReasons.push("AILLAME_GGUF_MODEL_PATH environment variable is not set.");
+    blockedReasons.push("AILLAME_GGUF_MODEL_PATH or AILLAME_GGUF_MODEL_DIR + AILLAME_GGUF_ACTIVE_MODEL is not set.");
   } else if (!pathValidation.allowed) {
     state = "model-path-invalid";
     blockedReasons.push(pathValidation.reason || "Invalid model path.");
@@ -45,7 +55,13 @@ export function checkGgufWorkerReadiness(): AillameGgufWorkerReadinessResult {
 
   if (state === "ready-for-manual-enable") {
     if (!config.enabled) {
-      warnings.push("GGUF worker is configured but currently disabled (AILLAME_GGUF_WORKER_ENABLED=false).");
+      warnings.push("GGUF worker is configured but currently disabled (AILLAME_GGUF_RUNTIME_ENABLED=false).");
+    } else if (!config.runtimeBinary) {
+      state = "blocked";
+      blockedReasons.push("AILLAME_GGUF_RUNTIME_BINARY is not set.");
+    } else if (!runtimeBinaryExists) {
+      state = "blocked";
+      blockedReasons.push("AILLAME_GGUF_RUNTIME_BINARY was not found.");
     } else {
       canEnable = true;
     }
@@ -58,7 +74,7 @@ export function checkGgufWorkerReadiness(): AillameGgufWorkerReadinessResult {
     modelPathExists,
     allowedByPathPolicy: pathValidation.allowed,
     canEnable,
-    canGenerate: false, // Always false in this planning phase
+    canGenerate: canEnable,
     warnings,
     blockedReasons,
   };

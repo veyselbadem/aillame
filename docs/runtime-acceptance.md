@@ -30,12 +30,20 @@ Bir LLM icin `finalAcceptanceReady=true` olmasi icin:
 - `AILLAME_GGUF_MODEL_PATH` veya `AILLAME_GGUF_MODEL_DIR` +
   `AILLAME_GGUF_ACTIVE_MODEL` yerel GGUF model dosyasini gostermeli.
 - Model dosyasi mevcut olmali.
+- Runtime binary mevcut ve executable gorunmeli.
+- Binary adi Ollama, LM Studio, Gemini veya OpenAI gibi dis/cloud wrapper
+  izlenimi vermemeli.
 - Worker gercek generation denemesi yapmali.
 - Response bos olmamali.
 - Cikti fallback, degraded veya placeholder olmamali.
 
 Nano probe bilgisi acceptance raporunda gorunebilir, fakat Nano tek basina ana
 LLM final kabul sayilmaz.
+
+Varsayilan smoke argumanlari llama.cpp/CLI benzeri runtime'lar icin
+`-m {model} -p {prompt} -n {maxTokens} --temp {temperature}` seklindedir.
+Farkli bir Aillame-controlled worker arguman sozlesmesi kullaniliyorsa
+`AILLAME_GGUF_RUNTIME_ARGS` ile sablon verilebilir.
 
 ## IGM Acceptance
 

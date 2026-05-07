@@ -15,6 +15,8 @@ async function runAcceptanceTest() {
 
   console.log("Diagnostics:");
   console.log(`- Runtime: ${text.selectedRuntime}`);
+  console.log(`- Runtime Binary: ${text.runtimeBinary ?? "not-set"}`);
+  console.log(`- Model: ${text.modelPathSanitized ?? "not-set"}`);
   console.log(`- Configured: ${text.configured}`);
   console.log(`- Attempted: ${text.attempted}`);
   console.log(`- Succeeded: ${text.succeeded}`);
@@ -33,7 +35,11 @@ async function runAcceptanceTest() {
     succeeded: text.succeeded,
     selectedRuntime: text.selectedRuntime,
     selectedModelId: text.selectedModelId,
+    runtimeBinary: text.runtimeBinary,
+    modelPathSanitized: text.modelPathSanitized,
+    discoveredModels: text.discoveredModels,
     responseLength: text.responseLength,
+    outputPreview: text.outputPreview,
     fallbackUsed: text.fallbackUsed,
     degraded: text.degraded,
     reason: text.reason,

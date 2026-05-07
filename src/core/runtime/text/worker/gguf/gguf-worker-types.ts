@@ -25,7 +25,7 @@ export type AillameGgufWorkerReadinessResult = {
   modelPathExists: boolean;
   allowedByPathPolicy: boolean;
   canEnable: boolean;
-  canGenerate: false;
+  canGenerate: boolean;
   warnings: string[];
   blockedReasons: string[];
 };

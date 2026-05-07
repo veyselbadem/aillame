@@ -84,7 +84,9 @@ npm run smoke:nano-eval-training
 Güncel config yüzeyi için `.env.example` dosyasındaki `AILLAME_*` değişkenlerini kullanın. Ana mimari isimleri generic tutulur:
 
 - `AILLAME_GGUF_RUNTIME_ENABLED`
+- `AILLAME_GGUF_RUNTIME_BINARY`
 - `AILLAME_GGUF_MODEL_DIR`
+- `AILLAME_GGUF_ACTIVE_MODEL`
 - `AILLAME_IGM_RUNTIME_ENABLED`
 - `AILLAME_IGM_MODEL_DIR`
 - `AILLAME_MODEL_DISCOVERY_ENABLED`

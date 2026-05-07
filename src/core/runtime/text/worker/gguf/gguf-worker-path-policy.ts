@@ -8,7 +8,10 @@ export type AillameGgufPathPolicyResult = {
   normalizedPath: string;
 };
 
-export function validateGgufModelPath(modelPath: string | undefined): AillameGgufPathPolicyResult {
+export function validateGgufModelPath(
+  modelPath: string | undefined,
+  options: { allowExternalModels?: boolean } = {}
+): AillameGgufPathPolicyResult {
   if (!modelPath) {
     return { allowed: false, reason: "No path provided", isExternal: false, normalizedPath: "" };
   }
@@ -36,11 +39,17 @@ export function validateGgufModelPath(modelPath: string | undefined): AillameGgu
     };
   }
 
-  // If external models are explicitly allowed by config, we could relax this,
-  // but for the prototype, we default to "project-only" security.
+  if (options.allowExternalModels) {
+    return {
+      allowed: true,
+      isExternal: true,
+      normalizedPath: normalized,
+    };
+  }
+
   return {
     allowed: false,
-    reason: "Model path is outside the allowed project workspace. Move GGUF models to models/gguf/ directory.",
+    reason: "Model path is outside the allowed project workspace. Move GGUF models to models/gguf/ or set AILLAME_GGUF_ALLOW_EXTERNAL=true for an explicit local model path.",
     isExternal: true,
     normalizedPath: normalized,
   };
