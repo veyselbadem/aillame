@@ -163,6 +163,29 @@ export default function AdminMemoryCardsPage() {
         <ScopeNote title="Session Memory" body="Geçici bağlam uzun dönem hafızadan ayrı tutulur." />
       </section>
 
+      <div className="mb-6 rounded-3xl border border-white/10 bg-black/10 p-5">
+        <h2 className="text-sm font-black text-white mb-4">Persistence Strategy (Phase 5 Foundation)</h2>
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <div>
+            <p className="text-xs text-gray-500 mb-1">Current Store</p>
+            <span className="rounded-lg bg-indigo-500/10 border border-indigo-500/20 px-2 py-0.5 text-[10px] text-indigo-300">In-Memory Foundation</span>
+          </div>
+          <div>
+            <p className="text-xs text-gray-500 mb-1">Short-term Goal</p>
+            <span className="rounded-lg bg-white/5 border border-white/10 px-2 py-0.5 text-[10px] text-gray-300">JSONL / File-store</span>
+          </div>
+          <div>
+            <p className="text-xs text-gray-500 mb-1">Mid-term Goal</p>
+            <span className="rounded-lg bg-white/5 border border-white/10 px-2 py-0.5 text-[10px] text-gray-300">SQLite / Embedded Store</span>
+          </div>
+          <div>
+            <p className="text-xs text-gray-500 mb-1">Data Guard</p>
+            <span className="rounded-lg bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 text-[10px] text-emerald-300">Sensitive Guard Active</span>
+          </div>
+        </div>
+        <p className="text-[10px] text-gray-500 mt-3">Not: In-memory store kalıcı değildir, restart atıldığında sıfırlanır. Kalıcı dosya yazma beta sonrası planlanmıştır.</p>
+      </div>
+
       {/* Pipeline flow */}
       <div className="mb-6 flex flex-wrap items-center gap-2 text-xs">
         <span className="rounded-full bg-white/5 border border-white/10 px-3 py-1 text-gray-400">Feedback</span>

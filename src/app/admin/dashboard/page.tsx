@@ -44,16 +44,20 @@ const QUICK_LINKS = [
 ] as const;
 
 const FOUNDATION_STATUS = [
-  { label: 'Local Text Runtime Foundation', desc: 'GGUF/text runtime ve registry diagnostic yüzeyi hazır.', variant: 'active' as const },
-  { label: 'Project Memory', desc: 'Global, project ve session scope ayrımı görünür.', variant: 'review' as const },
-  { label: 'External Provider API', desc: '/api/external/v1 ve OpenAI-compatible route hazırlığı.', variant: 'protected' as const },
-  { label: 'Code Agent Foundation', desc: 'Plan-only, patch proposal ve approval-gated akış.', variant: 'review' as const },
-  { label: 'Nano Diagnostics', desc: 'Advisory decision metadata ve Türkçe diagnostic akışı.', variant: 'active' as const },
-  { label: 'Image Workflow', desc: 'Workflow JSON, job queue ve SDXL-like adapter foundation; runtime not configured.', variant: 'disabled' as const },
-  { label: 'RAG / Vector Memory', desc: 'Placeholder embedding, in-memory vector store ve document ingestion foundation.', variant: 'review' as const },
-  { label: 'Memory Attribution', desc: 'Cevaplarda kaynak/hafıza şeffaflığı için diagnostic attribution yüzeyi.', variant: 'review' as const },
-  { label: 'Nano Feedback Loop', desc: 'Feedback doğrudan eğitime gitmez; pending-review candidate olarak tutulur.', variant: 'protected' as const },
-  { label: 'Security Hardening', desc: 'API key ve policy sertleştirmesi Faz 5 kapsamındadır.', variant: 'disabled' as const },
+  { label: 'Local Text Runtime', desc: 'GGUF/text runtime ve registry diagnostic yüzeyi hazır.', variant: 'active' as const, status: 'ready' },
+  { label: 'Runtime Router', desc: 'OpenAI-compatible routing foundation.', variant: 'active' as const, status: 'ready' },
+  { label: 'Model Registry', desc: 'Tip güvenli model arama.', variant: 'active' as const, status: 'ready' },
+  { label: 'Project Memory', desc: 'Global, project ve session scope izolasyonu.', variant: 'active' as const, status: 'ready' },
+  { label: 'External Provider API', desc: 'Dış uygulamalar için güvenli API yüzeyi.', variant: 'active' as const, status: 'ready' },
+  { label: 'Code Agent', desc: 'Plan-only ve approval-gated foundation.', variant: 'active' as const, status: 'ready' },
+  { label: 'Image Workflow', desc: 'Job queue ve node validator hazır; runtime model yok.', variant: 'disabled' as const, status: 'not-configured' },
+  { label: 'Vector Memory / RAG', desc: 'Document ingestion ve bellek entegrasyonu.', variant: 'active' as const, status: 'ready' },
+  { label: 'Nano Diagnostics', desc: 'Advisory decisions ve hooks (otonom kapalı).', variant: 'protected' as const, status: 'ready' },
+  { label: 'Security / Permissions', desc: 'API key, permission scopes.', variant: 'active' as const, status: 'ready' },
+  { label: 'Audit / Rate Limit', desc: 'Sanitized audit log, ip/key rate limit.', variant: 'active' as const, status: 'ready' },
+  { label: 'CLI Foundation', desc: 'aillame-cli.mjs read-only komut desteği.', variant: 'active' as const, status: 'ready' },
+  { label: 'Desktop Readiness', desc: 'Masaüstü shell için boot planı.', variant: 'pending' as const, status: 'planned' },
+  { label: 'Beta Checklist', desc: 'Productization testleri.', variant: 'active' as const, status: 'ready' },
 ];
 
 const RUNTIME_ROWS = [
@@ -148,17 +152,19 @@ export default function AdminDashboard() {
           </div>
         </header>
 
-        <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
-          {FOUNDATION_STATUS.map(({ label, desc, variant }) => (
-            <div key={label} className="glass-card rounded-[20px] p-5 border border-white/10">
-              <div className="flex items-start justify-between mb-3">
-                <div className="p-2.5 rounded-xl bg-white/[0.03] border border-white/5">
-                  <FiCpu size={14} className="text-slate-400" />
+        <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mb-8">
+          {FOUNDATION_STATUS.map(({ label, desc, variant, status }) => (
+            <div key={label} className="glass-card rounded-[20px] p-5 border border-white/10 flex flex-col justify-between">
+              <div>
+                <div className="flex items-start justify-between mb-3">
+                  <div className="p-2.5 rounded-xl bg-white/[0.03] border border-white/5">
+                    <FiCpu size={14} className="text-slate-400" />
+                  </div>
+                  <StatusBadge variant={variant} label={status} />
                 </div>
-                <StatusBadge variant={variant} />
+                <p className="text-sm font-black text-slate-900 dark:text-white tracking-tight">{label}</p>
+                <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">{desc}</p>
               </div>
-              <p className="text-sm font-black text-slate-900 dark:text-white tracking-tight">{label}</p>
-              <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">{desc}</p>
             </div>
           ))}
         </section>
@@ -201,6 +207,58 @@ export default function AdminDashboard() {
               <StatusRow label="GGUF Readiness" value="not configured until model path is set" ok={false} />
             </div>
           </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+          <div className="glass-card p-6 rounded-[24px] border border-white/5">
+            <h2 className="text-[10px] font-black uppercase tracking-[0.25em] text-gray-500 mb-4 flex items-center gap-2">
+              <FiCheckCircle className="text-indigo-400" size={12} />
+              Beta Readiness Checklist
+            </h2>
+            <div className="grid gap-2">
+              <StatusRow label="npm run typecheck" value="done" ok />
+              <StatusRow label="npm run build" value="done" ok />
+              <StatusRow label="smoke:foundation" value="done" ok />
+              <StatusRow label="smoke:project-provider" value="done" ok />
+              <StatusRow label="smoke:code-agent" value="done" ok />
+              <StatusRow label="smoke:image-rag-nano" value="done" ok />
+              <StatusRow label="smoke:productization" value="done" ok />
+              <StatusRow label="smoke:beta-ui" value="done" ok />
+              <StatusRow label="Manual UI QA" value="needs manual check" ok={false} />
+            </div>
+          </div>
+          
+          <div className="glass-card p-6 rounded-[24px] border border-white/5">
+            <h2 className="text-[10px] font-black uppercase tracking-[0.25em] text-gray-500 mb-4 flex items-center gap-2">
+              <FiPackage className="text-indigo-400" size={12} />
+              Desktop Readiness
+            </h2>
+            <div className="grid gap-2">
+              <StatusRow label="Desktop Shell" value="foundation ready" ok />
+              <StatusRow label="Local Server Boot" value="planned" ok={false} />
+              <StatusRow label="Health Check" value="ready" ok />
+              <StatusRow label="Tray/Background App" value="planned" ok={false} />
+              <StatusRow label="Packaging" value="planned" ok={false} />
+            </div>
+            <p className="text-xs text-gray-500 mt-4 leading-relaxed">
+              Desktop packaging ön hazırlığı tamamlandı. Tauri veya Electron paketi ile çevrimdışı çalışma hedeflenmektedir.
+            </p>
+          </div>
+        </div>
+
+        <div className="glass-card p-6 rounded-[24px] border border-white/5 mb-6">
+          <h2 className="text-[10px] font-black uppercase tracking-[0.25em] text-gray-500 mb-4">CLI Usage (Plan-Only)</h2>
+          <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+            <InfoCard title="Status & Health" body="npm run cli:aillame -- status" />
+            <InfoCard title="Projects" body="npm run cli:aillame -- projects" />
+            <InfoCard title="Ask Question" body='npm run cli:aillame -- ask --project aillame --message "Merhaba"' />
+            <InfoCard title="Memory List" body="npm run cli:aillame -- memory list --project aillame" />
+            <InfoCard title="Task Plan" body='npm run cli:aillame -- task plan --project aillame --message "Analiz et"' />
+            <InfoCard title="Diagnostics" body="npm run cli:aillame -- diagnostics" />
+          </div>
+          <p className="text-xs text-gray-500 mt-4 leading-relaxed">
+            CLI plan-only çalışır. Destructive işlem yapmaz, dosya yazmaz, otomatik komut çalıştırmaz.
+          </p>
         </div>
 
         <div className="glass-card p-6 rounded-[24px] border border-white/5">

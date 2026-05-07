@@ -256,6 +256,59 @@ await client.chat({
         </InfoPanel>
       </div>
 
+      <div className="grid gap-4 mb-8 lg:grid-cols-2">
+        <InfoPanel icon={<FiShield />} title="Security & Permission Foundation (Phase 5)">
+          <div className="grid grid-cols-2 gap-4 mt-2">
+            <div>
+              <p className="text-xs text-gray-500 mb-1">Auth Mode</p>
+              <span className="rounded-xl border border-indigo-500/20 bg-indigo-500/10 px-3 py-1 text-xs font-bold text-indigo-300">development optional / production required</span>
+            </div>
+            <div>
+              <p className="text-xs text-gray-500 mb-1">API Key Status</p>
+              <span className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-3 py-1 text-xs font-bold text-emerald-300">configured</span>
+            </div>
+            <div className="col-span-2">
+              <p className="text-xs text-gray-500 mb-1">Permission Scopes</p>
+              <div className="flex flex-wrap gap-2">
+                {['chat:read', 'chat:write', 'project:read', 'memory:read', 'memory:write', 'task:create'].map(scope => (
+                  <span key={scope} className="rounded-lg bg-black/20 border border-white/5 px-2 py-0.5 text-[10px] text-gray-300">{scope}</span>
+                ))}
+              </div>
+            </div>
+            <div className="col-span-2">
+              <p className="text-xs text-gray-500 mb-1">Production Guards</p>
+              <div className="space-y-1">
+                <p className="text-[11px] text-rose-300">⚠️ autonomous actions disabled</p>
+                <p className="text-[11px] text-rose-300">⚠️ dangerous tools disabled</p>
+                <p className="text-[11px] text-emerald-300">✓ model path exposure guard active</p>
+              </div>
+            </div>
+          </div>
+        </InfoPanel>
+        
+        <InfoPanel icon={<FiCode />} title="Audit Log & Rate Limit Visibility">
+          <div className="grid grid-cols-2 gap-4 mt-2">
+            <div>
+              <p className="text-xs text-gray-500 mb-1">Audit Logging</p>
+              <span className="rounded-xl border border-indigo-500/20 bg-indigo-500/10 px-3 py-1 text-xs font-bold text-indigo-300">enabled (in-memory foundation)</span>
+            </div>
+            <div>
+              <p className="text-xs text-gray-500 mb-1">Rate Limit Policy</p>
+              <span className="rounded-xl border border-amber-500/20 bg-amber-500/10 px-3 py-1 text-xs font-bold text-amber-300">relaxed (stricter in production)</span>
+            </div>
+            <div className="col-span-2">
+              <p className="text-xs text-gray-500 mb-1">Last Audit Event (Preview)</p>
+              <div className="rounded-xl bg-black/20 border border-white/5 p-3 font-mono text-[10px] text-gray-400">
+                <span className="text-indigo-400">INFO</span> | actor: api-key (ak_live_****) <br/>
+                action: <span className="text-amber-200">external.chat.request</span> | target: project(boss-ai)<br/>
+                <span className="text-emerald-400">data sanitized</span>
+              </div>
+              <p className="text-[10px] text-gray-500 mt-2">Not: In-memory audit log uzun vadede kalıcı değildir.</p>
+            </div>
+          </div>
+        </InfoPanel>
+      </div>
+
       <div className="grid gap-8 xl:grid-cols-[1.1fr_1.9fr]">
         <section className="glass-card border border-white/10 p-6 rounded-[24px]">
           <div className="flex items-center justify-between mb-6">

@@ -49,3 +49,16 @@ npm run smoke:external-api
 - **Audit Logging**: Kritik işlemler (ör: memory write, task plan) sanitize edilerek loglanır. Şifreler veya secret değerler ASLA loglara yansımaz.
 - **Rate Limit**: Gelen API çağrıları için in-memory (ileride redis/sqlite) limitler mevcuttur.
 - `.env` dosyasını commit'leme; `.env.example` şablonunu kullan.
+
+## Beta UI Integration & Foundation Belgelendirmesi
+
+Aillame'in admin paneli, Phase 5 productization özelliklerini yansıtacak şekilde genişletilmiştir:
+- Admin Dashboard üzerinden Health, Beta Readiness ve Desktop Boot statüleri izlenebilir.
+- Security paneli, Audit Log ve API Key yetkileri şeffaf şekilde listelenir.
+- Agent Task'leri, "plan-only" çalışma mantığını açıkça belirtir.
+- Hafıza sayfaları, in-memory durumunu ve gelecekteki SQLite/JSONL persistence stratejisini açıklar.
+
+Detaylı belgeler için aşağıdaki dokümanlara göz atın:
+- [Desktop Readiness Stratejisi](docs/desktop-readiness.md)
+- [Kalıcı Hafıza (Persistent Memory) Stratejisi](docs/persistent-memory-strategy.md)
+- [Beta Readiness Checklist](docs/beta-readiness-checklist.md)
