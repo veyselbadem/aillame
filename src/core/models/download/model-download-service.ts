@@ -5,21 +5,13 @@ import type { ModelCatalogEntry, ModelCatalogFile } from "../catalog/model-catal
 import { CURATED_GGUF_STARTER_CATALOG } from "../catalog/curated-gguf-catalog";
 import type { ModelDownloadJob, ModelDownloadPlan, ModelDownloadResult } from "./model-download-types";
 
+import { getGgufModelDirectory, getSafeFileName } from "../model-path-policy";
+
 const JOBS_FILE = "model-download-jobs.jsonl";
-
-function getModelLibraryDir(): string {
-  const configured = process.env.AILLAME_MODEL_LIBRARY_DIR;
-  if (configured && configured.trim()) return path.resolve(process.cwd(), configured);
-  return path.join(getStorageRoot(), "models", "gguf");
-}
-
-function safeFileName(fileName: string): string {
-  return path.basename(fileName).replace(/[^a-zA-Z0-9._-]/g, "_");
-}
 
 function safeTargetPath(targetDirectory: string, fileName: string): { pathSafe: boolean; targetFile: string } {
   const resolvedDir = path.resolve(targetDirectory);
-  const targetFile = path.join(resolvedDir, safeFileName(fileName));
+  const targetFile = path.join(resolvedDir, getSafeFileName(fileName));
   const relative = path.relative(resolvedDir, targetFile);
   return {
     pathSafe: Boolean(relative) && !relative.startsWith("..") && !path.isAbsolute(relative),
@@ -35,7 +27,7 @@ function findCatalogFile(modelId: string, fileName: string): { entry?: ModelCata
 
 export class ModelDownloadService {
   createDownloadPlan(entry: ModelCatalogEntry, file: ModelCatalogFile): ModelDownloadPlan {
-    const targetDirectory = getModelLibraryDir();
+    const targetDirectory = getGgufModelDirectory();
     const target = safeTargetPath(targetDirectory, file.fileName);
     const risks: ModelDownloadPlan["risks"] = [];
     const nextActions: string[] = [];

@@ -107,8 +107,8 @@ check('Admin API foundation exists', () => {
 });
 
 check('Model Library UI surfaces catalog, download and active model sections', () => {
-  const content = read('src/app/admin/model-library/page.tsx');
-  for (const token of ['Ollama-like GGUF Model Manager', 'Discover / Starter Catalog', 'Download Plans', 'Active Model', 'Live Text Acceptance']) {
+  const content = read('src/components/admin/GgufModelManager.tsx');
+  for (const token of ['Discover / Catalog', 'Jobs & Queue', 'Aktif GGUF Modeli', 'Installed GGUF Models']) {
     if (!content.includes(token)) return `Missing UI token ${token}`;
   }
   return true;

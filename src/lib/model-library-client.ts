@@ -1,5 +1,5 @@
 import { adminFetch } from '@/lib/admin-fetch';
-import type {
+import {
   LocalModelMetadata,
   LocalModelStatus,
   ModelInstallRequest,
@@ -8,6 +8,10 @@ import type {
   ModelRemoveResult,
   LocalModelDiscoveryOptions,
 } from '@/core/model-library/types';
+import type { ModelCatalogEntry, ModelCatalogFile } from '@/core/models/catalog/model-catalog-types';
+import type { ModelDownloadJob, ModelDownloadPlan, ModelDownloadResult } from '@/core/models/download/model-download-types';
+import type { ActiveGgufModelRecord } from '@/core/models/download/active-gguf-model-service';
+import type { VerifiedGgufModel } from '@/core/models/download/model-verification-service';
 
 // ── UI-facing DTO types ───────────────────────────────────────────────────
 
@@ -255,5 +259,103 @@ export async function fetchModelLibrarySummary(): Promise<ModelLibrarySummary> {
   } catch (err) {
     console.error('[model-library-client] fetchModelLibrarySummary:', err);
     return { totalModels: 0, availableModels: 0, missingModels: 0, providers: [], lastCheckedAt: null };
+  }
+}
+
+// ── GGUF Model Manager API calls ──────────────────────────────────────────
+
+export async function fetchGgufCatalog(): Promise<ModelCatalogEntry[]> {
+  try {
+    const res = await adminFetch('/api/admin/models/catalog');
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return await res.json();
+  } catch (err) {
+    console.error('[model-library-client] fetchGgufCatalog:', err);
+    return [];
+  }
+}
+
+export async function createGgufDownloadPlan(modelId: string, fileName: string): Promise<{ success: boolean; plan?: ModelDownloadPlan; error?: string }> {
+  try {
+    const res = await adminFetch('/api/admin/models/download/plan', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ modelId, fileName }),
+    });
+    return await res.json();
+  } catch (err) {
+    return { success: false, error: formatError(err) };
+  }
+}
+
+export async function createGgufDownloadJob(modelId: string, fileName: string): Promise<{ success: boolean; job?: ModelDownloadJob; error?: string }> {
+  try {
+    const res = await adminFetch('/api/admin/models/download/jobs', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ modelId, fileName }),
+    });
+    return await res.json();
+  } catch (err) {
+    return { success: false, error: formatError(err) };
+  }
+}
+
+export async function fetchGgufDownloadJobs(): Promise<ModelDownloadJob[]> {
+  try {
+    const res = await adminFetch('/api/admin/models/download/jobs');
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const json = await res.json();
+    return json.jobs ?? [];
+  } catch (err) {
+    console.error('[model-library-client] fetchGgufDownloadJobs:', err);
+    return [];
+  }
+}
+
+export async function approveGgufDownloadJob(jobId: string): Promise<ModelDownloadResult> {
+  try {
+    const res = await adminFetch(`/api/admin/models/download/jobs/${encodeURIComponent(jobId)}/approve`, {
+      method: 'POST',
+    });
+    return await res.json();
+  } catch (err) {
+    return { success: false, message: formatError(err) } as any;
+  }
+}
+
+export async function cancelGgufDownloadJob(jobId: string): Promise<ModelDownloadResult> {
+  try {
+    const res = await adminFetch(`/api/admin/models/download/jobs/${encodeURIComponent(jobId)}/cancel`, {
+      method: 'POST',
+    });
+    return await res.json();
+  } catch (err) {
+    return { success: false, message: formatError(err) } as any;
+  }
+}
+
+export async function fetchInstalledGgufModels(): Promise<{ models: VerifiedGgufModel[]; activeModel?: ActiveGgufModelRecord }> {
+  try {
+    const res = await adminFetch('/api/admin/models/installed');
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const json = await res.json();
+    return { models: json.models ?? [], activeModel: json.activeModel };
+  } catch (err) {
+    console.error('[model-library-client] fetchInstalledGgufModels:', err);
+    return { models: [] };
+  }
+}
+
+export async function selectActiveGgufModel(modelId: string, filePath: string): Promise<{ success: boolean; activeModel?: ActiveGgufModelRecord; error?: string }> {
+  try {
+    const res = await adminFetch('/api/admin/models/active', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ modelId, filePath, approved: true }),
+    });
+    return await res.json();
+  } catch (err) {
+    return { success: false, error: formatError(err) };
   }
 }

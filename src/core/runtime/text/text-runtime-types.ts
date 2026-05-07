@@ -1,6 +1,7 @@
 export type AillameTextRuntimeKind =
   | "nano-rust"
   | "aillame-managed-worker"
+  | "llama-server-gguf"
   | "native-local"
   | "placeholder";
 

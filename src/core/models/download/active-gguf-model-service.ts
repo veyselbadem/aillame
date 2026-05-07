@@ -3,6 +3,8 @@ import path from "path";
 import { resolveStoragePath, ensureStorageRoot } from "../../storage/file-store";
 import { verifyLocalGgufModel, type VerifiedGgufModel } from "./model-verification-service";
 
+import { getGgufModelDirectory } from "../model-path-policy";
+
 export interface ActiveGgufModelRecord {
   modelId: string;
   fileName: string;
@@ -15,10 +17,10 @@ export interface ActiveGgufModelRecord {
 const ACTIVE_MODEL_FILE = "active-gguf-model.json";
 
 function configuredEnvActiveModel(): ActiveGgufModelRecord | undefined {
-  const modelDir = process.env.AILLAME_GGUF_MODEL_DIR;
+  const modelDir = getGgufModelDirectory();
   const activeModel = process.env.AILLAME_GGUF_ACTIVE_MODEL;
   const directPath = process.env.AILLAME_GGUF_MODEL_PATH;
-  const filePath = directPath || (modelDir && activeModel ? path.join(modelDir, activeModel) : undefined);
+  const filePath = directPath || (process.env.AILLAME_GGUF_ACTIVE_MODEL && modelDir ? path.join(modelDir, activeModel!) : undefined);
   if (!filePath) return undefined;
   const verified = verifyLocalGgufModel(filePath);
   return {
@@ -32,7 +34,7 @@ function configuredEnvActiveModel(): ActiveGgufModelRecord | undefined {
 }
 
 export class ActiveGgufModelService {
-  listInstalledGgufModels(modelDir = process.env.AILLAME_GGUF_MODEL_DIR): VerifiedGgufModel[] {
+  listInstalledGgufModels(modelDir = getGgufModelDirectory()): VerifiedGgufModel[] {
     if (!modelDir || !fs.existsSync(modelDir)) return [];
     return fs.readdirSync(modelDir)
       .filter((fileName) => fileName.toLowerCase().endsWith(".gguf"))

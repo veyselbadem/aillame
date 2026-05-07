@@ -5,6 +5,7 @@ import { generateWithAillameTextRuntime } from "../../model-adapters/aillame-tex
 import { AILLAME_NANO_MODEL_ID, listModels } from "../../models/registry";
 import { getNanoRustTextRuntimeHealth, getPlaceholderTextRuntimeHealth } from "./text-runtime-health";
 import { createAillameManagedTextWorkerRuntime } from "./worker/text-worker-runtime";
+import { createGgufWorkerRuntime } from "./worker/gguf/gguf-worker-runtime";
 import type { AillameTextRuntime } from "./text-runtime-interface";
 import type {
   AillameTextGenerateRequest,
@@ -157,6 +158,7 @@ const nanoRustRuntime: AillameTextRuntime = {
 const TEXT_RUNTIMES: readonly AillameTextRuntime[] = [
   nanoRustRuntime,
   createAillameManagedTextWorkerRuntime(),
+  createGgufWorkerRuntime(),
 ];
 
 export function listTextRuntimes(): AillameTextRuntimeModelInfo[] {

@@ -27,11 +27,27 @@ function resolveGgufModelPath() {
 
   const modelDir = process.env.AILLAME_GGUF_MODEL_DIR;
   const activeModel = process.env.AILLAME_GGUF_ACTIVE_MODEL;
-  if (!modelDir || !activeModel) return undefined;
+  
+  if (modelDir && activeModel) {
+    return path.isAbsolute(activeModel)
+      ? activeModel
+      : path.join(modelDir, activeModel);
+  }
 
-  return path.isAbsolute(activeModel)
-    ? activeModel
-    : path.join(modelDir, activeModel);
+  // Fallback to Persistent Store
+  const storePath = path.join(process.cwd(), '.aillame-data', 'active-gguf-model.json');
+  if (fs.existsSync(storePath)) {
+    try {
+      const store = JSON.parse(fs.readFileSync(storePath, 'utf8'));
+      if (store && store.filePath && store.verified) {
+        return store.filePath;
+      }
+    } catch {
+      // Ignore parse errors
+    }
+  }
+
+  return undefined;
 }
 
 function isBlockedRuntimeBinary(binaryPath) {

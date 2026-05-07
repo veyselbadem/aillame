@@ -25,6 +25,7 @@
                     "smoke:code-agent-patch-workflow": "node scripts/smoke-code-agent-patch-workflow.mjs",
                     "smoke:model-discovery-runtime": "node scripts/smoke-model-discovery-runtime.mjs",
                     "smoke:model-download-manager": "node scripts/smoke-model-download-manager.mjs",
+                    "smoke:live-llm-model-manager": "node scripts/smoke-live-llm-model-manager.mjs",
                     "smoke:nano-eval-training": "node scripts/smoke-nano-eval-training.mjs",
                     "smoke:rag-document-library": "node scripts/smoke-rag-document-library.mjs",
                     "smoke:image-runtime-assets": "node scripts/smoke-image-runtime-assets.mjs",
