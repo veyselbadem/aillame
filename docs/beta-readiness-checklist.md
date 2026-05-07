@@ -27,7 +27,9 @@ This checklist tracks the foundation pieces required before releasing Aillame as
 - [x] `npm run smoke:code-agent` passes
 - [x] `npm run smoke:image-rag-nano` passes
 - [x] `npm run smoke:productization` passes
-
+- [x] `npm run smoke:beta-ui` passes
+- [x] `npm run smoke:persistent-storage` passes
+- [x] Live Health API and Dashboard binding verified
 ## Final Release Checks
 - [ ] Manual QA of UI Dashboard
 - [ ] Clean up of `aillame_old_core_backup` (if no longer needed)

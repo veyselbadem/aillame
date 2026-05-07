@@ -168,7 +168,7 @@ export default function AdminMemoryCardsPage() {
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <div>
             <p className="text-xs text-gray-500 mb-1">Current Store</p>
-            <span className="rounded-lg bg-indigo-500/10 border border-indigo-500/20 px-2 py-0.5 text-[10px] text-indigo-300">In-Memory Foundation</span>
+            <span className="rounded-lg bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 text-[10px] text-emerald-300">File-store Adapter</span>
           </div>
           <div>
             <p className="text-xs text-gray-500 mb-1">Short-term Goal</p>

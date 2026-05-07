@@ -1,8 +1,9 @@
 # Aillame Persistent Memory Strategy
 
 ## 1. Short-term (Current Foundation)
-- All memory and vector stores are currently **In-Memory** for Phase 1-4 tests.
-- We will transition to a local **JSONL / File-Store** strategy for Beta to avoid heavy dependencies while retaining state across restarts.
+- We have implemented local **JSONL / File-Store** adapters for Project Memory, Vector Memory, and Audit Log in Post-Beta Phase 1.
+- Data is written to the `.aillame-data` directory by default, configurable via `AILLAME_DATA_DIR`.
+- All writes are appended, and read operations aggregate the file into memory.
 
 ## 2. Medium-term (Production Desktop)
 - Transition to a lightweight embedded database.
@@ -10,16 +11,16 @@
 - **Embedded Vector Store**: Using a small in-process vector library (e.g., HNSW implementation in Node or Rust layer) to avoid external DB services.
 
 ## 3. Pluggable Vector Store
-- We will implement a `PersistentVectorStoreAdapter` interface.
-- This allows swapping out the implementation without changing the foundation logic (e.g., using local Faiss or a Rust-based worker).
+- We have implemented a `VectorStoreAdapter` interface.
+- The current implementation is `VectorMemoryFileStore`, which uses deterministic Cosine Similarity and JSONL storage.
 
 ## 4. Project Isolation
 - All persistence logic MUST partition data by `projectId`.
-- Cross-project data leaks are considered a critical severity issue.
+- Cross-project data leaks are considered a critical severity issue. Project filters are enforced at the File-Store level.
 
 ## 5. Backup & Restore
-- Since data is localized to the user's machine, we will provide a `export/import` utility (potentially via the CLI: `aillame memory export`).
+- The storage policy foundation defines `BackupRequest`, `RestoreRequest`, and `DeletePolicy` (soft delete default, hard delete requires dangerous flag).
 
 ## 6. Security & Sensitive Data Policy
 - Persistent memory will run through the `SensitiveMemoryGuard` BEFORE hitting the disk.
-- Tokens, keys, and passwords should be rejected or redacted.
+- Tokens, keys, and passwords are automatically redacted (e.g., `[REDACTED]`) before being written to the JSONL files.

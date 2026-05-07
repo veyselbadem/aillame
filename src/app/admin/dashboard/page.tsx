@@ -71,6 +71,7 @@ const RUNTIME_ROWS = [
 export default function AdminDashboard() {
   const [stats, setStats] = useState({ conversations: 0, messages: 0 });
   const [brainStats, setBrainStats] = useState<BrainStats | null>(null);
+  const [systemHealth, setSystemHealth] = useState<any>(null);
   const [authorized, setAuthorized] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const router = useRouter();
@@ -81,6 +82,7 @@ export default function AdminDashboard() {
     setAuthorized(true);
     loadStats();
     loadBrainStats();
+    loadHealth();
   }, [router]);
 
   const loadStats = async () => {
@@ -100,9 +102,19 @@ export default function AdminDashboard() {
     } catch {}
   };
 
+  const loadHealth = async () => {
+    try {
+      const res = await fetch('/api/aillame/health');
+      if (res.ok) {
+        const data = await res.json();
+        setSystemHealth(data.systemHealth?.components);
+      }
+    } catch {}
+  };
+
   const handleRefresh = async () => {
     setRefreshing(true);
-    await Promise.all([loadStats(), loadBrainStats()]);
+    await Promise.all([loadStats(), loadBrainStats(), loadHealth()]);
     setTimeout(() => setRefreshing(false), 600);
   };
 
@@ -113,6 +125,35 @@ export default function AdminDashboard() {
   };
 
   const formatBytes = (b: number) => b < 1024 ? `${b}B` : b < 1048576 ? `${(b / 1024).toFixed(1)}KB` : `${(b / 1048576).toFixed(1)}MB`;
+
+  const getLiveStatus = (label: string, defaultStatus: string, defaultVariant: any): { status: string; variant: any; isLive: boolean } => {
+    if (!systemHealth) return { status: defaultStatus, variant: defaultVariant, isLive: false };
+    
+    let liveStatus: string | undefined;
+    switch (label) {
+      case 'Local Text Runtime': liveStatus = systemHealth.runtime?.status; break;
+      case 'Model Registry': liveStatus = systemHealth.modelRegistry?.status; break;
+      case 'Project Memory': liveStatus = systemHealth.projectMemory?.status; break;
+      case 'External Provider API': liveStatus = systemHealth.externalProvider?.status; break;
+      case 'Code Agent': liveStatus = systemHealth.codeAgent?.status; break;
+      case 'Image Workflow': liveStatus = systemHealth.imageWorkflow?.status; break;
+      case 'Vector Memory / RAG': liveStatus = systemHealth.vectorMemory?.status; break;
+      case 'Nano Diagnostics': liveStatus = systemHealth.nanoIntelligence?.status; break;
+      case 'Security / Permissions': liveStatus = systemHealth.security?.status; break;
+      case 'Audit / Rate Limit': liveStatus = systemHealth.security?.status; break;
+      case 'Desktop Readiness': liveStatus = systemHealth.desktopReadiness?.status; break;
+    }
+
+    if (!liveStatus) return { status: defaultStatus, variant: defaultVariant, isLive: false };
+    
+    let variant = defaultVariant;
+    if (liveStatus === 'ready') variant = 'active';
+    else if (liveStatus === 'failed') variant = 'failed';
+    else if (liveStatus === 'degraded') variant = 'warning';
+    else if (liveStatus === 'not-configured') variant = 'disabled';
+    
+    return { status: liveStatus, variant, isLive: true };
+  };
 
   if (!authorized) return null;
 
@@ -153,20 +194,26 @@ export default function AdminDashboard() {
         </header>
 
         <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mb-8">
-          {FOUNDATION_STATUS.map(({ label, desc, variant, status }) => (
-            <div key={label} className="glass-card rounded-[20px] p-5 border border-white/10 flex flex-col justify-between">
-              <div>
-                <div className="flex items-start justify-between mb-3">
-                  <div className="p-2.5 rounded-xl bg-white/[0.03] border border-white/5">
-                    <FiCpu size={14} className="text-slate-400" />
+          {FOUNDATION_STATUS.map(({ label, desc, variant: defaultVariant, status: defaultStatus }) => {
+            const { status, variant, isLive } = getLiveStatus(label, defaultStatus, defaultVariant);
+            return (
+              <div key={label} className="glass-card rounded-[20px] p-5 border border-white/10 flex flex-col justify-between">
+                <div>
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="p-2.5 rounded-xl bg-white/[0.03] border border-white/5">
+                      <FiCpu size={14} className="text-slate-400" />
+                    </div>
+                    <div className="flex flex-col items-end gap-1">
+                      {isLive && <span className="text-[8px] text-emerald-400 uppercase font-bold tracking-widest">LIVE</span>}
+                      <StatusBadge variant={variant} label={status} />
+                    </div>
                   </div>
-                  <StatusBadge variant={variant} label={status} />
+                  <p className="text-sm font-black text-slate-900 dark:text-white tracking-tight">{label}</p>
+                  <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">{desc}</p>
                 </div>
-                <p className="text-sm font-black text-slate-900 dark:text-white tracking-tight">{label}</p>
-                <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">{desc}</p>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </section>
 
         <section className="mb-6">

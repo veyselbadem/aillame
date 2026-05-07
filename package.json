@@ -17,6 +17,7 @@
                     "smoke:external-api":  "node scripts/smoke-external-api.mjs",
                     "smoke:productization":  "node scripts/smoke-productization.mjs",
                     "smoke:beta-ui":  "node scripts/smoke-beta-ui.mjs",
+                    "smoke:persistent-storage":  "node scripts/smoke-persistent-storage.mjs",
                     "cli:aillame":  "node scripts/aillame-cli.mjs",
                     "core:build":  "napi build --platform --release --cargo-cwd aillame-core",
                     "core:dev":  "napi build --cargo-cwd aillame-core",

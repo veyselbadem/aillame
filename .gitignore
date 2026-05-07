@@ -64,6 +64,8 @@ data/
 /data/nano/**/*.jsonl
 *.json.bak
 *.log
+.aillame-data/
+.aillame-test-data/
 api-clients-store.json
 ai_lab_sessions.json
 agent-tasks-store.json

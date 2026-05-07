@@ -62,3 +62,15 @@ Detaylı belgeler için aşağıdaki dokümanlara göz atın:
 - [Desktop Readiness Stratejisi](docs/desktop-readiness.md)
 - [Kalıcı Hafıza (Persistent Memory) Stratejisi](docs/persistent-memory-strategy.md)
 - [Beta Readiness Checklist](docs/beta-readiness-checklist.md)
+
+## Post-Beta Phase 1: Persistent File Storage & Live Health Binding
+
+Aillame artık bellek durumunu ve sistem sağlığını in-memory seviyesinden dosya tabanlı (JSONL) kalıcı depolamaya ve canlı izleme yapısına taşımıştır:
+- **Storage Root:** Tüm kalıcı veriler varsayılan olarak `.aillame-data/` klasörüne yazılır (veya `AILLAME_DATA_DIR` env değişkeni ile ezilebilir).
+- **Project Memory & Vector Store:** Artık JSONL tabanlı `File-Store` adaptörleri üzerinden okunup yazılır. Her okuma ve yazma işleminde Project Isolation kuralları korunur ve veriler otomatik olarak sterilize edilir.
+- **Live Health Binding:** `/api/aillame/health` endpoint'i ve Admin Dashboard artık gerçek zamanlı aggregator üzerinden storage diagnostics verilerini okur.
+
+Smoke testi için:
+```bash
+npm run smoke:persistent-storage
+```
