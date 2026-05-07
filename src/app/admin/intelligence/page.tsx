@@ -54,7 +54,7 @@ export default function IntelligenceDashboard() {
   const progress = stats && stats.totalEpochs > 0 ? (stats.currentEpoch / stats.totalEpochs) * 100 : 0;
 
   return (
-    <div className="min-h-screen bg-[#050505] p-8 text-slate-300 font-sans">
+    <div className="theme-admin-page min-h-screen p-8 font-sans">
       <div className="mb-10 flex flex-col gap-4 border-b border-white/5 pb-6 lg:flex-row lg:items-center lg:justify-between">
         <div>
           <h1 className="flex items-center text-3xl font-light tracking-widest text-slate-900 dark:text-white uppercase">

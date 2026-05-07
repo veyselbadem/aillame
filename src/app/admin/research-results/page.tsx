@@ -157,7 +157,7 @@ export default function AdminResearchResultsPage() {
   }, [results, statusFilter, typeFilter, projectFilter, modeFilter, safetyFilter]);
 
   return (
-    <div className="min-h-screen relative p-6 md:p-10 max-w-7xl mx-auto">
+    <div className="theme-admin-page min-h-screen relative p-6 md:p-10 max-w-7xl mx-auto">
       <header className="mb-8 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <p className="text-[10px] font-black uppercase tracking-[0.34em] text-gray-500 mb-3">Admin Research Results</p>

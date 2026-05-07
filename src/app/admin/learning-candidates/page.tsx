@@ -185,7 +185,7 @@ export default function AdminLearningCandidatesPage() {
   if (!authorized) return null;
 
   return (
-    <div className="min-h-screen bg-transparent relative p-6 md:p-10 max-w-7xl mx-auto">
+    <div className="theme-admin-page min-h-screen bg-transparent relative p-6 md:p-10 max-w-7xl mx-auto">
       <header className="mb-10 flex flex-col md:flex-row md:items-end md:justify-between gap-6">
         <div>
           <div className="flex items-center gap-2.5 mb-2">

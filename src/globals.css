@@ -173,6 +173,89 @@ body {
   border-color: var(--border) !important;
 }
 
+/* Final admin polish compatibility layer for older diagnostic pages. */
+.theme-admin-page {
+  background: var(--bg-main);
+  color: var(--text-main);
+}
+
+.theme-admin-page [class*="border-white/"],
+.theme-admin-page [class*="border-slate-"],
+.theme-admin-page [class*="border-zinc-"] {
+  border-color: var(--border) !important;
+}
+
+.theme-admin-page [class*="bg-white/5"],
+.theme-admin-page [class*="bg-white/["],
+.theme-admin-page [class*="bg-black/10"],
+.theme-admin-page [class*="bg-black/20"],
+.theme-admin-page [class*="bg-black/30"],
+.theme-admin-page [class*="bg-black/50"],
+.theme-admin-page [class*="bg-slate-950"],
+.theme-admin-page [class*="bg-zinc-950"],
+.theme-admin-page [class*="bg-[#050505]"],
+.theme-admin-page [class*="bg-[#0a0a0a]"] {
+  background: var(--bg-surface) !important;
+}
+
+.theme-admin-page [class*="text-white"],
+.theme-admin-page [class*="text-slate-100"],
+.theme-admin-page [class*="text-slate-200"],
+.theme-admin-page [class*="text-slate-300"],
+.theme-admin-page [class*="text-gray-200"],
+.theme-admin-page [class*="text-gray-300"],
+.theme-admin-page [class*="text-zinc-200"],
+.theme-admin-page [class*="text-zinc-300"] {
+  color: var(--text-main) !important;
+}
+
+.theme-admin-page [class*="text-slate-400"],
+.theme-admin-page [class*="text-slate-500"],
+.theme-admin-page [class*="text-gray-400"],
+.theme-admin-page [class*="text-gray-500"],
+.theme-admin-page [class*="text-zinc-400"],
+.theme-admin-page [class*="text-zinc-500"] {
+  color: var(--text-muted) !important;
+}
+
+.theme-admin-page input,
+.theme-admin-page select,
+.theme-admin-page textarea {
+  background: var(--bg-surface) !important;
+  color: var(--text-main) !important;
+  border-color: var(--border) !important;
+}
+
+.theme-admin-page option {
+  background: var(--bg-surface);
+  color: var(--text-main);
+}
+
+.theme-admin-page [class*="bg-indigo-600"],
+.theme-admin-page [class*="bg-indigo-500"],
+.theme-admin-page [class*="bg-blue-600"],
+.theme-admin-page [class*="bg-emerald-600"],
+.theme-admin-page [class*="bg-rose-600"],
+.theme-admin-page [class*="bg-amber-500"] {
+  color: #ffffff !important;
+}
+
+.theme-admin-page .admin-polish-card {
+  background: var(--bg-surface) !important;
+  color: var(--text-main) !important;
+  border-color: var(--border) !important;
+}
+
+.theme-admin-page .admin-polish-muted {
+  color: var(--text-muted) !important;
+}
+
+.theme-admin-page .admin-polish-code {
+  background: var(--bg-elevated) !important;
+  color: var(--text-secondary) !important;
+  border-color: var(--border) !important;
+}
+
 /* ═══ GLASS CARD ═══ */
 .glass-card {
   background: var(--glass-bg);

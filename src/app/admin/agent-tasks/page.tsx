@@ -279,7 +279,7 @@ export default function AdminAgentTasksPage() {
   if (!authorized) return null;
 
   return (
-    <div className="min-h-screen relative p-6 md:p-10 max-w-7xl mx-auto animate-fade-in">
+    <div className="theme-admin-page min-h-screen relative p-6 md:p-10 max-w-7xl mx-auto animate-fade-in">
       <header className="mb-8 flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
         <div>
           <div className="flex items-center gap-2.5 mb-2">

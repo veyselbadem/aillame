@@ -148,7 +148,7 @@ export default function AdminMemoryCardsPage() {
   if (!authorized) return null;
 
   return (
-    <div className="min-h-screen bg-transparent relative p-6 md:p-10 max-w-7xl mx-auto">
+    <div className="theme-admin-page min-h-screen bg-transparent relative p-6 md:p-10 max-w-7xl mx-auto">
       <header className="mb-6 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div>
           <p className="text-[10px] font-black uppercase tracking-[0.34em] text-gray-500 mb-3">Admin · Learning Pipeline</p>
