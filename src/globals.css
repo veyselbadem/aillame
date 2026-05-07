@@ -15,8 +15,12 @@
   /* Surface (Light) */
   --bg-main:        #f8fafc;
   --bg-surface:     #ffffff;
+  --bg-elevated:    #f1f5f9;
+  --bg-soft:        #eef2ff;
   --text-main:      #0f172a;
+  --text-secondary: #334155;
   --text-muted:     #475569;
+  --border:         #d8dee8;
 
   /* Semantic (Light) */
   --status-warning-bg:   rgba(245, 158, 11, 0.08);
@@ -46,8 +50,12 @@
   /* Surface (Crystal Dark) */
   --bg-main:        #05050a;
   --bg-surface:     #0b0b14;
+  --bg-elevated:    #111827;
+  --bg-soft:        #15172a;
   --text-main:      #f8fafc;
+  --text-secondary: #cbd5e1;
   --text-muted:     #94a3b8;
+  --border:         rgba(148,163,184,0.22);
 
   /* Semantic (Dark) */
   --status-warning-bg:   rgba(245, 158, 11, 0.15);
@@ -75,6 +83,94 @@ body {
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* Shared theme primitives */
+.theme-shell {
+  background: var(--bg-main);
+  color: var(--text-main);
+}
+
+.theme-surface {
+  background: var(--bg-surface);
+  color: var(--text-main);
+  border: 1px solid var(--border);
+  box-shadow: var(--card-shadow);
+}
+
+.theme-elevated {
+  background: var(--bg-elevated);
+  color: var(--text-main);
+  border: 1px solid var(--border);
+}
+
+.theme-soft-panel {
+  background: color-mix(in srgb, var(--bg-surface) 86%, var(--primary) 5%);
+  color: var(--text-main);
+  border: 1px solid var(--border);
+}
+
+.theme-title { color: var(--text-main); }
+.theme-secondary { color: var(--text-secondary); }
+.theme-muted { color: var(--text-muted); }
+.theme-divider { border-color: var(--border); }
+
+.theme-input {
+  background: var(--bg-surface);
+  color: var(--text-main);
+  border: 1px solid var(--border);
+}
+
+.theme-input::placeholder {
+  color: var(--text-muted);
+  opacity: 0.72;
+}
+
+.theme-table-row:hover {
+  background: color-mix(in srgb, var(--bg-elevated) 64%, transparent);
+}
+
+.theme-callout-info {
+  background: rgba(79, 70, 229, 0.08);
+  color: var(--text-secondary);
+  border: 1px solid rgba(79, 70, 229, 0.2);
+}
+
+.theme-callout-warning {
+  background: var(--status-warning-bg);
+  color: var(--status-warning-text);
+  border: 1px solid rgba(245, 158, 11, 0.28);
+}
+
+.theme-code {
+  background: color-mix(in srgb, var(--bg-elevated) 78%, transparent);
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+}
+
+/* Scoped compatibility for legacy dark Tailwind utilities inside themed surfaces. */
+.theme-surface .text-white,
+.theme-surface [class*="text-zinc-2"],
+.theme-surface [class*="text-zinc-3"] {
+  color: var(--text-main) !important;
+}
+
+.theme-surface [class*="text-zinc-4"],
+.theme-surface [class*="text-zinc-5"],
+.theme-surface [class*="text-zinc-6"],
+.theme-surface [class*="text-zinc-7"] {
+  color: var(--text-muted) !important;
+}
+
+.theme-surface [class*="bg-zinc-8"],
+.theme-surface [class*="bg-zinc-9"],
+.theme-surface [class*="bg-black/"] {
+  background: var(--bg-elevated) !important;
+}
+
+.theme-surface [class*="border-zinc-"],
+.theme-surface [class*="border-white/"] {
+  border-color: var(--border) !important;
 }
 
 /* ═══ GLASS CARD ═══ */
@@ -216,7 +312,7 @@ body {
 ::-webkit-scrollbar-track { background: transparent; }
 
 .custom-scrollbar::-webkit-scrollbar { width: 3px; }
-.custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.05); border-radius: 10px; }
+.custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(100,116,139,0.24); border-radius: 10px; }
 .custom-scrollbar:hover::-webkit-scrollbar-thumb { background: rgba(129,140,248,0.25); }
 
 /* ═══ SELECTION ═══ */
@@ -238,13 +334,15 @@ code, pre, .font-mono {
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  border: 1px solid rgba(255,255,255,0.06);
+  border: 1px solid var(--border);
   backdrop-filter: blur(8px);
 }
 
-.tool-badge.running  { background: rgba(250,204,21,0.1);  color: #fde047; border-color: rgba(250,204,21,0.2); }
-.tool-badge.done     { background: rgba(52,211,153,0.1);  color: #6ee7b7; border-color: rgba(52,211,153,0.2); }
-.tool-badge.error    { background: rgba(248,113,113,0.1); color: #fca5a5; border-color: rgba(248,113,113,0.2); }
+.tool-badge.running  { background: rgba(245,158,11,0.12); color: var(--status-warning-text); border-color: rgba(245,158,11,0.28); }
+.tool-badge.done     { background: rgba(16,185,129,0.12); color: #047857; border-color: rgba(16,185,129,0.28); }
+.tool-badge.error    { background: rgba(244,63,94,0.12); color: #be123c; border-color: rgba(244,63,94,0.28); }
+.dark .tool-badge.done  { color: #6ee7b7; }
+.dark .tool-badge.error { color: #fca5a5; }
 
 /* ═══ NEURAL GRID (subtle background pattern) ═══ */
 .neural-grid {

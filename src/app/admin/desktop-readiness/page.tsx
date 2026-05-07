@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { adminFetch, requireAdminTokenOrRedirect } from '@lib/admin-fetch';
 import { RiComputerLine, RiServerLine, RiFileTextLine, RiImageLine, RiShieldCheckLine, RiAlertLine, RiCheckboxCircleLine } from 'react-icons/ri';
+import StatusBadge from '@components/ui/StatusBadge';
 
 export default function DesktopReadinessPage() {
   const [data, setData] = useState<any>(null);
@@ -34,79 +35,69 @@ export default function DesktopReadinessPage() {
   if (!authorized) return null;
 
   const report = data?.report;
-  const acceptance = data?.runtimeAcceptance;
 
   return (
-    <div className="min-h-screen bg-[#050505] p-8 text-slate-300 font-sans">
-      <div className="mb-10 flex flex-col gap-4 border-b border-white/5 pb-6 lg:flex-row lg:items-center lg:justify-between">
+    <div className="min-h-screen theme-shell p-8 font-sans">
+      <div className="mb-10 flex flex-col gap-4 border-b pb-6 theme-divider lg:flex-row lg:items-center lg:justify-between">
         <div>
-          <h1 className="flex items-center text-3xl font-light tracking-widest text-white uppercase">
-            <RiComputerLine className="mr-4 text-blue-500" />
+          <h1 className="flex items-center text-3xl font-bold tracking-tight theme-title">
+            <RiComputerLine className="mr-4 text-blue-600 dark:text-blue-300" />
             Desktop Readiness
           </h1>
-          <p className="mt-2 text-sm text-slate-500">Desktop shell prototype, local server boot and final runtime acceptance bridge.</p>
+          <p className="mt-2 text-sm theme-muted">Desktop shell prototype, local server boot and final runtime acceptance bridge.</p>
         </div>
-        <div className="flex gap-3">
-          <button onClick={loadReadiness} className="rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-xs hover:bg-white/10 transition-colors">
-            Run Readiness Check
-          </button>
-        </div>
+        <button onClick={loadReadiness} className="rounded-lg theme-elevated px-4 py-2 text-xs font-semibold transition-colors hover:border-indigo-500/35">
+          Run Readiness Check
+        </button>
       </div>
 
       {!report && !loading && (
-        <div className="rounded-2xl border border-rose-500/20 bg-rose-500/5 p-10 text-center">
-          <RiAlertLine className="mx-auto mb-4 text-3xl text-rose-500" />
-          <h2 className="text-xl font-bold text-white">Readiness Check Failed</h2>
-          <p className="mt-2 text-sm text-slate-400">Could not retrieve desktop readiness data from the server.</p>
+        <div className="rounded-2xl border border-rose-500/25 bg-rose-500/10 p-10 text-center">
+          <RiAlertLine className="mx-auto mb-4 text-3xl text-rose-600 dark:text-rose-300" />
+          <h2 className="text-xl font-bold theme-title">Readiness Check Failed</h2>
+          <p className="mt-2 text-sm theme-muted">Could not retrieve desktop readiness data from the server.</p>
         </div>
       )}
 
       {report && (
         <div className="grid gap-8 lg:grid-cols-3">
-          {/* Main Acceptance Card */}
-          <div className="lg:col-span-2 space-y-8">
-            <div className={`rounded-3xl border ${report.runtimeAcceptance.finalAcceptanceReady ? 'border-emerald-500/20 bg-emerald-500/5' : 'border-amber-500/20 bg-amber-500/5'} p-8 shadow-2xl`}>
-              <div className="flex items-start justify-between">
+          <div className="space-y-8 lg:col-span-2">
+            <div className={`rounded-3xl border p-8 ${report.runtimeAcceptance.finalAcceptanceReady ? 'border-emerald-500/25 bg-emerald-500/10' : 'border-amber-500/25 bg-amber-500/10'}`}>
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                 <div>
-                  <h2 className="text-2xl font-bold text-white">Beta Acceptance Status</h2>
-                  <p className="mt-1 text-sm text-slate-400">Final production release requirements.</p>
+                  <h2 className="text-2xl font-bold theme-title">Beta Acceptance Status</h2>
+                  <p className="mt-1 text-sm theme-muted">Final production release requirements.</p>
                 </div>
-                <span className={`rounded-full px-4 py-1 text-xs font-bold uppercase tracking-widest ${report.runtimeAcceptance.finalAcceptanceReady ? 'bg-emerald-500 text-black' : 'bg-amber-500 text-black'}`}>
-                  {report.runtimeAcceptance.finalAcceptanceReady ? 'Ready for Beta' : 'Action Required'}
-                </span>
+                <StatusBadge
+                  variant={report.runtimeAcceptance.finalAcceptanceReady ? 'ready' : 'warning'}
+                  label={report.runtimeAcceptance.finalAcceptanceReady ? 'Ready for Beta' : 'Action Required'}
+                />
               </div>
 
               <div className="mt-10 grid gap-6 md:grid-cols-2">
-                <div className="rounded-2xl bg-black/40 p-6 border border-white/5">
-                  <div className="flex items-center gap-3 mb-4">
-                    <RiFileTextLine className="text-xl text-blue-400" />
-                    <h3 className="font-bold text-white uppercase tracking-wider text-xs">Live Text Runtime (LLM)</h3>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {report.runtimeAcceptance.textRuntimeReady ? <RiCheckboxCircleLine className="text-emerald-500" /> : <RiAlertLine className="text-amber-500" />}
-                    <span className="text-sm font-medium">{report.runtimeAcceptance.textRuntimeReady ? 'Active & Producing Text' : 'Not Producing Text'}</span>
-                  </div>
-                  <p className="mt-3 text-[10px] text-slate-500">Requirements: aillame-core-v7.node + Nano v1 checkpoint.</p>
-                </div>
-
-                <div className="rounded-2xl bg-black/40 p-6 border border-white/5">
-                  <div className="flex items-center gap-3 mb-4">
-                    <RiImageLine className="text-xl text-purple-400" />
-                    <h3 className="font-bold text-white uppercase tracking-wider text-xs">Live Image Runtime (IGM)</h3>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {report.runtimeAcceptance.imageRuntimeReady ? <RiCheckboxCircleLine className="text-emerald-500" /> : <RiAlertLine className="text-amber-500" />}
-                    <span className="text-sm font-medium">{report.runtimeAcceptance.imageRuntimeReady ? 'Active & Producing Images' : 'Not Configured'}</span>
-                  </div>
-                  <p className="mt-3 text-[10px] text-slate-500">Requirements: Diffusion model + AILLAME_IGM_* env variables.</p>
-                </div>
+                <RuntimeRequirementCard
+                  icon={<RiFileTextLine className="text-xl text-blue-600 dark:text-blue-300" />}
+                  title="Live Text Runtime (LLM)"
+                  ready={report.runtimeAcceptance.textRuntimeReady}
+                  readyText="Active & Producing Text"
+                  waitingText="Not Producing Text"
+                  note="Requirements: aillame-core-v7.node + Nano v1 checkpoint."
+                />
+                <RuntimeRequirementCard
+                  icon={<RiImageLine className="text-xl text-purple-600 dark:text-purple-300" />}
+                  title="Live Image Runtime (IGM)"
+                  ready={report.runtimeAcceptance.imageRuntimeReady}
+                  readyText="Active & Producing Images"
+                  waitingText="Not Configured"
+                  note="Requirements: Diffusion model + AILLAME_IGM_* env variables."
+                />
               </div>
 
               {!report.runtimeAcceptance.finalAcceptanceReady && (
                 <div className="mt-8 space-y-2">
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-amber-500">Beta Blockers:</p>
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-amber-800 dark:text-amber-200">Beta Blockers:</p>
                   {report.runtimeAcceptance.blockers.map((b: string, i: number) => (
-                    <div key={i} className="flex items-center gap-2 text-xs text-amber-200/70">
+                    <div key={i} className="flex items-center gap-2 text-xs text-amber-900 dark:text-amber-100">
                       <div className="h-1 w-1 rounded-full bg-amber-500" />
                       {b}
                     </div>
@@ -115,40 +106,29 @@ export default function DesktopReadinessPage() {
               )}
             </div>
 
-            {/* Boot Strategy Card */}
-            <div className="rounded-3xl border border-white/5 bg-[#0a0a0a] p-8">
-              <h3 className="flex items-center text-sm font-bold uppercase tracking-widest text-slate-400">
-                <RiServerLine className="mr-3 text-blue-400" /> Local Server Boot Strategy
+            <div className="theme-surface rounded-3xl p-8">
+              <h3 className="flex items-center text-sm font-bold uppercase tracking-widest theme-secondary">
+                <RiServerLine className="mr-3 text-blue-600 dark:text-blue-300" /> Local Server Boot Strategy
               </h3>
               <div className="mt-6 grid gap-4 text-xs">
-                <div className="flex justify-between border-b border-white/5 pb-2">
-                  <span className="text-slate-500">Default Host</span>
-                  <span className="font-mono text-blue-400">{data?.desktop?.bootPlan?.defaultHost}</span>
-                </div>
-                <div className="flex justify-between border-b border-white/5 pb-2">
-                  <span className="text-slate-500">Default Port</span>
-                  <span className="font-mono text-blue-400">{data?.desktop?.bootPlan?.defaultPort}</span>
-                </div>
-                <div className="flex justify-between border-b border-white/5 pb-2">
-                  <span className="text-slate-500">Startup Command</span>
-                  <span className="font-mono text-slate-300">{data?.desktop?.bootPlan?.startupCommandPreview}</span>
-                </div>
+                <KeyValue label="Default Host" value={data?.desktop?.bootPlan?.defaultHost} />
+                <KeyValue label="Default Port" value={data?.desktop?.bootPlan?.defaultPort} />
+                <KeyValue label="Startup Command" value={data?.desktop?.bootPlan?.startupCommandPreview} />
               </div>
               <div className="mt-6">
-                <p className="text-[10px] font-bold uppercase tracking-widest text-slate-600 mb-2">Production Notes:</p>
+                <p className="mb-2 text-[10px] font-bold uppercase tracking-widest theme-muted">Production Notes:</p>
                 <div className="space-y-2">
                   {data?.desktop?.bootPlan?.productionNotes.map((n: string, i: number) => (
-                    <p key={i} className="text-[10px] text-slate-500 leading-relaxed italic">• {n}</p>
+                    <p key={i} className="text-[10px] leading-relaxed theme-muted">- {n}</p>
                   ))}
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Sidebar Diagnostics */}
           <div className="space-y-8">
-            <div className="rounded-3xl border border-white/5 bg-[#0a0a0a] p-6">
-              <h3 className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-6">Shell Diagnostics</h3>
+            <div className="theme-surface rounded-3xl p-6">
+              <h3 className="mb-6 text-xs font-bold uppercase tracking-widest theme-secondary">Shell Diagnostics</h3>
               <div className="space-y-4">
                 {[
                   ['Shell Prototype', report.shellAvailable],
@@ -159,24 +139,56 @@ export default function DesktopReadinessPage() {
                   ['Packaging', report.packagingReady],
                 ].map(([label, ok]) => (
                   <div key={label as string} className="flex items-center justify-between">
-                    <span className="text-[11px] text-slate-500">{label}</span>
-                    <div className={`h-2 w-2 rounded-full ${ok ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'bg-slate-800'}`} />
+                    <span className="text-[11px] theme-muted">{label}</span>
+                    <div className={`h-2 w-2 rounded-full ${ok ? 'bg-emerald-500' : 'bg-slate-400 dark:bg-slate-600'}`} />
                   </div>
                 ))}
               </div>
             </div>
 
-            <div className="rounded-3xl border border-white/5 bg-[#0a0a0a] p-6">
-              <RiShieldCheckLine className="text-2xl text-blue-500 mb-4" />
-              <h3 className="text-xs font-bold uppercase tracking-widest text-white mb-2">Aillame Local Hub</h3>
-              <p className="text-[10px] text-slate-500 leading-relaxed">
-                Aillame Desktop, Ollama veya dış servislere bağımlı olmadan çalışacak şekilde tasarlanmıştır. 
+            <div className="theme-surface rounded-3xl p-6">
+              <RiShieldCheckLine className="mb-4 text-2xl text-blue-600 dark:text-blue-300" />
+              <h3 className="mb-2 text-xs font-bold uppercase tracking-widest theme-title">Aillame Local Hub</h3>
+              <p className="text-[10px] leading-relaxed theme-muted">
+                Aillame Desktop, harici runtime wrapper zorunluluğu olmadan çalışacak şekilde tasarlanmıştır.
                 Final kabul için yerel LLM ve IGM çalışma zamanlarının doğrulanması şarttır.
               </p>
             </div>
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+function RuntimeRequirementCard({ icon, title, ready, readyText, waitingText, note }: {
+  icon: React.ReactNode;
+  title: string;
+  ready: boolean;
+  readyText: string;
+  waitingText: string;
+  note: string;
+}) {
+  return (
+    <div className="theme-surface rounded-2xl p-6">
+      <div className="mb-4 flex items-center gap-3">
+        {icon}
+        <h3 className="text-xs font-bold uppercase tracking-wider theme-title">{title}</h3>
+      </div>
+      <div className="flex items-center gap-2 theme-secondary">
+        {ready ? <RiCheckboxCircleLine className="text-emerald-600 dark:text-emerald-300" /> : <RiAlertLine className="text-amber-600 dark:text-amber-300" />}
+        <span className="text-sm font-medium">{ready ? readyText : waitingText}</span>
+      </div>
+      <p className="mt-3 text-[10px] theme-muted">{note}</p>
+    </div>
+  );
+}
+
+function KeyValue({ label, value }: { label: string; value: string | number | undefined }) {
+  return (
+    <div className="flex justify-between border-b pb-2 theme-divider">
+      <span className="theme-muted">{label}</span>
+      <span className="font-mono theme-secondary">{value ?? '-'}</span>
     </div>
   );
 }

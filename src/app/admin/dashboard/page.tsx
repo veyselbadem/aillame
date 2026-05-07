@@ -197,15 +197,15 @@ export default function AdminDashboard() {
           {FOUNDATION_STATUS.map(({ label, desc, variant: defaultVariant, status: defaultStatus }) => {
             const { status, variant, isLive } = getLiveStatus(label, defaultStatus, defaultVariant);
             return (
-              <div key={label} className="glass-card rounded-[22px] p-5 border border-white/8 bg-white/[0.025] transition-colors hover:bg-white/[0.04]">
+              <div key={label} className="theme-surface rounded-[22px] p-5 transition-colors hover:border-indigo-500/25">
                 <div className="flex items-center justify-between gap-3 mb-3">
-                  <span className="text-[10px] font-black text-slate-300 uppercase tracking-[0.16em]">{label}</span>
+                  <span className="text-[10px] font-black uppercase tracking-[0.16em] theme-title">{label}</span>
                   <div className="flex items-center gap-1.5">
                     {isLive && <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />}
                     <StatusBadge variant={variant} label={status} className="!px-2 !py-0 !text-[8px]" />
                   </div>
                 </div>
-                <p className="text-[11px] text-slate-400 leading-relaxed">{desc}</p>
+                <p className="text-[11px] leading-relaxed theme-muted">{desc}</p>
               </div>
             );
           })}
@@ -236,8 +236,8 @@ export default function AdminDashboard() {
             <StatCard icon={<FiCpu className="text-amber-400" />} label="Epoch" value={brainStats ? brainStats.totalEpochs.toLocaleString() : '-'} accent="amber" />
           </div>
 
-          <div className="glass-card p-6 rounded-[24px] border border-white/8 bg-white/[0.025]">
-            <h2 className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-400 mb-5 flex items-center gap-2">
+          <div className="theme-surface p-6 rounded-[24px]">
+            <h2 className="text-[10px] font-black uppercase tracking-[0.25em] theme-secondary mb-5 flex items-center gap-2">
               <FiCpu className="text-indigo-400" size={12} />
               Runtime Stack Preview
             </h2>
@@ -252,8 +252,8 @@ export default function AdminDashboard() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-          <div className="glass-card p-6 rounded-[24px] border border-white/8 bg-white/[0.025]">
-            <h2 className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-400 mb-4 flex items-center gap-2">
+          <div className="theme-surface p-6 rounded-[24px]">
+            <h2 className="text-[10px] font-black uppercase tracking-[0.25em] theme-secondary mb-4 flex items-center gap-2">
               <FiCheckCircle className="text-indigo-400" size={12} />
               Beta Readiness Checklist
             </h2>
@@ -270,8 +270,8 @@ export default function AdminDashboard() {
             </div>
           </div>
           
-          <div className="glass-card p-6 rounded-[24px] border border-white/8 bg-white/[0.025]">
-            <h2 className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-400 mb-4 flex items-center gap-2">
+          <div className="theme-surface p-6 rounded-[24px]">
+            <h2 className="text-[10px] font-black uppercase tracking-[0.25em] theme-secondary mb-4 flex items-center gap-2">
               <FiPackage className="text-indigo-400" size={12} />
               Desktop Readiness
             </h2>
@@ -282,14 +282,14 @@ export default function AdminDashboard() {
               <StatusRow label="Tray/Background App" value="planned" ok={false} />
               <StatusRow label="Packaging" value="planned" ok={false} />
             </div>
-            <p className="text-xs text-slate-400 mt-4 leading-relaxed">
+            <p className="text-xs theme-muted mt-4 leading-relaxed">
               Desktop packaging ön hazırlığı tamamlandı. Tauri veya Electron paketi ile çevrimdışı çalışma hedeflenmektedir.
             </p>
           </div>
         </div>
 
-        <div className="glass-card p-6 rounded-[24px] border border-white/8 bg-white/[0.025] mb-6">
-          <h2 className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-400 mb-4">CLI Usage (Plan-Only)</h2>
+        <div className="theme-surface p-6 rounded-[24px] mb-6">
+          <h2 className="text-[10px] font-black uppercase tracking-[0.25em] theme-secondary mb-4">CLI Usage (Plan-Only)</h2>
           <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
             <InfoCard title="Status & Health" body="npm run cli:aillame -- status" />
             <InfoCard title="Projects" body="npm run cli:aillame -- projects" />
@@ -298,13 +298,13 @@ export default function AdminDashboard() {
             <InfoCard title="Task Plan" body='npm run cli:aillame -- task plan --project aillame --message "Analiz et"' />
             <InfoCard title="Diagnostics" body="npm run cli:aillame -- diagnostics" />
           </div>
-          <p className="text-xs text-slate-400 mt-4 leading-relaxed">
+          <p className="text-xs theme-muted mt-4 leading-relaxed">
             CLI plan-only çalışır. Destructive işlem yapmaz, dosya yazmaz, otomatik komut çalıştırmaz.
           </p>
         </div>
 
-        <div className="glass-card p-6 rounded-[24px] border border-white/8 bg-white/[0.025]">
-          <h2 className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-400 mb-4">Project Memory Isolation</h2>
+        <div className="theme-surface p-6 rounded-[24px]">
+          <h2 className="text-[10px] font-black uppercase tracking-[0.25em] theme-secondary mb-4">Project Memory Isolation</h2>
           <div className="grid gap-3 md:grid-cols-3">
             <InfoCard title="Global Memory" body="Yalnızca açıkça istenirse ortak bağlam olarak kullanılır." />
             <InfoCard title="Project Memory" body="boss-ai hafızası doomsgame-engine isteklerine otomatik karışmaz." />
@@ -325,22 +325,22 @@ function StatCard({ icon, label, value, accent }: { icon: React.ReactNode; label
   };
   return (
     <div className={`p-5 rounded-[20px] border transition-all duration-300 group ${accents[accent] || 'bg-white/5 border-white/5'}`}>
-      <div className="w-8 h-8 rounded-xl bg-white/5 flex items-center justify-center text-lg mb-3">
+      <div className="w-8 h-8 rounded-xl bg-white/60 dark:bg-white/5 flex items-center justify-center text-lg mb-3">
         {icon}
       </div>
-      <p className="text-[9px] font-bold text-gray-600 uppercase tracking-widest">{label}</p>
-      <p className="text-xl font-extrabold mt-0.5 tracking-tight font-mono">{value}</p>
+      <p className="text-[9px] font-bold uppercase tracking-widest theme-muted">{label}</p>
+      <p className="text-xl font-extrabold mt-0.5 tracking-tight font-mono theme-title">{value}</p>
     </div>
   );
 }
 
 function StatusRow({ label, value, ok }: { label: string; value: string; ok: boolean }) {
   return (
-    <div className="flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl bg-white/[0.03] hover:bg-white/[0.05] transition-all group">
-      <span className="text-[10px] font-medium text-gray-500 uppercase tracking-wider group-hover:text-gray-300 transition-colors">{label}</span>
+    <div className="flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl theme-elevated transition-all group">
+      <span className="text-[10px] font-medium uppercase tracking-wider theme-muted transition-colors">{label}</span>
       <div className="flex items-center gap-2">
         {ok ? <FiCheckCircle size={11} className="text-emerald-400 flex-shrink-0" /> : <FiAlertCircle size={11} className="text-amber-400 flex-shrink-0" />}
-        <span className="text-xs font-bold text-gray-300 font-mono text-right">{value}</span>
+        <span className="text-xs font-bold font-mono text-right theme-secondary">{value}</span>
       </div>
     </div>
   );
@@ -348,9 +348,9 @@ function StatusRow({ label, value, ok }: { label: string; value: string; ok: boo
 
 function InfoCard({ title, body }: { title: string; body: string }) {
   return (
-    <div className="rounded-2xl border border-white/8 bg-black/10 p-4">
-      <p className="text-sm font-black text-white">{title}</p>
-      <p className="mt-1 text-xs text-gray-400 leading-relaxed">{body}</p>
+    <div className="theme-elevated rounded-2xl p-4">
+      <p className="text-sm font-black theme-title">{title}</p>
+      <p className="mt-1 text-xs theme-muted leading-relaxed">{body}</p>
     </div>
   );
 }

@@ -16,25 +16,25 @@ export default function ModelLibraryPage() {
   }, []);
 
   return (
-    <div className="flex h-screen bg-zinc-950 text-zinc-100">
+    <div className="flex h-screen theme-shell">
       <Sidebar isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} />
       <main className={`flex-1 overflow-y-auto transition-all duration-200 ${isSidebarOpen ? 'ml-64' : 'ml-0'}`}>
         {authorized === null ? (
-          <div className="flex items-center justify-center h-full text-zinc-500 text-sm">Kontrol ediliyor...</div>
+          <div className="flex h-full items-center justify-center text-sm theme-muted">Kontrol ediliyor...</div>
         ) : !authorized ? (
-          <div className="flex flex-col items-center justify-center h-full gap-3 text-zinc-400">
-            <FiPackage size={32} className="text-zinc-600" />
+          <div className="flex h-full flex-col items-center justify-center gap-3 theme-muted">
+            <FiPackage size={32} className="text-indigo-500" />
             <p className="text-sm">Bu sayfaya erişmek için admin token gereklidir.</p>
-            <a href="/admin/login" className="text-xs text-indigo-400 hover:underline">Admin girişine git</a>
+            <a href="/admin/login" className="text-xs text-indigo-600 hover:underline dark:text-indigo-300">Admin girişine git</a>
           </div>
         ) : (
-          <div className="max-w-5xl mx-auto px-6 py-8">
+          <div className="mx-auto max-w-5xl px-6 py-8">
             <div className="mb-6">
-              <div className="flex items-center gap-2 mb-1">
-                <FiPackage className="text-indigo-400" size={20} />
-                <h1 className="text-xl font-bold text-white">Runtime & Model Kütüphanesi</h1>
+              <div className="mb-1 flex items-center gap-2">
+                <FiPackage className="text-indigo-500 dark:text-indigo-300" size={20} />
+                <h1 className="text-xl font-bold theme-title">Runtime & Model Kütüphanesi</h1>
               </div>
-              <p className="text-sm text-zinc-400">
+              <p className="text-sm theme-muted">
                 Yerel model keşfi, runtime readiness ve güvenli hazırlık işlemleri.
               </p>
             </div>
@@ -46,56 +46,60 @@ export default function ModelLibraryPage() {
                 ['Registry', 'model count visible'],
                 ['Fallback', 'safe response enabled'],
               ].map(([label, value]) => (
-                <div key={label} className="rounded-xl border border-zinc-700/40 bg-zinc-900/50 p-4">
-                  <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-zinc-500">{label}</p>
-                  <p className="mt-2 text-sm font-semibold text-zinc-200">{value}</p>
+                <div key={label} className="theme-surface rounded-xl p-4">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.22em] theme-muted">{label}</p>
+                  <p className="mt-2 text-sm font-semibold theme-secondary">{value}</p>
                 </div>
               ))}
             </section>
 
-            <div className="rounded-xl border border-zinc-700/40 bg-zinc-900/50 p-5">
+            <div className="theme-surface rounded-xl p-5">
               <ModelLibraryPanel />
             </div>
 
             <section className="mt-8 space-y-6">
               <div>
-                <div className="flex items-center gap-2 mb-4">
-                  <FiPackage className="text-emerald-400" size={16} />
-                  <h2 className="text-sm font-bold uppercase tracking-widest text-zinc-400">Discover & Watchlist (E2E Foundation)</h2>
+                <div className="mb-4 flex items-center gap-2">
+                  <FiPackage className="text-emerald-600 dark:text-emerald-300" size={16} />
+                  <h2 className="text-sm font-bold uppercase tracking-widest theme-muted">Discover & Watchlist (E2E Foundation)</h2>
                 </div>
                 <div className="grid gap-4 md:grid-cols-2">
-                  <div className="rounded-xl border border-zinc-700/40 bg-zinc-900/50 p-5">
-                    <h3 className="text-sm font-bold mb-3">Model Watchlist</h3>
+                  <div className="theme-surface rounded-xl p-5">
+                    <h3 className="mb-3 text-sm font-bold theme-title">Model Watchlist</h3>
                     <div className="space-y-3">
                       {[
                         { name: 'Gemma-2B-GGUF', status: 'up-to-date', fit: 'likely' },
-                        { name: 'Qwen2-7B-GGUF', status: 'update-available', fit: 'warning' }
-                      ].map(item => (
-                        <div key={item.name} className="flex items-center justify-between p-3 rounded-lg bg-zinc-950/40 border border-zinc-800/50">
+                        { name: 'Qwen2-7B-GGUF', status: 'update-available', fit: 'warning' },
+                      ].map((item) => (
+                        <div key={item.name} className="flex items-center justify-between rounded-lg theme-elevated p-3">
                           <div>
-                            <p className="text-xs font-bold text-zinc-200">{item.name}</p>
-                            <p className="text-[10px] text-zinc-500">Hardware Fit: {item.fit}</p>
+                            <p className="text-xs font-bold theme-title">{item.name}</p>
+                            <p className="text-[10px] theme-muted">Hardware Fit: {item.fit}</p>
                           </div>
-                          <span className={`text-[10px] px-1.5 py-0.5 rounded ${item.status === 'up-to-date' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-amber-500/10 text-amber-400'}`}>
+                          <span className={`rounded border px-1.5 py-0.5 text-[10px] ${
+                            item.status === 'up-to-date'
+                              ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'
+                              : 'border-amber-500/20 bg-amber-500/10 text-amber-800 dark:text-amber-300'
+                          }`}>
                             {item.status}
                           </span>
                         </div>
                       ))}
                     </div>
                   </div>
-                  
-                  <div className="rounded-xl border border-zinc-700/40 bg-zinc-900/50 p-5">
-                    <h3 className="text-sm font-bold mb-3">Compatibility Analysis</h3>
+
+                  <div className="theme-surface rounded-xl p-5">
+                    <h3 className="mb-3 text-sm font-bold theme-title">Compatibility Analysis</h3>
                     <div className="space-y-4">
-                      <div className="p-3 rounded-lg bg-indigo-500/5 border border-indigo-500/20">
-                        <div className="flex justify-between mb-2">
-                          <span className="text-xs text-indigo-300">Selected Model Compatibility</span>
-                          <span className="text-xs font-bold text-indigo-200">85%</span>
+                      <div className="rounded-lg border border-indigo-500/20 bg-indigo-500/5 p-3">
+                        <div className="mb-2 flex justify-between">
+                          <span className="text-xs text-indigo-700 dark:text-indigo-300">Selected Model Compatibility</span>
+                          <span className="text-xs font-bold text-indigo-800 dark:text-indigo-200">85%</span>
                         </div>
-                        <div className="h-1.5 w-full bg-zinc-800 rounded-full overflow-hidden">
-                          <div className="h-full bg-indigo-500 w-[85%]"></div>
+                        <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800">
+                          <div className="h-full w-[85%] bg-indigo-500" />
                         </div>
-                        <p className="mt-2 text-[10px] text-zinc-400 leading-relaxed">
+                        <p className="mt-2 text-[10px] leading-relaxed theme-muted">
                           GGUF format detected. Quantization Q4_K_M is optimized for local RAM usage. Hardware fit: likely.
                         </p>
                       </div>
@@ -104,9 +108,9 @@ export default function ModelLibraryPage() {
                 </div>
               </div>
 
-              <div className="p-4 rounded-xl bg-zinc-900/30 border border-zinc-700/20">
-                <p className="text-[11px] text-zinc-500 leading-relaxed">
-                  <span className="font-bold text-zinc-400 uppercase tracking-tighter">Note:</span> Aillame local model discovery bu fazda offline-first ve plan-only seviyesindedir. 
+              <div className="theme-soft-panel rounded-xl p-4">
+                <p className="text-[11px] leading-relaxed theme-muted">
+                  <span className="font-bold uppercase tracking-tighter theme-secondary">Not:</span> Aillame local model discovery bu fazda offline-first ve plan-only seviyesindedir.
                   Model indirme ve güncellemeler explicit kullanıcı onayı gerektirir.
                 </p>
               </div>

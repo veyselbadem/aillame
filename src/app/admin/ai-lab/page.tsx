@@ -282,17 +282,17 @@ export default function AiLabPage() {
         </header>
 
         <section className="mb-6 grid gap-3 md:grid-cols-3">
-          <div className="rounded-2xl border border-white/8 bg-white/[0.03] p-4">
-            <p className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">Overview</p>
-            <p className="mt-2 text-sm font-semibold text-slate-200">Aillame Lab ana ürün merkezi değil; kontrollü deney ve evaluation yüzeyidir.</p>
+          <div className="theme-surface rounded-2xl p-4">
+            <p className="text-[9px] font-black uppercase tracking-[0.2em] theme-muted">Overview</p>
+            <p className="mt-2 text-sm font-semibold theme-secondary">Aillame Lab ana ürün merkezi değil; kontrollü deney ve evaluation yüzeyidir.</p>
           </div>
-          <div className="rounded-2xl border border-white/8 bg-white/[0.03] p-4">
-            <p className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">Playground</p>
-            <p className="mt-2 text-sm font-semibold text-slate-200">Prompt, structured JSON, provider output ve RAG context testleri burada denenir.</p>
+          <div className="theme-surface rounded-2xl p-4">
+            <p className="text-[9px] font-black uppercase tracking-[0.2em] theme-muted">Playground</p>
+            <p className="mt-2 text-sm font-semibold theme-secondary">Prompt, structured JSON, provider output ve RAG context testleri burada denenir.</p>
           </div>
-          <div className="rounded-2xl border border-white/8 bg-white/[0.03] p-4">
-            <p className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">Diagnostics</p>
-            <p className="mt-2 text-sm font-semibold text-slate-200">LLM / IGM runtime durumları yalnızca diagnostic preview olarak gösterilir.</p>
+          <div className="theme-surface rounded-2xl p-4">
+            <p className="text-[9px] font-black uppercase tracking-[0.2em] theme-muted">Diagnostics</p>
+            <p className="mt-2 text-sm font-semibold theme-secondary">LLM / IGM runtime durumları yalnızca diagnostic preview olarak gösterilir.</p>
           </div>
         </section>
 
@@ -421,7 +421,7 @@ export default function AiLabPage() {
                 { name: 'LLM Profiles', status: 'DIAGNOSTIC', color: 'text-amber-300', desc: 'Compatibility', icon: <FiTerminal className="text-amber-300" /> },
                 { name: 'IGM Profiles', status: 'DIAGNOSTIC', color: 'text-amber-300', desc: 'Compatibility', icon: <FiImage className="text-amber-300" /> },
               ].map(m => (
-                <div key={m.name} className="rounded-2xl border border-white/8 bg-white/[0.03] p-4 transition-all hover:border-indigo-500/25 group">
+                <div key={m.name} className="theme-surface rounded-2xl p-4 transition-all hover:border-indigo-500/25 group">
                   <div className="flex items-center justify-between gap-2">
                     <div className="text-[10px] text-[var(--text-muted)] font-black uppercase tracking-widest group-hover:text-indigo-500 transition-colors">{m.name}</div>
                     {m.icon}
@@ -431,7 +431,7 @@ export default function AiLabPage() {
                 </div>
               ))}
             </div>
-            <p className="mt-4 text-[11px] font-medium leading-relaxed text-slate-400">
+            <p className="mt-4 text-[11px] font-medium leading-relaxed theme-muted">
               Model yönetimi, API key, release readiness, patch workflow ve document library kendi admin sayfalarında yönetilir. Lab yalnızca güvenli deney ve değerlendirme alanıdır.
             </p>
           </div>        </section>
