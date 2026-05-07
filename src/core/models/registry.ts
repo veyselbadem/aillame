@@ -205,11 +205,20 @@ function isUsableModel(model: ManagedModel): boolean {
   return model.enabled !== false;
 }
 
+export type AillameModelRegistrySelectionResult = {
+  success: boolean;
+  model?: ManagedModel;
+  modelId?: string;
+  requiredCapabilities: ModelCapability[];
+  fallbackReason?: string;
+  warnings: string[];
+};
+
 function hasCapabilities(
   model: ManagedModel,
   capabilities: readonly ModelCapability[]
 ): boolean {
-  return capabilities.every((capability) => model.capabilities.includes(capability as any));
+  return capabilities.every((capability) => model.capabilities.includes(capability));
 }
 
 export function findBestModelForCapabilities(
@@ -230,6 +239,70 @@ export function findBestModelForCapabilities(
         const tierScore = (m: ManagedModel) => m.tier === 'pro' ? 2 : 1;
         return tierScore(b) - tierScore(a);
     })[0];
+}
+
+export function selectModelForCapabilities(
+  capabilities: readonly ModelCapability[],
+  preferredModelId?: string
+): AillameModelRegistrySelectionResult {
+  const requiredCapabilities = [...capabilities];
+
+  if (preferredModelId) {
+    const preferredModel = getModelById(preferredModelId);
+    if (!preferredModel) {
+      const fallback = findBestModelForCapabilities(requiredCapabilities);
+      return {
+        success: Boolean(fallback),
+        model: fallback,
+        modelId: fallback?.id,
+        requiredCapabilities,
+        fallbackReason: `Preferred model '${preferredModelId}' is not registered.`,
+        warnings: [`Unknown preferred modelId=${preferredModelId}.`],
+      };
+    }
+
+    if (!isUsableModel(preferredModel)) {
+      const fallback = findBestModelForCapabilities(requiredCapabilities);
+      return {
+        success: Boolean(fallback),
+        model: fallback,
+        modelId: fallback?.id,
+        requiredCapabilities,
+        fallbackReason: `Preferred model '${preferredModelId}' is disabled.`,
+        warnings: [`Preferred modelId=${preferredModelId} is disabled.`],
+      };
+    }
+
+    if (!hasCapabilities(preferredModel, requiredCapabilities)) {
+      const fallback = findBestModelForCapabilities(requiredCapabilities);
+      return {
+        success: Boolean(fallback),
+        model: fallback,
+        modelId: fallback?.id,
+        requiredCapabilities,
+        fallbackReason: `Preferred model '${preferredModelId}' does not support required capabilities.`,
+        warnings: [`Preferred modelId=${preferredModelId} cannot handle ${requiredCapabilities.join(', ')}.`],
+      };
+    }
+
+    return {
+      success: true,
+      model: preferredModel,
+      modelId: preferredModel.id,
+      requiredCapabilities,
+      warnings: [],
+    };
+  }
+
+  const model = findBestModelForCapabilities(requiredCapabilities);
+  return {
+    success: Boolean(model),
+    model,
+    modelId: model?.id,
+    requiredCapabilities,
+    fallbackReason: model ? undefined : `No enabled model supports ${requiredCapabilities.join(', ')}.`,
+    warnings: model ? [] : [`No enabled model supports ${requiredCapabilities.join(', ')}.`],
+  };
 }
 
 // ---- Backward-compat helpers (used by ChatShell etc.) ----------

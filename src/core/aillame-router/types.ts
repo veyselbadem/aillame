@@ -60,6 +60,7 @@ export type AillameRouteInput = {
   contentType?: AillameContentType;
   outputType?: AillameOutputType;
   preferredModelId?: string;
+  requiredCapabilities?: AillameModelCapability[];
   projectId?: string;
 };
 

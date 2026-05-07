@@ -1,0 +1,34 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Aillame Nano JSONL Record",
+  "type": "object",
+  "required": ["id", "type", "instruction", "expectedOutput", "mode", "intent"],
+  "properties": {
+    "id": { "type": "string", "minLength": 1 },
+    "type": {
+      "type": "string",
+      "enum": ["instruction", "classification", "project-aware", "safety-fallback", "eval", "feedback-candidate"]
+    },
+    "instruction": { "type": "string", "minLength": 1 },
+    "expectedOutput": { "type": "string", "minLength": 1 },
+    "mode": {
+      "type": "string",
+      "enum": ["general", "education", "code", "economy"]
+    },
+    "intent": {
+      "type": "string",
+      "enum": ["conversation", "analysis", "planning", "coding", "math", "research", "education", "creative", "image", "safety", "fallback", "unknown"]
+    },
+    "projectId": { "type": "string" },
+    "input": {},
+    "metadata": { "type": "object" },
+    "source": { "type": "string" },
+    "language": { "type": "string" },
+    "createdAt": { "type": "string" },
+    "safetyTags": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  },
+  "additionalProperties": true
+}

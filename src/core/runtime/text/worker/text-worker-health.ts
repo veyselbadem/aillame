@@ -4,7 +4,11 @@ import type { AillameTextWorkerLifecycleState } from "./text-worker-lifecycle";
 
 function modelPathExists(config: AillameTextWorkerConfig): boolean | undefined {
   if (!config.modelPath) return undefined;
-  return fs.existsSync(config.modelPath);
+  try {
+    return fs.existsSync(config.modelPath);
+  } catch {
+    return false;
+  }
 }
 
 export function getTextWorkerHealth(

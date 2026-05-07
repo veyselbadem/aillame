@@ -7,7 +7,7 @@
 export type AillameTier = 'nano' | 'pro';
 
 /** High-level model modality */
-export type ModelType = 'text' | 'image' | 'multimodal';
+export type ModelType = 'text' | 'image' | 'vision' | 'embedding' | 'audio' | 'multimodal';
 
 /**
  * Runtime environment that executes the model.
@@ -30,7 +30,8 @@ export type ModelRuntime =
   | 'python-diffusers'
   | 'external-api'
   | 'browser-indexeddb'
-  | 'future-comfyui';
+  | 'future-comfyui'
+  | 'not-configured';
 
 /**
  * What the model can do.

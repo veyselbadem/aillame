@@ -1,34 +1,28 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDefaultModelForMode } from '@core/models/model-policy';
-import { getEnabledModels } from '@core/models/registry';
-import { generateWithTextRuntimeRouter } from '@core/inference/text-runtime-router';
-import {
-  listLocalModels,
-  createRuntimeModelSelection,
-  resolveRuntimeSelectionWithPreference,
-  getPreferredModelIdForCapability,
-} from '@core/model-library';
-import { ensureSafeModelId, normalizeInferenceModelSelection } from '@core/inference/model-selection';
-import {
-  buildPromptFromMessages,
-  normalizeOpenAIChatMessages,
-} from '@core/external-api/chat-normalizer';
-import {
-  createExternalApiResponseHeaders,
-  validateExternalApiRequest,
-} from '@core/external-api/auth';
-import {
-  extractExternalProviderContext,
-  summarizeExternalProviderContext,
-} from '@core/external-api/provider-contract';
-import { toOpenAIChatCompletion } from '@core/external-api/openai-mapper';
+import type { AillameMode } from '@core/aillame-router/types';
+import type { AillameTaskType } from '@core/contracts/aillame-request';
+import { validateExternalApiRequest, createExternalApiResponseHeaders } from '@core/external-api/auth';
 import { jsonOpenAIError } from '@core/external-api/error-format';
-import {
-  createModelSelectionEventFromDecision,
-  createRuntimeFallbackDecision,
-} from '@core/inference/fallback-policy';
-import { appendRuntimeModelEvent } from '@core/ai-lab/runtime-event-log';
-import type { ManagedModel } from '@core/models/types';
+import { generateWithBestTextRuntime } from '@core/runtime/text/text-runtime-router';
+
+type OpenAIChatRole = 'system' | 'user' | 'assistant' | 'tool';
+
+type OpenAIChatMessage = {
+  role: OpenAIChatRole;
+  content: string;
+  name?: string;
+};
+
+type ParsedChatBody = {
+  model?: string;
+  messages: OpenAIChatMessage[];
+  temperature?: number;
+  maxTokens?: number;
+  stream: boolean;
+  projectId?: string;
+  mode?: AillameMode;
+  taskType?: AillameTaskType;
+};
 
 type ChatCompletionsBody = {
   model?: unknown;
@@ -36,34 +30,77 @@ type ChatCompletionsBody = {
   temperature?: unknown;
   max_tokens?: unknown;
   stream?: unknown;
+  projectId?: unknown;
+  mode?: unknown;
+  taskType?: unknown;
 };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
-function parseChatBody(payload: unknown):
-  | {
-      success: true;
-      body: {
-        model?: string;
-        messages: unknown;
-        temperature?: number;
-        maxTokens?: number;
-        stream: boolean;
-      };
+function optionalString(value: unknown): string | undefined {
+  return typeof value === 'string' && value.trim() ? value.trim() : undefined;
+}
+
+function normalizeMode(value: unknown): AillameMode | undefined {
+  if (value === 'general' || value === 'education' || value === 'code' || value === 'economy') return value;
+  return undefined;
+}
+
+function normalizeTaskType(value: unknown): AillameTaskType | undefined {
+  if (
+    value === 'chat'
+    || value === 'text'
+    || value === 'code'
+    || value === 'analysis'
+    || value === 'image'
+    || value === 'vision'
+    || value === 'agent'
+    || value === 'mixed'
+    || value === 'unknown'
+  ) {
+    return value;
+  }
+  return undefined;
+}
+
+function normalizeMessages(value: unknown): { success: true; messages: OpenAIChatMessage[] } | { success: false; error: string } {
+  if (!Array.isArray(value) || value.length === 0) {
+    return { success: false, error: 'messages must be a non-empty array.' };
+  }
+
+  const messages: OpenAIChatMessage[] = [];
+  for (const [index, message] of value.entries()) {
+    if (!isRecord(message)) {
+      return { success: false, error: `messages[${index}] must be an object.` };
     }
-  | { success: false; error: string } {
+
+    const role = message.role;
+    if (role !== 'system' && role !== 'user' && role !== 'assistant' && role !== 'tool') {
+      return { success: false, error: `messages[${index}].role is invalid.` };
+    }
+
+    if (typeof message.content !== 'string' || !message.content.trim()) {
+      return { success: false, error: `messages[${index}].content must be a non-empty string.` };
+    }
+
+    messages.push({
+      role,
+      content: message.content,
+      name: optionalString(message.name),
+    });
+  }
+
+  return { success: true, messages };
+}
+
+function parseChatBody(payload: unknown): { success: true; body: ParsedChatBody } | { success: false; error: string } {
   if (!isRecord(payload)) {
     return { success: false, error: 'Body must be a JSON object.' };
   }
 
   const body = payload as ChatCompletionsBody;
-
-  if (body.messages === undefined) {
-    return { success: false, error: 'messages is required.' };
-  }
-
   if (body.model !== undefined && typeof body.model !== 'string') {
     return { success: false, error: 'model must be a string when provided.' };
   }
@@ -80,66 +117,69 @@ function parseChatBody(payload: unknown):
     return { success: false, error: 'stream must be a boolean when provided.' };
   }
 
+  const normalizedMessages = normalizeMessages(body.messages);
+  if (!normalizedMessages.success) {
+    return { success: false, error: normalizedMessages.error };
+  }
+
   return {
     success: true,
     body: {
-      model: typeof body.model === 'string' ? body.model.trim() : undefined,
-      messages: body.messages,
+      model: optionalString(body.model),
+      messages: normalizedMessages.messages,
       temperature: typeof body.temperature === 'number' ? body.temperature : undefined,
       maxTokens: typeof body.max_tokens === 'number' ? Math.max(1, Math.floor(body.max_tokens)) : undefined,
       stream: body.stream === true,
+      projectId: optionalString(body.projectId),
+      mode: normalizeMode(body.mode),
+      taskType: normalizeTaskType(body.taskType) ?? 'chat',
     },
   };
 }
 
-function isChatCompatibleModel(model: ManagedModel): boolean {
-  return model.enabled !== false
-    && model.purpose === 'chat'
-    && (model.type === undefined || model.type === 'text' || model.type === 'multimodal')
-    && model.capabilities.includes('chat');
+function buildPrompt(messages: OpenAIChatMessage[]): string {
+  return messages
+    .filter((message) => message.role !== 'system')
+    .map((message) => `${message.role}: ${message.content}`)
+    .join('\n')
+    .trim();
 }
 
-function pickPreferredProvider(
-  requestedModelId: string | undefined,
-  modelLibraryProvider: string | undefined,
-): 'ollama' | 'gemma' | undefined {
-  if (modelLibraryProvider === 'ollama') return 'ollama';
-  if (requestedModelId?.toLowerCase().includes('ollama')) return 'ollama';
-  if (requestedModelId?.toLowerCase().includes('gemma')) return 'gemma';
-  return undefined;
+function nowSeconds(): number {
+  return Math.floor(Date.now() / 1000);
 }
 
-function logModelSelectionDecision(input: {
-  requestedModelId?: string;
-  selectedModelId?: string;
-  fallbackModelId?: string;
-  provider?: string;
-  available: boolean;
-  reason: string;
-  contextSummary?: string;
-}): void {
-  try {
-    const summaryReason = input.contextSummary
-      ? `${input.reason} Context: ${input.contextSummary}`
-      : input.reason;
-
-    const decision = createRuntimeFallbackDecision({
-      requestedModelId: input.requestedModelId,
-      selectedModelId: input.available ? input.selectedModelId : undefined,
-      fallbackModelId: input.fallbackModelId,
-      provider: input.provider,
-      capability: 'text',
-      available: input.available,
-      reason: summaryReason,
-    });
-
-    appendRuntimeModelEvent({
-      ...createModelSelectionEventFromDecision(decision),
-      source: 'v1-chat-completions',
-    });
-  } catch {
-    // Event logging must not affect chat completions.
-  }
+function openAIChatCompletion(input: {
+  model: string;
+  content: string;
+  finishReason: string;
+  warnings?: string[];
+}) {
+  return {
+    id: `chatcmpl-aillame-${Date.now().toString(36)}`,
+    object: 'chat.completion',
+    created: nowSeconds(),
+    model: input.model,
+    choices: [
+      {
+        index: 0,
+        message: {
+          role: 'assistant',
+          content: input.content,
+        },
+        finish_reason: input.finishReason,
+      },
+    ],
+    usage: {
+      prompt_tokens: 0,
+      completion_tokens: 0,
+      total_tokens: 0,
+    },
+    aillame: {
+      local: true,
+      warnings: input.warnings ?? [],
+    },
+  };
 }
 
 export async function POST(request: NextRequest) {
@@ -160,128 +200,63 @@ export async function POST(request: NextRequest) {
     return jsonOpenAIError('Invalid JSON payload.', 'invalid_json', 400);
   }
 
-  const externalContext = extractExternalProviderContext(payload);
-  const externalContextSummary = summarizeExternalProviderContext(externalContext);
-  const responseHeaders = createExternalApiResponseHeaders(authResult);
-
   const parsed = parseChatBody(payload);
   if (!parsed.success) {
     return jsonOpenAIError(parsed.error, 'invalid_request', 400);
   }
 
+  const responseHeaders = createExternalApiResponseHeaders(authResult);
+
   if (parsed.body.stream) {
-    return jsonOpenAIError('Streaming is not supported in FAZ 3.', 'stream_not_supported', 501);
+    return jsonOpenAIError(
+      'Streaming is not supported by Aillame local OpenAI-compatible chat completions yet.',
+      'stream_not_supported',
+      501,
+      responseHeaders,
+    );
   }
 
-  const normalized = normalizeOpenAIChatMessages(parsed.body.messages);
-  if (!normalized.success) {
-    return jsonOpenAIError(normalized.error, 'invalid_messages', 400);
+  const prompt = buildPrompt(parsed.body.messages);
+  if (!prompt) {
+    return jsonOpenAIError('At least one non-system message is required.', 'invalid_messages', 400, responseHeaders);
   }
-
-  const chatModels = getEnabledModels().filter((model) => isChatCompatibleModel(model));
-  const defaultModel = getDefaultModelForMode('general');
-  const requestedModelId = ensureSafeModelId(parsed.body.model);
-
-  let localModels = [] as ReturnType<typeof listLocalModels>;
-  try {
-    localModels = listLocalModels();
-  } catch {
-    localModels = [];
-  }
-
-  const normalizedSelection = normalizeInferenceModelSelection({
-    modelId: requestedModelId,
-    capability: 'text',
-    source: 'v1-chat',
-  });
-
-  const preferredTextModelId = getPreferredModelIdForCapability('text');
-
-  const resolvedSelection = resolveRuntimeSelectionWithPreference(
-    createRuntimeModelSelection({
-      modelId: normalizedSelection.modelId,
-      capability: 'text',
-      source: 'request',
-    }),
-    localModels,
-    preferredTextModelId,
-  );
-
-  const registryRequestedModel = requestedModelId
-    ? chatModels.find((model) => model.id === requestedModelId)
-    : undefined;
-
-  const selectedModel = registryRequestedModel?.id
-    || (resolvedSelection.ok ? resolvedSelection.model?.id : undefined)
-    || defaultModel;
-
-  const selectedProvider = pickPreferredProvider(
-    selectedModel,
-    resolvedSelection.ok ? resolvedSelection.model?.provider : undefined,
-  );
-
-  if (!selectedModel) {
-    logModelSelectionDecision({
-      requestedModelId,
-      provider: selectedProvider,
-      available: false,
-      reason: 'No default model is configured.',
-      contextSummary: externalContextSummary,
-    });
-    return jsonOpenAIError('No default model is configured.', 'model_not_configured', 500);
-  }
-
-  const modelWarnings: string[] = [];
-  if (requestedModelId && requestedModelId !== selectedModel) {
-    modelWarnings.push(`Requested model '${requestedModelId}' is unavailable; defaulted to '${selectedModel}'.`);
-  }
-
-  logModelSelectionDecision({
-    requestedModelId,
-    selectedModelId: selectedModel,
-    fallbackModelId: requestedModelId && requestedModelId !== selectedModel ? selectedModel : undefined,
-    provider: selectedProvider,
-    available: !requestedModelId || requestedModelId === selectedModel,
-    reason: requestedModelId && requestedModelId !== selectedModel
-      ? `Requested model '${requestedModelId}' is unavailable; defaulted to '${selectedModel}'.`
-      : 'Requested or default model selected successfully.',
-    contextSummary: externalContextSummary,
-  });
-
-  const prompt = buildPromptFromMessages(normalized.messages);
-  const preferredProvider = pickPreferredProvider(
-    requestedModelId,
-    resolvedSelection.ok ? resolvedSelection.model?.provider : undefined,
-  );
 
   try {
-    const generation = await generateWithTextRuntimeRouter({
+    const runtimeResult = await generateWithBestTextRuntime({
+      modelId: parsed.body.model,
+      projectId: parsed.body.projectId,
+      mode: parsed.body.mode,
+      taskType: parsed.body.taskType,
       prompt,
-      messages: normalized.messages,
+      messages: parsed.body.messages,
       maxTokens: parsed.body.maxTokens,
       temperature: parsed.body.temperature,
-      modelId: selectedModel,
-      preferredProvider,
+      stream: false,
+      metadata: {
+        source: 'openai-compatible-chat-completions',
+      },
     });
 
-    if (!generation.success || !generation.answer) {
-      return jsonOpenAIError(generation.error || 'Text generation failed.', generation.code || 'generation_failed', 503);
+    const generation = runtimeResult.generation;
+    if (!generation.success && generation.finishReason !== 'unsupported') {
+      return jsonOpenAIError(
+        generation.error?.message || 'Aillame local text runtime failed.',
+        generation.error?.code || 'generation_failed',
+        503,
+        responseHeaders,
+      );
     }
 
-    const warnings = [
-      ...(generation.usedFallback ? ['Primary provider unavailable; fallback provider used.'] : []),
-      ...modelWarnings,
-    ];
-
     return NextResponse.json(
-      toOpenAIChatCompletion({
-        model: selectedModel,
-        content: generation.answer,
-        warnings: warnings.length > 0 ? warnings : undefined,
+      openAIChatCompletion({
+        model: generation.modelId,
+        content: generation.content,
+        finishReason: generation.finishReason === 'length' ? 'length' : 'stop',
+        warnings: [...runtimeResult.route.warnings, ...generation.warnings],
       }),
-      { status: 200, headers: responseHeaders },
+      { status: generation.success ? 200 : 503, headers: responseHeaders },
     );
   } catch {
-    return jsonOpenAIError('Internal server error.', 'internal_error', 500);
+    return jsonOpenAIError('Internal server error.', 'internal_error', 500, responseHeaders);
   }
 }

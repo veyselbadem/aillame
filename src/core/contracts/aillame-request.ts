@@ -52,9 +52,17 @@ export type AillameRoutingDecision = {
   taskType: AillameTaskType;
   contentType: AillameContentType;
   outputType: AillameOutputType;
+  selectedRuntime?: string;
   selectedModelId?: string;
   capabilities: AillameModelCapability[];
   confidence: number;
+  fallbackReason?: string;
   reason: string;
   warnings?: string[];
+  diagnostics?: {
+    projectId?: string;
+    mode?: AillameMode;
+    requiredCapabilities: AillameModelCapability[];
+    safeFallback: boolean;
+  };
 };

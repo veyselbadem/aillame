@@ -132,7 +132,7 @@ export async function generateWithBestTextRuntime(
         success: false,
         modelId: route.selectedModelId ?? request.modelId ?? "unselected",
         runtimeKind: "placeholder",
-        content: "",
+        content: "Aillame local text runtime is not configured for this request yet.",
         finishReason: "unsupported",
         usedLocalRuntime: false,
         degraded: true,

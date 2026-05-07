@@ -56,6 +56,18 @@ export type NanoControlPlan = {
   systemPrompt: string;
   modelPrompt: string;
   settings: NanoGenerationSettings;
+  capabilityHooks?: NanoLongTermCapabilityHooks;
+};
+
+export type NanoLongTermCapabilityHooks = {
+  planningReady: boolean;
+  toolUseReady: boolean;
+  memoryUseReady: boolean;
+  codeUseReady: boolean;
+  multimodalReady: boolean;
+  selfImproveReady: boolean;
+  autonomousActionsEnabled: false;
+  diagnosticsOnly: true;
 };
 
 export type NanoAnswer = {

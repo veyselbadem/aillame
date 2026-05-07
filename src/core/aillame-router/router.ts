@@ -5,7 +5,7 @@ import type {
 } from '@core/contracts/aillame-request';
 import type { ModelAdapterId } from '@core/model-adapters/base';
 import type { ModelCapability } from '@core/models/registry';
-import { findBestModelForCapabilities } from '../models/registry';
+import { selectModelForCapabilities } from '../models/registry';
 import { AILLAME_MODES, DEFAULT_AILLAME_MODE } from './modes';
 import type {
   AdapterRequirement,
@@ -403,7 +403,9 @@ function applyExplicitContract(
     taskType: input.taskType ?? inferred.taskType,
     contentType: input.contentType ?? inferred.contentType,
     outputType: input.outputType ?? inferred.outputType,
-    capabilities: inferred.capabilities,
+    capabilities: input.requiredCapabilities?.length
+      ? Array.from(new Set([...inferred.capabilities, ...input.requiredCapabilities]))
+      : inferred.capabilities,
   };
 }
 
@@ -476,10 +478,10 @@ export function routeAillameRequest(input: AillameRouteInput): AillameRouteDecis
   const memoryScopes = getMemoryScopes(selectedModes, primaryMode, intent);
   const hasExplicitRoutingHint = Boolean(input.taskType || input.contentType || input.outputType || input.preferredModelId);
   const confidence = getConfidence(matchedModeKeywords, matchedIntentKeywords, hasExplicitRoutingHint);
-  const selectedModel = findBestModelForCapabilities(contractShape.capabilities, input.preferredModelId);
-  const warnings = selectedModel
-    ? undefined
-    : [`No configured model found for capabilities: ${contractShape.capabilities.join(', ')}`];
+  const selectedModelResult = selectModelForCapabilities(contractShape.capabilities, input.preferredModelId);
+  const selectedModel = selectedModelResult.model;
+  const warnings = selectedModelResult.warnings.length > 0 ? selectedModelResult.warnings : undefined;
+  const fallbackReason = selectedModelResult.fallbackReason;
   const reason = matchedIntentKeywords.length > 0
     ? `Matched routing signals: ${matchedIntentKeywords.join(', ')}.`
     : 'Used default text routing because no stronger routing signal matched.';
@@ -498,11 +500,19 @@ export function routeAillameRequest(input: AillameRouteInput): AillameRouteDecis
     taskType: contractShape.taskType,
     contentType: contractShape.contentType,
     outputType: contractShape.outputType,
+    selectedRuntime: selectedModel?.runtime ?? 'not-configured',
     selectedModelId: selectedModel?.id,
     capabilities: contractShape.capabilities,
     confidence,
+    fallbackReason,
     reason,
     warnings,
+    diagnostics: {
+      projectId: input.projectId,
+      mode: primaryMode,
+      requiredCapabilities: contractShape.capabilities,
+      safeFallback: !selectedModel || Boolean(fallbackReason),
+    },
   };
 
   return {
