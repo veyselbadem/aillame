@@ -76,16 +76,30 @@ export class ImageGenerationService {
         outputDir: imageAssetStore.getAssetsDirectory()
       });
 
-      if (response.success && response.assetId) {
+      let assetId = response.assetId;
+      if (response.success && response.imagePath && !assetId) {
+        // Register the new file as an asset
+        const asset = await imageAssetStore.registerLocalFile({
+          jobId,
+          projectId: request.projectId,
+          filePath: response.imagePath,
+          mimeType: response.mimeType || 'image/png',
+          modelId: response.modelId || request.modelId || '',
+          promptPreview: request.prompt.slice(0, 100)
+        });
+        assetId = asset.assetId;
+      }
+
+      if (response.success && assetId) {
         await imageJobStore.updateJob(jobId, { 
           status: 'completed', 
           progress: 100,
-          outputAssetIds: [response.assetId] 
+          outputAssetIds: [assetId] 
         });
       } else {
         await imageJobStore.updateJob(jobId, { 
           status: response.status === 'not-configured' ? 'not-configured' : 'failed',
-          errorSummary: response.error 
+          errorSummary: response.error || 'Worker success but no asset produced.'
         });
       }
     } catch (err: any) {

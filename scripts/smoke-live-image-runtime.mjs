@@ -16,6 +16,8 @@ async function runAcceptanceTest() {
   console.log(`- Configured: ${image.configured}`);
   console.log(`- Attempted: ${image.attempted}`);
   console.log(`- Succeeded: ${image.succeeded}`);
+  console.log(`- Worker Configured: ${image.workerConfigured}`);
+  console.log(`- Model Configured: ${image.modelConfigured}`);
   console.log(`- File Exists: ${image.fileExists}`);
   console.log(`- Placeholder Used: ${image.placeholderUsed}`);
   console.log(`- Degraded: ${image.degraded}`);
@@ -28,6 +30,8 @@ async function runAcceptanceTest() {
     configured: image.configured,
     attempted: image.attempted,
     succeeded: image.succeeded,
+    workerConfigured: image.workerConfigured,
+    modelConfigured: image.modelConfigured,
     jobId: image.jobId,
     assetId: image.assetId,
     outputPathSanitized: image.outputPathSanitized,

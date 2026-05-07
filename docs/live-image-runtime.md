@@ -21,25 +21,35 @@ Bir görsel üretim isteği şu aşamalardan geçer:
 
 ## Worker Configuration
 Aillame, görsel üretim için bir external process (Python script veya binary) çağırır.
-- `AILLAME_IGM_WORKER_COMMAND`: Worker binary veya script yolu (örn: `python`, `sd-worker.exe`).
-- `AILLAME_IGM_WORKER_ARGS`: Komut satırı argümanları.
+- `AILLAME_IGM_WORKER_COMMAND`: Worker binary veya script yolu (örn: `C:\path\to\python.exe`).
+- `AILLAME_IGM_WORKER_ARGS`: Komut satırı argümanları (örn: `src/core/image-generation/scripts/sdxl_generate.py`).
+- `AILLAME_IGM_PROTOCOL`: Worker iletişim protokolü. `stream` (stdin/stdout JSON) veya `foundation` (--request/--output flags). Varsayılan: `stream`.
 - `AILLAME_IGM_TIMEOUT_MS`: Maksimum üretim süresi (varsayılan 5 dk).
 
 ## Final Acceptance Criteria (Final Kabul Kriterleri)
 Aillame'in tam sürüm (beta) sayılabilmesi için yerel görsel üretiminin aktif olması zorunludur:
 - `AILLAME_IGM_RUNTIME_ENABLED=true` olmalı.
 - `AILLAME_IGM_WORKER_COMMAND` geçerli bir worker'ı işaret etmeli.
-- Yerel bir model dosyası (`.safetensors` vb.) tanımlanmış olmalı.
-- Çıktı klasörü yazılabilir olmalı.
+- `AILLAME_IGM_MODEL_DIR` ve `AILLAME_IGM_ACTIVE_MODEL` geçerli bir `.safetensors` dosyasını işaret etmeli.
 - **Dürüst Raporlama:** Placeholder görseller veya sadece env ayarı olması kabul sayılmaz; gerçek bir PNG/JPEG dosyası üretilmelidir.
+
+## Örnek Kurulum (SDXL Python Worker)
+```env
+AILLAME_IGM_RUNTIME_ENABLED=true
+AILLAME_IGM_WORKER_COMMAND=C:\Users\veyse\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe
+AILLAME_IGM_WORKER_ARGS=src/core/image-generation/scripts/sdxl_generate.py
+AILLAME_IGM_PROTOCOL=stream
+AILLAME_IGM_MODEL_DIR=C:\aillame-models\diffusion
+AILLAME_IGM_ACTIVE_MODEL=sd_xl_turbo_1.0_fp16.safetensors
+```
 
 ## Komutlar
 ```bash
 # IGM kabul durumunu raporla
-npm run smoke:live-image-runtime
+node scripts/smoke-live-image-runtime.mjs
 
-# Runtime ve Asset Manager testlerini çalıştır
-npm run smoke:image-runtime-assets
+# IGM Model Manager testlerini çalıştır
+node scripts/smoke-live-igm-model-manager.mjs
 ```
 
 ## Güvenlik

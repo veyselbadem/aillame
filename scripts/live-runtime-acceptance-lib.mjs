@@ -360,19 +360,18 @@ async function runIgmGeneration({ enabled, modelPath }) {
     };
   }
 
-  // Attempt to call the worker with a simple probe request
   const outputDir = process.env.AILLAME_IGM_OUTPUT_DIR || '.aillame-data/assets/images';
   if (!fs.existsSync(outputDir)) fs.mkdirSync(outputDir, { recursive: true });
 
   const jobId = `smoke_igm_${Date.now()}`;
   const assetId = `asset_${jobId}`;
-  const outputPath = path.join(outputDir, `${assetId}.png`);
+  const protocol = process.env.AILLAME_IGM_PROTOCOL || 'stream';
 
   const request = {
-    prompt: 'A simple test image',
+    prompt: 'a simple blue cube on a clean white background, minimal style',
     width: 256,
     height: 256,
-    steps: 1,
+    steps: 1, // Fast probe
     seed: 42,
     modelId: path.basename(modelPath),
     outputDir,
@@ -380,38 +379,71 @@ async function runIgmGeneration({ enabled, modelPath }) {
     assetId
   };
 
-  const tempDir = path.join(process.cwd(), '.aillame-data', 'temp');
-  if (!fs.existsSync(tempDir)) fs.mkdirSync(tempDir, { recursive: true });
-  const requestPath = path.join(tempDir, `${jobId}_req.json`);
-  const responsePath = path.join(tempDir, `${jobId}_res.json`);
-
   try {
-    fs.writeFileSync(requestPath, JSON.stringify(request));
-    
-    const result = spawnSync(workerCommand, ['--request', requestPath, '--output', responsePath], {
-      cwd: process.cwd(),
-      encoding: 'utf8',
-      timeout: 30000,
-      windowsHide: true,
-    });
+    let result;
+    let response;
 
-    if (result.status === 0 && fs.existsSync(outputPath)) {
-      return {
-        attempted: true,
-        succeeded: true,
-        jobId,
-        assetId,
-        outputPath,
-        reason: 'REAL_IGM_GENERATION_SUCCEEDED',
-        warnings: [],
-      };
+    if (protocol === 'foundation') {
+      const tempDir = path.join(process.cwd(), '.aillame-data', 'temp');
+      if (!fs.existsSync(tempDir)) fs.mkdirSync(tempDir, { recursive: true });
+      const requestPath = path.join(tempDir, `${jobId}_req.json`);
+      const responsePath = path.join(tempDir, `${jobId}_res.json`);
+      fs.writeFileSync(requestPath, JSON.stringify(request));
+      
+      result = spawnSync(workerCommand, ['--request', requestPath, '--output', responsePath], {
+        cwd: process.cwd(),
+        encoding: 'utf8',
+        timeout: 60000,
+        windowsHide: true,
+      });
+
+      if (result.status === 0 && fs.existsSync(responsePath)) {
+        response = JSON.parse(fs.readFileSync(responsePath, 'utf8'));
+      }
+    } else {
+      // Stream mode
+      result = spawnSync(workerCommand, [], {
+        input: JSON.stringify(request),
+        cwd: process.cwd(),
+        encoding: 'utf8',
+        timeout: 60000,
+        windowsHide: true,
+      });
+
+      if (result.status === 0) {
+        const jsonMatch = result.stdout.match(/\{[\s\S]*\}/);
+        if (jsonMatch) response = JSON.parse(jsonMatch[0]);
+      }
+    }
+
+    if (response && response.success) {
+      // Handle base64 or file
+      let finalPath = response.imagePath;
+      if (response.image?.startsWith('data:image')) {
+        const b64Data = response.image.split(',')[1];
+        const buffer = Buffer.from(b64Data, 'base64');
+        finalPath = path.join(outputDir, `${assetId}.png`);
+        fs.writeFileSync(finalPath, buffer);
+      }
+
+      if (finalPath && fs.existsSync(finalPath)) {
+        return {
+          attempted: true,
+          succeeded: true,
+          jobId,
+          assetId,
+          outputPath: finalPath,
+          reason: 'REAL_IGM_GENERATION_SUCCEEDED',
+          warnings: [],
+        };
+      }
     }
 
     return {
       attempted: true,
       succeeded: false,
-      reason: result.status !== 0 ? `IGM_WORKER_EXIT_${result.status}` : 'IGM_WORKER_NO_OUTPUT',
-      warnings: result.stderr ? ['Worker wrote to stderr.'] : [],
+      reason: result?.status !== 0 ? `IGM_WORKER_EXIT_${result?.status}` : 'IGM_WORKER_NO_VALID_OUTPUT',
+      warnings: result?.stderr ? ['Worker wrote to stderr.'] : [],
     };
   } catch (err) {
     return {
@@ -420,11 +452,6 @@ async function runIgmGeneration({ enabled, modelPath }) {
       reason: `IGM_PROBE_ERROR: ${err.message}`,
       warnings: [],
     };
-  } finally {
-    try {
-      if (fs.existsSync(requestPath)) fs.unlinkSync(requestPath);
-      if (fs.existsSync(responsePath)) fs.unlinkSync(responsePath);
-    } catch {}
   }
 }
 
@@ -503,6 +530,8 @@ export async function getLiveImageAcceptanceReport() {
     configured,
     attempted,
     succeeded,
+    workerConfigured: workerExists,
+    modelConfigured: activeModelExists,
     jobId: generation.jobId,
     assetId: generation.assetId,
     outputPathSanitized: generation.outputPath ? path.basename(generation.outputPath) : undefined,
