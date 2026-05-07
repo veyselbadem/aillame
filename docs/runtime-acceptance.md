@@ -1,39 +1,87 @@
-# Aillame Runtime Acceptance & Desktop Readiness
+# Aillame Runtime Acceptance
 
-Aillame'in beta/final sürümüne hazır olup olmadığını ölçmek için kullanılan merkezi sistemdir.
+Aillame icin **Beta Foundation RC** ve **Live Runtime Acceptance** ayni sey
+degildir.
 
-## Final Kabul Kriterleri (Acceptance Criteria)
-Aillame'in yayınlanabilmesi için şu iki temel yerel motorun aktif ve "üretim yapabilir" durumda olması şarttır:
+- Beta Foundation RC: runtime, provider, memory, agent, security, desktop ve UI
+  altyapi katmanlarinin calistigini gosterir.
+- Live Runtime Acceptance: en az bir gercek yerel LLM metin uretimi ve en az
+  bir gercek yerel IGM gorsel uretimi Aillame-controlled runtime/worker
+  uzerinden basariyla tamamlandiginda saglanir.
 
-1. **Live Text Runtime (LLM):**
-   - Aillame Nano v1 motoru devrede olmalı.
-   - Native modül (`aillame-core-v7.node`) yüklü olmalı.
-   - Model checkpoint dosyası mevcut olmalı.
-   - Doğrudan metin üretimi (`smoke:live-text-runtime`) başarılı olmalı.
+Foundation, preview, degraded, not-configured, placeholder veya fallback cikti
+tek basina final kabul sayilmaz.
 
-2. **Live Image Runtime (IGM):**
-   - Diffusion motoru yapılandırılmış olmalı.
-   - `AILLAME_IGM_RUNTIME_ENABLED=true` olmalı.
-   - Model ağırlıkları (`.safetensors`) tanımlanmış olmalı.
-   - Görsel üretimi (`smoke:live-image-runtime`) başarılı olmalı.
+## Final Kabul Kriterleri
 
-## Desktop Shell Readiness
-Masaüstü uygulaması için şu bileşenler izlenir:
-- **Local Server Boot:** Sunucunun hangi port ve host üzerinden başlayacağı.
-- **Health Bridge:** Desktop shell'in sistemi izlemek için kullandığı API köprüsü.
-- **Packaging:** Uygulamanın paketlenmeye (Tauri/Electron) hazır olma durumu.
+1. En az bir yerel LLM gercek metin uretmeli.
+2. En az bir yerel IGM gercek gorsel uretmeli.
+3. LLM ve IGM Aillame-controlled runtime/worker uzerinden yonetilmeli.
+4. Ollama, ComfyUI ve LM Studio zorunlu bagimlilik olmamali.
+5. Nano advisory/eval/decision cekirdegi ana LLM final kabul yerine gecmemeli.
 
-## Komutlar
+## LLM Acceptance
+
+Bir LLM icin `finalAcceptanceReady=true` olmasi icin:
+
+- `AILLAME_GGUF_RUNTIME_ENABLED=true`
+- `AILLAME_GGUF_RUNTIME_BINARY` yerel Aillame-controlled text worker binary
+  yolunu gostermeli.
+- `AILLAME_GGUF_MODEL_PATH` veya `AILLAME_GGUF_MODEL_DIR` +
+  `AILLAME_GGUF_ACTIVE_MODEL` yerel GGUF model dosyasini gostermeli.
+- Model dosyasi mevcut olmali.
+- Worker gercek generation denemesi yapmali.
+- Response bos olmamali.
+- Cikti fallback, degraded veya placeholder olmamali.
+
+Nano probe bilgisi acceptance raporunda gorunebilir, fakat Nano tek basina ana
+LLM final kabul sayilmaz.
+
+## IGM Acceptance
+
+Bir IGM icin `finalAcceptanceReady=true` olmasi icin:
+
+- `AILLAME_IGM_RUNTIME_ENABLED=true`
+- `AILLAME_IGM_MODEL_DIR` yerel diffusion model dizinini gostermeli.
+- `AILLAME_IGM_ACTIVE_MODEL` bu dizindeki model dosyasini gostermeli.
+- `AILLAME_IGM_OUTPUT_DIR` yazilabilir olmali.
+- Aillame-controlled IGM worker gercek image job calistirmali.
+- Job `completed` olmali.
+- PNG veya JPEG gibi gercek bir image asset dosyasi olusmali.
+- Placeholder/dummy dosya final kabul sayilmamali.
+
+## Acceptance Report Alanlari
+
+Runtime acceptance raporu su ayrimi acik tutar:
+
+- `configured`: gerekli config ve dosyalar gorunuyor mu?
+- `attempted`: gercek generation denemesi yapildi mi?
+- `succeeded`: gercek generation basarili oldu mu?
+- `finalAcceptanceReady`: final kabul icin tum kosullar saglandi mi?
+- `missingConfig`: eksik environment/config alanlari.
+- `missingFiles`: eksik model veya output path bilgileri.
+- `missingWorker`: Aillame-controlled worker eksikleri.
+- `nextActions`: kullanicinin bir sonraki somut adimlari.
+
+## Smoke Komutlari
+
 ```bash
-# Metin üretim kabulünü test et
 npm run smoke:live-text-runtime
-
-# Görsel üretim kabulünü test et
 npm run smoke:live-image-runtime
-
-# Desktop hazır olma durumunu raporla
+npm run smoke:live-runtime-acceptance
 npm run smoke:desktop-readiness
 ```
 
-## Beta Engelleyiciler (Blockers)
-Eğer yerel motorlardan biri "Not Configured" veya "Failed" durumundaysa, sistem `finalAcceptanceReady: false` döner ve admin panelinde engelleyici sebepler listelenir.
+Runtime yoksa bu komutlar rapor uretir ve QA zincirini kirmadan
+`finalAcceptanceReady=false` doner. Bu davranis bilinclidir: eksik runtime
+gizlenmez, fakat foundation testleri de sahte basari uretmez.
+
+## Git ve Guvenlik
+
+- Model, checkpoint, diffusion agirligi ve uretilen asset dosyalari git'e
+  eklenmemelidir.
+- `.aillame-data`, `.aillame-test-data`, `.next`, `node_modules`, `dist`,
+  `build`, `coverage` ve cache ciktilari stage edilmemelidir.
+- `.env`, token, key ve secret icerikleri loglanmamalidir.
+- Model indirme, dis network veya dependency install bu acceptance raporunun
+  parcasi degildir.

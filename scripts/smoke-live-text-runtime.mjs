@@ -1,40 +1,59 @@
 /**
- * Aillame Live Text Runtime Acceptance Smoke Test (Post-Beta Phase 9)
- * Verifies if the local LLM is truly producing text for final production.
+ * Aillame Live Text Runtime Acceptance Smoke Test
+ *
+ * This reporter distinguishes Beta Foundation readiness from real local LLM
+ * acceptance. Nano may be probed as advisory infrastructure, but Nano output
+ * alone is not counted as final LLM acceptance.
  */
 
-import { probeAillameTextRuntime } from '../src/core/engine/rust-core.ts';
+import { getLiveTextAcceptanceReport } from './live-runtime-acceptance-lib.mjs';
 
 async function runAcceptanceTest() {
   console.log("Running Live Text Runtime Acceptance Check...\n");
 
-  const probe = probeAillameTextRuntime();
+  const text = getLiveTextAcceptanceReport();
 
   console.log("Diagnostics:");
-  console.log(`- Success: ${probe.success}`);
-  console.log(`- Checkpoint: ${probe.checkpoint.checkpointPathExists ? "FOUND" : "NOT FOUND"}`);
-  console.log(`- Generated Tokens: ${probe.generatedTokenCount}`);
-  console.log(`- Decoded Length: ${probe.decodedLength}`);
-  if (probe.reason) console.log(`- Reason: ${probe.reason}`);
+  console.log(`- Runtime: ${text.selectedRuntime}`);
+  console.log(`- Configured: ${text.configured}`);
+  console.log(`- Attempted: ${text.attempted}`);
+  console.log(`- Succeeded: ${text.succeeded}`);
+  console.log(`- Response Length: ${text.responseLength}`);
+  console.log(`- Fallback Used: ${text.fallbackUsed}`);
+  console.log(`- Degraded: ${text.degraded}`);
+  console.log(`- Reason: ${text.reason}`);
+  console.log(`- Nano Advisory Probe: ${text.nanoAdvisoryProbe.available ? "available" : "not-ready"}`);
   console.log("");
 
-  const report = {
-    liveTextRuntimeAvailable: probe.success,
-    finalAcceptanceReady: probe.success,
-    selectedRuntime: "nano-rust",
-    selectedModelId: "aillame-nano-v1",
-    checkpointPath: probe.checkpoint.checkpointPath,
+  const smokeReport = {
+    liveTextRuntimeAvailable: text.liveTextRuntimeAvailable,
+    finalAcceptanceReady: text.finalAcceptanceReady,
+    configured: text.configured,
+    attempted: text.attempted,
+    succeeded: text.succeeded,
+    selectedRuntime: text.selectedRuntime,
+    selectedModelId: text.selectedModelId,
+    responseLength: text.responseLength,
+    fallbackUsed: text.fallbackUsed,
+    degraded: text.degraded,
+    reason: text.reason,
+    missingConfig: text.missingConfig,
+    missingFiles: text.missingFiles,
+    missingWorker: text.missingWorker,
+    nextActions: text.nextActions,
+    warnings: text.warnings,
+    nanoAdvisoryProbe: text.nanoAdvisoryProbe,
     timestamp: new Date().toISOString(),
-    status: probe.success ? "READY" : "NOT_CONFIGURED"
+    status: text.finalAcceptanceReady ? "READY" : "NOT_CONFIGURED"
   };
 
-  console.log(JSON.stringify(report, null, 2));
+  console.log(JSON.stringify(smokeReport, null, 2));
 
-  if (!probe.success) {
-    console.warn("\nWARNING: Local Text Generation (LLM) is not ready for final acceptance.");
-    console.warn("Please ensure aillame-core-v7.node is compiled and checkpoint exists.");
+  if (!text.finalAcceptanceReady) {
+    console.warn("\nWARNING: Real local LLM generation is not ready for final acceptance.");
+    console.warn("Nano advisory output, fallback output, degraded output, or placeholder text is not counted.");
   } else {
-    console.log("\nSUCCESS: Local Text Generation runtime is ready for final acceptance.");
+    console.log("\nSUCCESS: Real local LLM generation passed final acceptance.");
   }
 
   process.exit(0);

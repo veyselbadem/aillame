@@ -54,15 +54,15 @@ export class ReleaseService {
     if (!acceptance.text.finalAcceptanceReady) {
       blockers.push({
         id: 'blk-text',
-        description: 'Local LLM (Nano) is not producing text results.',
-        requirement: 'Native core-v7 must be compiled and Nano v1 checkpoint must be in place.'
+        description: 'Local LLM is not producing real text through an Aillame-controlled GGUF/text worker.',
+        requirement: acceptance.text.nextActions.join(' ') || 'Configure a local GGUF model, runtime binary and generation worker.'
       });
     }
     if (!acceptance.image.finalAcceptanceReady) {
       blockers.push({
         id: 'blk-image',
-        description: 'Local IGM (Diffusion) is not configured.',
-        requirement: 'Diffusion model weights and AILLAME_IGM_* env variables are required for final acceptance.'
+        description: 'Local IGM is not producing a real image through an Aillame-controlled diffusion worker.',
+        requirement: acceptance.image.nextActions.join(' ') || 'Configure a local IGM model, output directory and generation worker.'
       });
     }
 
@@ -96,8 +96,8 @@ export class ReleaseService {
       blockers,
       knownIssues,
       nextActions: [
-        "Complete manual validation of GGUF model loading.",
-        "Finalize image generation worker with stable diffusion local path.",
+        "Configure an Aillame-controlled GGUF text worker and verify real local LLM generation.",
+        "Configure an Aillame-controlled IGM worker and verify real PNG/JPEG image generation.",
         "Update documentation for desktop packaging."
       ]
     };

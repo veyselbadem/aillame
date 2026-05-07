@@ -1,43 +1,59 @@
 /**
- * Aillame Live Image Runtime Acceptance Smoke Test (Post-Beta Phase 8)
- * Verifies if the local IGM runtime is truly ready for final production.
+ * Aillame Live Image Runtime Acceptance Smoke Test
+ *
+ * This reporter does not count env-only configuration, dummy files, or
+ * placeholder worker responses as final IGM acceptance.
  */
 
-import { IGMRuntimeReadiness } from '../src/core/runtime/image/igm-runtime-readiness.ts';
+import { getLiveImageAcceptanceReport } from './live-runtime-acceptance-lib.mjs';
 
 async function runAcceptanceTest() {
   console.log("Running Live Image Runtime Acceptance Check...\n");
 
-  // Mocking process.env access as the script might run in node environment
-  // We'll rely on the IGMRuntimeReadiness which reads env
-  const diag = IGMRuntimeReadiness.getDiagnostics();
+  const image = getLiveImageAcceptanceReport();
 
   console.log("Diagnostics:");
-  console.log(`- Enabled: ${diag.enabled}`);
-  console.log(`- Model Directory: ${diag.modelDirConfigured ? "Configured" : "NOT SET"}`);
-  console.log(`- Active Model: ${diag.activeModelConfigured ? "Configured" : "NOT SET"}`);
-  console.log(`- Output Directory: ${diag.outputDirWritable ? "Writable" : "NOT WRITABLE"}`);
-  console.log(`- Device: ${diag.device}`);
+  console.log(`- Configured: ${image.configured}`);
+  console.log(`- Attempted: ${image.attempted}`);
+  console.log(`- Succeeded: ${image.succeeded}`);
+  console.log(`- File Exists: ${image.fileExists}`);
+  console.log(`- Placeholder Used: ${image.placeholderUsed}`);
+  console.log(`- Degraded: ${image.degraded}`);
+  console.log(`- Reason: ${image.reason}`);
   console.log("");
 
-  const report = {
-    liveImageRuntimeAvailable: diag.enabled && diag.workerAvailable,
-    finalAcceptanceReady: diag.finalAcceptanceReady,
-    missingConfig: diag.missingConfig,
+  const smokeReport = {
+    liveImageRuntimeAvailable: image.liveImageRuntimeAvailable,
+    finalAcceptanceReady: image.finalAcceptanceReady,
+    configured: image.configured,
+    attempted: image.attempted,
+    succeeded: image.succeeded,
+    jobId: image.jobId,
+    assetId: image.assetId,
+    outputPathSanitized: image.outputPathSanitized,
+    mimeType: image.mimeType,
+    fileExists: image.fileExists,
+    placeholderUsed: image.placeholderUsed,
+    degraded: image.degraded,
+    reason: image.reason,
+    missingConfig: image.missingConfig,
+    missingFiles: image.missingFiles,
+    missingWorker: image.missingWorker,
+    nextActions: image.nextActions,
+    warnings: image.warnings,
     timestamp: new Date().toISOString(),
-    status: diag.finalAcceptanceReady ? "READY" : "NOT_CONFIGURED"
+    status: image.finalAcceptanceReady ? "READY" : "NOT_CONFIGURED"
   };
 
-  console.log(JSON.stringify(report, null, 2));
+  console.log(JSON.stringify(smokeReport, null, 2));
 
-  if (!diag.finalAcceptanceReady) {
-    console.warn("\nWARNING: Local Image Generation (IGM) is not ready for final acceptance.");
-    console.warn("Please check .env.example for required AILLAME_IGM_* variables.");
+  if (!image.finalAcceptanceReady) {
+    console.warn("\nWARNING: Real local IGM generation is not ready for final acceptance.");
+    console.warn("Placeholder images, dummy assets, not-configured jobs, and env-only readiness are not counted.");
   } else {
-    console.log("\nSUCCESS: Local Image Generation runtime is ready for final acceptance.");
+    console.log("\nSUCCESS: Real local IGM generation passed final acceptance.");
   }
 
-  // We don't exit with 1 if not configured, as it's an acceptance reporter
   process.exit(0);
 }
 

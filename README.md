@@ -104,6 +104,7 @@ Gemma, Qwen, SDXL, Gemini veya Ollama gibi model/araç özel isimleri yalnızca 
 
 - [Beta Foundation RC](docs/releases/beta-foundation-rc.md)
 - [Runtime Acceptance](docs/runtime-acceptance.md)
+- [Live Runtime Setup](docs/live-runtime-setup.md)
 - [Desktop Readiness](docs/desktop-readiness.md)
 - [Persistent Memory Strategy](docs/persistent-memory-strategy.md)
 - [RAG Document Library](docs/rag-document-library.md)
