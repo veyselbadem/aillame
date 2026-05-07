@@ -15,6 +15,8 @@
                     "smoke:code-agent":  "node scripts/smoke-code-agent.mjs",
                     "smoke:image-rag-nano":  "node scripts/smoke-image-rag-nano.mjs",
                     "smoke:external-api":  "node scripts/smoke-external-api.mjs",
+                    "smoke:productization":  "node scripts/smoke-productization.mjs",
+                    "cli:aillame":  "node scripts/aillame-cli.mjs",
                     "core:build":  "napi build --platform --release --cargo-cwd aillame-core",
                     "core:dev":  "napi build --cargo-cwd aillame-core",
                     "core:train":  "npx tsx src/core/engine/supervisor.ts",
