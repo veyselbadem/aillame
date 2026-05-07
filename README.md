@@ -91,6 +91,8 @@ Güncel config yüzeyi için `.env.example` dosyasındaki `AILLAME_*` değişken
 - `AILLAME_IGM_MODEL_DIR`
 - `AILLAME_MODEL_DISCOVERY_ENABLED`
 - `AILLAME_RUNTIME_ACCEPTANCE_REQUIRED`
+- `AILLAME_MODEL_DOWNLOADS_ENABLED`
+- `AILLAME_MODEL_DOWNLOAD_REQUIRE_APPROVAL`
 
 Gemma, Qwen, SDXL, Gemini veya Ollama gibi model/araç özel isimleri yalnızca örnek, compatibility veya deneysel profil olarak kabul edilir; ana ürün mimarisi bunlara bağlı değildir.
 
@@ -107,6 +109,7 @@ Gemma, Qwen, SDXL, Gemini veya Ollama gibi model/araç özel isimleri yalnızca 
 - [Beta Foundation RC](docs/releases/beta-foundation-rc.md)
 - [Runtime Acceptance](docs/runtime-acceptance.md)
 - [Live Runtime Setup](docs/live-runtime-setup.md)
+- [Model Download Manager](docs/model-download-manager.md)
 - [Desktop Readiness](docs/desktop-readiness.md)
 - [Persistent Memory Strategy](docs/persistent-memory-strategy.md)
 - [RAG Document Library](docs/rag-document-library.md)

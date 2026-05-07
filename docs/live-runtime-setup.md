@@ -57,6 +57,11 @@ Success icin beklenen ozet:
 `smoke:live-text-runtime` GGUF model dizininde adaylari listeler. Birden fazla
 GGUF varsa otomatik secim yapmadan `AILLAME_GGUF_ACTIVE_MODEL` bekler.
 
+Model Library icindeki Model Download Manager, Ollama-like bir deneyim sunar:
+starter catalog gorunur, download plan uretilir, kullanici onayi beklenir,
+yerel `.gguf` dosyasi verify edilir ve sonra aktif model adayi secilir.
+Bu akış Ollama veya LM Studio'ya bagimli degildir.
+
 ### Model candidate guidance
 
 Ilk acceptance icin 3B-4B sinifi GGUF modellerin Q4_K_M veya Q5_K_M

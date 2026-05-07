@@ -53,6 +53,61 @@ export default function ModelLibraryPage() {
               ))}
             </section>
 
+            <section className="mb-5 theme-surface rounded-xl p-5">
+              <div className="mb-4 flex items-start justify-between gap-4">
+                <div>
+                  <h2 className="text-sm font-bold theme-title">Ollama-like GGUF Model Manager</h2>
+                  <p className="mt-1 text-xs leading-relaxed theme-muted">
+                    Aillame can show starter GGUF candidates, create safe download plans, track approval-gated jobs and select a verified active model without depending on Ollama or LM Studio.
+                  </p>
+                </div>
+                <span className="rounded border border-amber-500/25 bg-amber-500/10 px-2 py-1 text-[10px] font-bold uppercase tracking-widest text-amber-800 dark:text-amber-300">
+                  plan only
+                </span>
+              </div>
+
+              <div className="grid gap-3 md:grid-cols-3">
+                {[
+                  {
+                    title: 'Discover / Starter Catalog',
+                    body: '3B-4B Q4_K_M / Q5_K_M GGUF candidates, license notes and hardware guidance.',
+                    status: 'metadata ready',
+                  },
+                  {
+                    title: 'Download Plans',
+                    body: 'approvalRequired=true, canAutoStart=false, target path sanitize and manual-source handling.',
+                    status: 'approval gated',
+                  },
+                  {
+                    title: 'Active Model',
+                    body: 'Only verified local .gguf files can become active model candidates.',
+                    status: 'verification first',
+                  },
+                ].map((item) => (
+                  <div key={item.title} className="theme-elevated rounded-lg p-4">
+                    <p className="text-xs font-bold theme-title">{item.title}</p>
+                    <p className="mt-2 text-[11px] leading-relaxed theme-muted">{item.body}</p>
+                    <p className="mt-3 text-[10px] font-bold uppercase tracking-widest theme-secondary">{item.status}</p>
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-4 grid gap-3 md:grid-cols-2">
+                <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/5 p-3">
+                  <p className="text-xs font-bold text-emerald-800 dark:text-emerald-200">Installed GGUF Models</p>
+                  <p className="mt-1 text-[11px] leading-relaxed theme-muted">
+                    Installed models are read from the local model library. Model files are never embedded in API responses and should never be staged in git.
+                  </p>
+                </div>
+                <div className="rounded-lg border border-indigo-500/20 bg-indigo-500/5 p-3">
+                  <p className="text-xs font-bold text-indigo-800 dark:text-indigo-200">Live Text Acceptance</p>
+                  <p className="mt-1 text-[11px] leading-relaxed theme-muted">
+                    After a verified GGUF model and Aillame-controlled runtime binary are selected, run smoke:live-text-runtime.
+                  </p>
+                </div>
+              </div>
+            </section>
+
             <div className="theme-surface rounded-xl p-5">
               <ModelLibraryPanel />
             </div>
