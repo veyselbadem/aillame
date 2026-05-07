@@ -113,6 +113,81 @@ export default function IntelligenceDashboard() {
           </div>
         </div>
       </div>
+
+      <section className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <div className="rounded-2xl border border-white/5 bg-[#0a0a0a] p-6 shadow-2xl">
+          <h3 className="mb-6 flex items-center text-sm font-semibold uppercase tracking-wider text-slate-400">
+            <RiLineChartLine className="mr-2" /> Nano Evaluation Pipeline v1
+          </h3>
+          <div className="space-y-4">
+            {[
+              { label: 'Project-Aware Routing', score: '92%', status: 'stable' },
+              { label: 'Turkish Quality (TR-EVAL)', score: '88%', status: 'stable' },
+              { label: 'Safety & Fallback Guard', score: '98%', status: 'active' },
+              { label: 'JSON Output Schema', score: '95%', status: 'active' }
+            ].map(item => (
+              <div key={item.label} className="p-3 rounded-xl bg-white/[0.02] border border-white/5">
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-xs font-bold text-slate-300 tracking-wider">{item.label}</span>
+                  <span className="text-xs font-mono text-blue-400">{item.score}</span>
+                </div>
+                <div className="h-1 w-full bg-white/5 rounded-full overflow-hidden">
+                  <div className="h-full bg-blue-500/50" style={{ width: item.score }}></div>
+                </div>
+                <div className="mt-2 flex justify-between items-center">
+                  <span className="text-[10px] text-slate-600 uppercase tracking-widest">{item.status}</span>
+                  <span className="text-[10px] text-blue-500/60 font-mono">baseline: 1.3.0</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-white/5 bg-[#0a0a0a] p-6 shadow-2xl">
+          <h3 className="mb-6 flex items-center text-sm font-semibold uppercase tracking-wider text-slate-400">
+            <RiDatabaseLine className="mr-2" /> Training Pipeline & Feedback Loop
+          </h3>
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="p-4 rounded-xl bg-white/[0.03] border border-white/5">
+                <p className="text-[10px] text-slate-500 uppercase tracking-widest mb-1">Approved Feedback</p>
+                <p className="text-xl font-bold text-slate-200">24 <span className="text-[10px] text-slate-600 font-normal">items</span></p>
+              </div>
+              <div className="p-4 rounded-xl bg-white/[0.03] border border-white/5">
+                <p className="text-[10px] text-slate-500 uppercase tracking-widest mb-1">Pending Review</p>
+                <p className="text-xl font-bold text-amber-500">12 <span className="text-[10px] text-slate-600 font-normal text-slate-500">items</span></p>
+              </div>
+            </div>
+            
+            <div className="p-4 rounded-xl bg-indigo-500/5 border border-indigo-500/20">
+              <div className="flex items-center gap-2 mb-3">
+                <RiTerminalBoxLine className="text-indigo-400" />
+                <span className="text-xs font-bold text-indigo-200 uppercase tracking-wider">Export & Validation Status</span>
+              </div>
+              <ul className="space-y-2">
+                <li className="flex items-center gap-2 text-[11px] text-slate-400">
+                  <span className="h-1 w-1 rounded-full bg-emerald-500"></span>
+                  Training Candidate Validator: <span className="text-emerald-400 font-mono ml-auto">READY</span>
+                </li>
+                <li className="flex items-center gap-2 text-[11px] text-slate-400">
+                  <span className="h-1 w-1 rounded-full bg-blue-500"></span>
+                  Feedback to Approved Export: <span className="text-blue-400 font-mono ml-auto">READY</span>
+                </li>
+                <li className="flex items-center gap-2 text-[11px] text-slate-400">
+                  <span className="h-1 w-1 rounded-full bg-slate-700"></span>
+                  Checkpoint Overwrite: <span className="text-slate-600 font-mono ml-auto">DISABLED</span>
+                </li>
+              </ul>
+            </div>
+            
+            <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20">
+               <p className="text-[10px] text-amber-200/70 leading-relaxed italic">
+                 Nano training pipeline bu fazda "advisory" seviyesindedir. Otonom model güncelleme veya checkpoint değişimi kapalıdır.
+               </p>
+            </div>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }

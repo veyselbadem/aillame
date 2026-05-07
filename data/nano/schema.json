@@ -7,13 +7,23 @@
     "id": { "type": "string", "minLength": 1 },
     "type": {
       "type": "string",
-      "enum": ["instruction", "classification", "project-aware", "safety-fallback", "eval", "feedback-candidate"]
+      "enum": [
+        "instruction", 
+        "classification", 
+        "project-aware", 
+        "safety-fallback", 
+        "eval", 
+        "feedback-candidate",
+        "turkish-quality",
+        "json-output",
+        "decision-routing"
+      ]
     },
     "instruction": { "type": "string", "minLength": 1 },
     "expectedOutput": { "type": "string", "minLength": 1 },
     "mode": {
       "type": "string",
-      "enum": ["general", "education", "code", "economy", "finance", "provider", "game-dev", "classroom"]
+      "enum": ["general", "education", "code", "economy", "finance", "provider", "game-dev", "classroom", "security"]
     },
     "intent": {
       "type": "string",
@@ -22,6 +32,20 @@
     "projectId": { "type": "string" },
     "context": { "type": "string" },
     "expectedDecision": { "type": "object" },
+    "scoringRubric": {
+      "type": "object",
+      "properties": {
+        "characterIntegrity": { "type": "number", "minimum": 0, "maximum": 1 },
+        "clarity": { "type": "number", "minimum": 0, "maximum": 1 },
+        "instructionFollowing": { "type": "number", "minimum": 0, "maximum": 1 },
+        "validJson": { "type": "boolean" },
+        "hallucinationRisk": { "type": "number", "minimum": 0, "maximum": 1 }
+      }
+    },
+    "safetyLabel": {
+      "type": "string",
+      "enum": ["safe", "sensitive", "unsafe", "requires-approval", "blocked"]
+    },
     "input": {},
     "metadata": { "type": "object" },
     "source": { "type": "string" },

@@ -20,12 +20,15 @@ const allowedTypes = new Set([
   "safety-fallback",
   "eval",
   "feedback-candidate",
+  "turkish-quality",
+  "json-output",
+  "decision-routing",
 ]);
 
 const safeProjectIdPattern = /^[a-z0-9][a-z0-9_-]{0,63}$/;
 const allowedProjectPresets = new Set(["general", "aillame", "boss-ai", "doomsgame-engine", "badem-akademi"]);
-const allowedModes = new Set(["general", "education", "code", "economy", "finance", "provider", "game-dev", "classroom"]);
-const allowedSafetyLabels = new Set(["safe", "fallback", "refuse", "needs-verification", "sensitive-blocked", "unknown"]);
+const allowedModes = new Set(["general", "education", "code", "economy", "finance", "provider", "game-dev", "classroom", "security"]);
+const allowedSafetyLabels = new Set(["safe", "fallback", "refuse", "needs-verification", "sensitive-blocked", "unknown", "sensitive", "unsafe", "requires-approval", "blocked"]);
 const allowedIntents = new Set([
   "conversation",
   "analysis",
@@ -39,6 +42,8 @@ const allowedIntents = new Set([
   "safety",
   "fallback",
   "unknown",
+  "explanation",
+  "legal",
 ]);
 
 const mojibakeMarkers = ["Ã", "Ä", "Å", "ð", "�"];

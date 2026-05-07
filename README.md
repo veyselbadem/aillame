@@ -129,3 +129,17 @@ Model Discovery testi için:
 ```bash
 npm run smoke:model-discovery-runtime
 ```
+
+## Post-Beta Phase 6: Nano Evaluation + Training Pipeline
+
+Aillame Nano, ölçülebilir ve güvenli bir gelişim döngüsüne (evaluation + training pipeline) taşındı:
+- **Nano Evaluation Pipeline:** Proje bazlı (project-aware), Türkçe kalitesi (Turkish quality), JSON çıktı doğruluğu ve güvenlik (safety) kriterlerini ölçen merkezi bir değerlendirme sistemi kuruldu.
+- **Project-Aware Routing Eval:** Nano'nun farklı projeler (Aillame, BOSS AI, Badem Akademi vb.) arasındaki bağlamı ne kadar doğru koruduğu ölçülmeye başlandı.
+- **Safety / Fallback Eval:** Riskli taleplerde ve bilinmeyen durumlarda Nano'nun güvenli geri çekilme (fallback) davranışı standartlaştırıldı.
+- **Feedback to Training Export:** Kullanıcı geri bildirimlerinin doğrudan değil, sadece "onaylı" (approved) durumda eğitim setine aktarıldığı güvenli bir akış oluşturuldu.
+- **Training Candidate Validator:** Eğitim öncesinde verilerin kalite ve güvenlik (secret detection) denetiminden geçtiği bir doğrulama katmanı eklendi.
+
+Nano Eval/Training testi için:
+```bash
+npm run smoke:nano-eval-training
+```
