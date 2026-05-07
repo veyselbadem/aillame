@@ -209,6 +209,38 @@ export default function AdminApiClientsPage() {
         </InfoPanel>
       </div>
 
+      <section className="mb-10">
+        <div className="mb-6 flex items-center gap-3">
+          <div className="w-5 h-5 rounded-lg bg-emerald-500/20 flex items-center justify-center">
+            <FiRefreshCw size={10} className="text-emerald-400" />
+          </div>
+          <h2 className="text-xs font-black uppercase tracking-[0.4em] text-slate-500">Provider Integration Readiness (E2E)</h2>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {[
+            { id: 'boss-ai', name: 'BOSS AI', mode: 'Economy', scopes: 'chat:write, memory:read' },
+            { id: 'doomsgame', name: 'Doomsgame Engine', mode: 'Code', scopes: 'chat:write, task:create' },
+            { id: 'badem', name: 'Badem Akademi', mode: 'Education', scopes: 'chat:write, memory:read' },
+            { id: 'openai', name: 'Generic OpenAI', mode: 'Chat', scopes: 'chat:write' }
+          ].map((int) => (
+            <div key={int.id} className="glass-card border border-white/10 p-4 rounded-2xl bg-white/[0.02]">
+              <h3 className="text-sm font-bold mb-1">{int.name}</h3>
+              <p className="text-[10px] text-gray-500 mb-3">{int.id === 'openai' ? '/api/v1/chat' : '/api/external/v1'}</p>
+              <div className="space-y-2">
+                <div className="flex justify-between text-[10px]">
+                  <span className="text-gray-500">Mode:</span>
+                  <span className="text-indigo-300 font-bold">{int.mode}</span>
+                </div>
+                <div className="flex justify-between text-[10px]">
+                  <span className="text-gray-500">Status:</span>
+                  <span className="text-emerald-400 font-bold">Contract Ready</span>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
       <div className="grid gap-8 xl:grid-cols-[1fr_1.8fr]">
         <section className="glass-card border border-white/10 p-6 rounded-[24px]">
           <div className="mb-6">

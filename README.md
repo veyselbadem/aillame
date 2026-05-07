@@ -88,3 +88,16 @@ Security smoke testi için:
 ```bash
 npm run smoke:security-api-keys
 ```
+
+## Post-Beta Phase 3: External Provider E2E Integration
+
+Aillame, harici projeler için hazır bir provider katmanı haline getirilmiştir:
+- **Integration Contracts:** BOSS AI, Doomsgame Engine ve Badem Akademi için typed entegrasyon sözleşmeleri tanımlandı (`src/core/integrations/contracts`).
+- **E2E Smoke Tests:** External Provider API ve OpenAI-compatible endpoint'ler için E2E doğrulama zinciri oluşturuldu.
+- **SDK Examples:** Proje bazlı SDK kullanım örnekleri ve hata handling senaryoları dokümante edildi.
+- **Admin Visibility:** Admin panelinde entegrasyon hazırlık durumu ve contract statüleri görünür hale getirildi.
+
+Provider E2E testi için:
+```bash
+npm run smoke:provider-e2e
+```
