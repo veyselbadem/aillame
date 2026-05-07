@@ -3,9 +3,10 @@ import path from "path";
 import { appendJsonl, getStorageRoot, readJsonl, writeJsonl } from "../../storage/file-store";
 import type { ModelCatalogEntry, ModelCatalogFile } from "../catalog/model-catalog-types";
 import { CURATED_GGUF_STARTER_CATALOG } from "../catalog/curated-gguf-catalog";
+import { CURATED_IGM_STARTER_CATALOG } from "../catalog/curated-igm-catalog";
 import type { ModelDownloadJob, ModelDownloadPlan, ModelDownloadResult } from "./model-download-types";
 
-import { getGgufModelDirectory, getSafeFileName } from "../model-path-policy";
+import { getGgufModelDirectory, getIgmModelDirectory, getSafeFileName } from "../model-path-policy";
 
 const JOBS_FILE = "model-download-jobs.jsonl";
 
@@ -20,14 +21,15 @@ function safeTargetPath(targetDirectory: string, fileName: string): { pathSafe: 
 }
 
 function findCatalogFile(modelId: string, fileName: string): { entry?: ModelCatalogEntry; file?: ModelCatalogFile } {
-  const entry = CURATED_GGUF_STARTER_CATALOG.find((candidate) => candidate.modelId === modelId);
+  const entries = [...CURATED_GGUF_STARTER_CATALOG, ...CURATED_IGM_STARTER_CATALOG];
+  const entry = entries.find((candidate) => candidate.modelId === modelId);
   const file = entry?.files.find((candidate) => candidate.fileName === fileName);
   return { entry, file };
 }
 
 export class ModelDownloadService {
   createDownloadPlan(entry: ModelCatalogEntry, file: ModelCatalogFile): ModelDownloadPlan {
-    const targetDirectory = getGgufModelDirectory();
+    const targetDirectory = entry.taskType === 'image' ? getIgmModelDirectory() : getGgufModelDirectory();
     const target = safeTargetPath(targetDirectory, file.fileName);
     const risks: ModelDownloadPlan["risks"] = [];
     const nextActions: string[] = [];

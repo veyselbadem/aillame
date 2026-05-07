@@ -10,7 +10,7 @@ import { getLiveImageAcceptanceReport } from './live-runtime-acceptance-lib.mjs'
 async function runAcceptanceTest() {
   console.log("Running Live Image Runtime Acceptance Check...\n");
 
-  const image = getLiveImageAcceptanceReport();
+  const image = await getLiveImageAcceptanceReport();
 
   console.log("Diagnostics:");
   console.log(`- Configured: ${image.configured}`);

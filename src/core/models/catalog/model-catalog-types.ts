@@ -1,8 +1,8 @@
 import type { ModelCompatibilityReport } from "../compatibility/model-compatibility";
 
 export type ModelCatalogSource = "curated" | "local" | "manual" | "remote" | "unknown";
-export type ModelCatalogFormat = "gguf" | "safetensors" | "onnx" | "unknown";
-export type ModelCatalogTaskType = "chat" | "completion" | "code" | "analysis" | "unknown";
+export type ModelCatalogFormat = "gguf" | "safetensors" | "diffusers" | "onnx" | "bundle" | "unknown";
+export type ModelCatalogTaskType = "chat" | "completion" | "code" | "analysis" | "image" | "unknown";
 
 export interface ModelCatalogFile {
   fileName: string;

@@ -71,11 +71,14 @@ export class IGMRuntimeReadiness {
       missingConfig.push('AILLAME_IGM_OUTPUT_DIR is not writable');
     }
 
-    // A real IGM worker is not wired in this foundation yet. Do not treat env-only
-    // configuration as final acceptance.
-    const workerAvailable = false;
-    if (enabled) {
-      missingWorker.push('Aillame-controlled IGM worker implementation is not configured.');
+    const workerCommand = process.env.AILLAME_IGM_WORKER_COMMAND;
+    const workerExists = Boolean(workerCommand && fs.existsSync(workerCommand));
+    const workerAvailable = enabled && workerExists;
+
+    if (enabled && !workerCommand) {
+      missingWorker.push('AILLAME_IGM_WORKER_COMMAND is not set.');
+    } else if (enabled && !workerExists) {
+      missingWorker.push(`IGM worker binary not found: ${workerCommand}`);
     }
 
     const configured = enabled
@@ -83,10 +86,12 @@ export class IGMRuntimeReadiness {
       && Boolean(activeModel)
       && modelDirExists
       && activeModelExists
-      && outputDirWritable;
+      && outputDirWritable
+      && workerExists;
+
     const attempted = false;
     const succeeded = false;
-    const finalAcceptanceReady = configured && workerAvailable && attempted && succeeded;
+    const finalAcceptanceReady = configured && attempted && succeeded;
 
     if (!enabled) nextActions.push('Set AILLAME_IGM_RUNTIME_ENABLED=true after a local IGM worker is available.');
     if (!modelDir) nextActions.push('Set AILLAME_IGM_MODEL_DIR to a local diffusion model directory.');

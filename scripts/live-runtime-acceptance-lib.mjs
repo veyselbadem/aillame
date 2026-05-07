@@ -349,7 +349,86 @@ export async function getLiveTextAcceptanceReport() {
   };
 }
 
-export function getLiveImageAcceptanceReport() {
+async function runIgmGeneration({ enabled, modelPath }) {
+  const workerCommand = process.env.AILLAME_IGM_WORKER_COMMAND;
+  if (!enabled || !workerCommand || !modelPath) {
+    return {
+      attempted: false,
+      succeeded: false,
+      reason: 'IGM worker or model not configured.',
+      warnings: [],
+    };
+  }
+
+  // Attempt to call the worker with a simple probe request
+  const outputDir = process.env.AILLAME_IGM_OUTPUT_DIR || '.aillame-data/assets/images';
+  if (!fs.existsSync(outputDir)) fs.mkdirSync(outputDir, { recursive: true });
+
+  const jobId = `smoke_igm_${Date.now()}`;
+  const assetId = `asset_${jobId}`;
+  const outputPath = path.join(outputDir, `${assetId}.png`);
+
+  const request = {
+    prompt: 'A simple test image',
+    width: 256,
+    height: 256,
+    steps: 1,
+    seed: 42,
+    modelId: path.basename(modelPath),
+    outputDir,
+    jobId,
+    assetId
+  };
+
+  const tempDir = path.join(process.cwd(), '.aillame-data', 'temp');
+  if (!fs.existsSync(tempDir)) fs.mkdirSync(tempDir, { recursive: true });
+  const requestPath = path.join(tempDir, `${jobId}_req.json`);
+  const responsePath = path.join(tempDir, `${jobId}_res.json`);
+
+  try {
+    fs.writeFileSync(requestPath, JSON.stringify(request));
+    
+    const result = spawnSync(workerCommand, ['--request', requestPath, '--output', responsePath], {
+      cwd: process.cwd(),
+      encoding: 'utf8',
+      timeout: 30000,
+      windowsHide: true,
+    });
+
+    if (result.status === 0 && fs.existsSync(outputPath)) {
+      return {
+        attempted: true,
+        succeeded: true,
+        jobId,
+        assetId,
+        outputPath,
+        reason: 'REAL_IGM_GENERATION_SUCCEEDED',
+        warnings: [],
+      };
+    }
+
+    return {
+      attempted: true,
+      succeeded: false,
+      reason: result.status !== 0 ? `IGM_WORKER_EXIT_${result.status}` : 'IGM_WORKER_NO_OUTPUT',
+      warnings: result.stderr ? ['Worker wrote to stderr.'] : [],
+    };
+  } catch (err) {
+    return {
+      attempted: true,
+      succeeded: false,
+      reason: `IGM_PROBE_ERROR: ${err.message}`,
+      warnings: [],
+    };
+  } finally {
+    try {
+      if (fs.existsSync(requestPath)) fs.unlinkSync(requestPath);
+      if (fs.existsSync(responsePath)) fs.unlinkSync(responsePath);
+    } catch {}
+  }
+}
+
+export async function getLiveImageAcceptanceReport() {
   const missingConfig = [];
   const missingFiles = [];
   const missingWorker = [];
@@ -357,25 +436,29 @@ export function getLiveImageAcceptanceReport() {
   const nextActions = [];
 
   const enabled = process.env.AILLAME_IGM_RUNTIME_ENABLED === 'true';
+  const workerCommand = process.env.AILLAME_IGM_WORKER_COMMAND;
   const modelDir = process.env.AILLAME_IGM_MODEL_DIR;
   const activeModel = process.env.AILLAME_IGM_ACTIVE_MODEL;
   const outputDir = process.env.AILLAME_IGM_OUTPUT_DIR || '.aillame-data/assets/images';
 
   if (!enabled) missingConfig.push('AILLAME_IGM_RUNTIME_ENABLED is false');
+  if (!workerCommand) missingConfig.push('AILLAME_IGM_WORKER_COMMAND is not set');
   if (!modelDir) missingConfig.push('AILLAME_IGM_MODEL_DIR is not set');
   if (!activeModel) missingConfig.push('AILLAME_IGM_ACTIVE_MODEL is not set');
+
+  const workerExists = fileExists(workerCommand);
+  if (workerCommand && !workerExists) missingWorker.push(`IGM worker command not found: ${workerCommand}`);
 
   const modelDirExists = fileExists(modelDir);
   if (modelDir && !modelDirExists) missingFiles.push('AILLAME_IGM_MODEL_DIR does not exist');
 
   let activeModelExists = false;
+  let modelPath = '';
   if (modelDir && activeModel && modelDirExists) {
-    const activeModelPath = path.isAbsolute(activeModel)
-      ? activeModel
-      : path.join(modelDir, activeModel);
-    activeModelExists = fileExists(activeModelPath);
+    modelPath = path.isAbsolute(activeModel) ? activeModel : path.join(modelDir, activeModel);
+    activeModelExists = fileExists(modelPath);
     if (!activeModelExists) {
-      missingFiles.push('AILLAME_IGM_ACTIVE_MODEL file was not found in the configured model directory');
+      missingFiles.push('AILLAME_IGM_ACTIVE_MODEL file was not found');
     }
   }
 
@@ -387,28 +470,32 @@ export function getLiveImageAcceptanceReport() {
     } else {
       fs.accessSync(path.dirname(outputDir), fs.constants.W_OK);
       outputDirWritable = true;
-      warnings.push('AILLAME_IGM_OUTPUT_DIR does not exist yet; parent directory is writable.');
     }
   } catch {
     missingConfig.push('AILLAME_IGM_OUTPUT_DIR is not writable');
   }
 
-  if (enabled) {
-    missingWorker.push('Aillame-controlled IGM worker implementation is not configured.');
+  if (enabled && !workerCommand) {
+    missingWorker.push('Aillame-controlled IGM worker command is not configured.');
   }
 
-  if (!enabled) nextActions.push('Set AILLAME_IGM_RUNTIME_ENABLED=true after a local IGM worker is available.');
-  if (!modelDir) nextActions.push('Set AILLAME_IGM_MODEL_DIR to a local diffusion model directory.');
-  if (!activeModel) nextActions.push('Set AILLAME_IGM_ACTIVE_MODEL to the local model filename.');
-  nextActions.push('Configure an Aillame-controlled IGM worker; placeholders do not count for final acceptance.');
+  if (!enabled) nextActions.push('Set AILLAME_IGM_RUNTIME_ENABLED=true');
+  if (!workerCommand) nextActions.push('Set AILLAME_IGM_WORKER_COMMAND to a local IGM worker binary or script.');
+  if (!modelDir) nextActions.push('Set AILLAME_IGM_MODEL_DIR');
+  if (!activeModel) nextActions.push('Set AILLAME_IGM_ACTIVE_MODEL');
 
-  const configured = enabled && Boolean(modelDir) && Boolean(activeModel) && modelDirExists && activeModelExists && outputDirWritable;
-  const attempted = false;
-  const succeeded = false;
+  const configured = enabled && workerExists && activeModelExists && outputDirWritable;
+  const generation = configured 
+    ? await runIgmGeneration({ enabled, modelPath })
+    : { attempted: false, succeeded: false, reason: 'IGM not configured', warnings: [] };
+
+  const attempted = generation.attempted;
+  const succeeded = generation.succeeded;
   const finalAcceptanceReady = configured && attempted && succeeded && missingWorker.length === 0;
+
   const reason = finalAcceptanceReady
     ? 'REAL_IGM_GENERATION_SUCCEEDED'
-    : missingConfig[0] ?? missingFiles[0] ?? missingWorker[0] ?? 'REAL_IGM_GENERATION_NOT_ATTEMPTED';
+    : missingConfig[0] ?? missingFiles[0] ?? missingWorker[0] ?? generation.reason ?? 'REAL_IGM_GENERATION_NOT_ATTEMPTED';
 
   return {
     liveImageRuntimeAvailable: finalAcceptanceReady,
@@ -416,10 +503,10 @@ export function getLiveImageAcceptanceReport() {
     configured,
     attempted,
     succeeded,
-    jobId: undefined,
-    assetId: undefined,
-    outputPathSanitized: undefined,
-    mimeType: undefined,
+    jobId: generation.jobId,
+    assetId: generation.assetId,
+    outputPathSanitized: generation.outputPath ? path.basename(generation.outputPath) : undefined,
+    mimeType: succeeded ? 'image/png' : undefined,
     fileExists: succeeded,
     placeholderUsed: !succeeded,
     degraded: !finalAcceptanceReady,
@@ -427,7 +514,7 @@ export function getLiveImageAcceptanceReport() {
     missingConfig,
     missingFiles,
     missingWorker,
-    warnings,
+    warnings: [...warnings, ...generation.warnings],
     nextActions,
     status: finalAcceptanceReady ? 'READY' : 'NOT_CONFIGURED',
   };
@@ -435,7 +522,7 @@ export function getLiveImageAcceptanceReport() {
 
 export async function getCombinedLiveRuntimeAcceptanceReport() {
   const text = await getLiveTextAcceptanceReport();
-  const image = getLiveImageAcceptanceReport();
+  const image = await getLiveImageAcceptanceReport();
   const blockers = [];
   if (!text.finalAcceptanceReady) blockers.push('Real local LLM generation is not ready.');
   if (!image.finalAcceptanceReady) blockers.push('Real local IGM generation is not ready.');

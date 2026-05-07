@@ -52,4 +52,17 @@ export class NotConfiguredIGMWorker implements IGMWorker {
   }
 }
 
-export const igmWorker = new NotConfiguredIGMWorker();
+import { IGMWorkerProcessBridge } from './igm-worker-process-bridge';
+
+export function getIGMWorker(): IGMWorker {
+  const enabled = process.env.AILLAME_IGM_RUNTIME_ENABLED === 'true';
+  const command = process.env.AILLAME_IGM_WORKER_COMMAND;
+  
+  if (enabled && command) {
+    return new IGMWorkerProcessBridge();
+  }
+  
+  return new NotConfiguredIGMWorker();
+}
+
+export const igmWorker = getIGMWorker();

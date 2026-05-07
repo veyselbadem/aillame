@@ -19,11 +19,19 @@ Bir görsel üretim isteği şu aşamalardan geçer:
 3. **Completed:** Görsel başarıyla üretildi ve asset manager'a kaydedildi.
 4. **Failed / Degraded:** Hata oluştu veya runtime yapılandırılmadığı için işlem yapılamadı.
 
+## Worker Configuration
+Aillame, görsel üretim için bir external process (Python script veya binary) çağırır.
+- `AILLAME_IGM_WORKER_COMMAND`: Worker binary veya script yolu (örn: `python`, `sd-worker.exe`).
+- `AILLAME_IGM_WORKER_ARGS`: Komut satırı argümanları.
+- `AILLAME_IGM_TIMEOUT_MS`: Maksimum üretim süresi (varsayılan 5 dk).
+
 ## Final Acceptance Criteria (Final Kabul Kriterleri)
 Aillame'in tam sürüm (beta) sayılabilmesi için yerel görsel üretiminin aktif olması zorunludur:
 - `AILLAME_IGM_RUNTIME_ENABLED=true` olmalı.
+- `AILLAME_IGM_WORKER_COMMAND` geçerli bir worker'ı işaret etmeli.
 - Yerel bir model dosyası (`.safetensors` vb.) tanımlanmış olmalı.
 - Çıktı klasörü yazılabilir olmalı.
+- **Dürüst Raporlama:** Placeholder görseller veya sadece env ayarı olması kabul sayılmaz; gerçek bir PNG/JPEG dosyası üretilmelidir.
 
 ## Komutlar
 ```bash
