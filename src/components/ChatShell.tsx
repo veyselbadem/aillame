@@ -116,6 +116,22 @@ function ProjectContextBar({ modelLabel }: { modelLabel: string }) {
   );
 }
 
+function AttributionPreviewBar() {
+  return (
+    <div className="border-b border-white/5 bg-emerald-500/[0.035] px-5 py-2.5">
+      <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+        <div className="flex items-center gap-2">
+          <FiDatabase size={12} className="text-emerald-300" />
+          <span className="text-[10px] font-black uppercase tracking-[0.22em] text-emerald-300">Kullanılan Hafıza / Kaynaklar</span>
+        </div>
+        <p className="text-[11px] text-emerald-100/65">
+          Bu cevap için kayıtlı hafıza/kaynak kullanılmadı. Attribution bu fazda diagnostic preview olarak görünür.
+        </p>
+      </div>
+    </div>
+  );
+}
+
 export default function ChatShell({ conversationId }: ChatShellProps) {
   // Nano-only: sabit, değiştirilemez
   const llmMode: 'local' = 'local';
@@ -222,6 +238,7 @@ export default function ChatShell({ conversationId }: ChatShellProps) {
       </div>
 
       <ProjectContextBar modelLabel={chatModel.shortLabel ?? chatModel.id} />
+      <AttributionPreviewBar />
       <ToolCallBar tools={activeTools} />
 
       <div className="flex-1 overflow-hidden relative flex flex-col">

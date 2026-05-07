@@ -23,7 +23,9 @@ const allowedTypes = new Set([
 ]);
 
 const safeProjectIdPattern = /^[a-z0-9][a-z0-9_-]{0,63}$/;
+const allowedProjectPresets = new Set(["general", "aillame", "boss-ai", "doomsgame-engine", "badem-akademi"]);
 const allowedModes = new Set(["general", "education", "code", "economy", "finance", "provider", "game-dev", "classroom"]);
+const allowedSafetyLabels = new Set(["safe", "fallback", "refuse", "needs-verification", "sensitive-blocked", "unknown"]);
 const allowedIntents = new Set([
   "conversation",
   "analysis",
@@ -92,6 +94,24 @@ function validateRecord(record, location) {
 
   if (hasText(record.projectId) && !safeProjectIdPattern.test(record.projectId)) {
     errors.push(`${location}: invalid projectId '${record.projectId}'.`);
+  }
+
+  if (record.type === "project-aware" && hasText(record.projectId) && !allowedProjectPresets.has(record.projectId)) {
+    errors.push(`${location}: project-aware projectId '${record.projectId}' is not a known preset.`);
+  }
+
+  if (record.expectedDecision !== undefined && (typeof record.expectedDecision !== "object" || record.expectedDecision === null || Array.isArray(record.expectedDecision))) {
+    errors.push(`${location}: expectedDecision must be a JSON object when present.`);
+  }
+
+  if (record.safetyLabel !== undefined && (!hasText(record.safetyLabel) || !allowedSafetyLabels.has(record.safetyLabel))) {
+    errors.push(`${location}: invalid safetyLabel '${record.safetyLabel}'.`);
+  }
+
+  if (!record.metadata || typeof record.metadata !== "object" || Array.isArray(record.metadata)) {
+    errors.push(`${location}: metadata object is required.`);
+  } else if (!hasText(record.metadata.source)) {
+    errors.push(`${location}: metadata.source is required.`);
   }
 
   if (record.type === "project-aware") {

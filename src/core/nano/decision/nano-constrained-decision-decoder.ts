@@ -118,6 +118,38 @@ function defaultHooks(): DecisionObject["longTermCapabilityHooks"] {
   };
 }
 
+export function normalizeNanoLongTermCapabilityHooks(value: unknown): {
+  hooks: DecisionObject["longTermCapabilityHooks"];
+  warnings: string[];
+  diagnostics: { autonomousActionsForcedDisabled: boolean; advisoryOnly: true };
+} {
+  const input = typeof value === "object" && value !== null && !Array.isArray(value)
+    ? value as Record<string, unknown>
+    : {};
+  const warnings: string[] = [];
+  if (input.autonomousActionsEnabled === true) {
+    warnings.push("Nano autonomousActionsEnabled was requested but forced to false.");
+  }
+
+  return {
+    hooks: {
+      planningReady: typeof input.planningReady === "boolean" ? input.planningReady : true,
+      toolUseReady: typeof input.toolUseReady === "boolean" ? input.toolUseReady : false,
+      memoryUseReady: typeof input.memoryUseReady === "boolean" ? input.memoryUseReady : true,
+      codeUseReady: typeof input.codeUseReady === "boolean" ? input.codeUseReady : false,
+      multimodalReady: typeof input.multimodalReady === "boolean" ? input.multimodalReady : false,
+      selfImproveReady: typeof input.selfImproveReady === "boolean" ? input.selfImproveReady : false,
+      autonomousActionsEnabled: false,
+      diagnosticsOnly: true,
+    },
+    warnings,
+    diagnostics: {
+      autonomousActionsForcedDisabled: input.autonomousActionsEnabled === true,
+      advisoryOnly: true,
+    },
+  };
+}
+
 function fallbackDecision(input: NanoConstrainedDecisionDecodeInput): DecisionObject {
   const taskType = pickAllowed(input.routerFallback?.taskType, TASK_TYPES, "text");
   const contentType = pickAllowed(input.routerFallback?.contentType, CONTENT_TYPES, "text");
@@ -213,7 +245,7 @@ function buildDecisionFromObject(
       fallbackRecommended: typeof value.fallbackRecommended === "boolean" ? value.fallbackRecommended : fallback.fallbackRecommended,
       confidence,
       decision,
-      longTermCapabilityHooks: defaultHooks(),
+      longTermCapabilityHooks: normalizeNanoLongTermCapabilityHooks(value.longTermCapabilityHooks).hooks,
     },
   };
 }

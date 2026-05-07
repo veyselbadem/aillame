@@ -7,6 +7,13 @@ import { IMAGE_SIZE_PRESETS, type ImageSizePreset } from '@core/image-generation
 
 const PRESETS = Object.entries(IMAGE_SIZE_PRESETS) as Array<[ImageSizePreset, typeof IMAGE_SIZE_PRESETS[ImageSizePreset]]>;
 
+const FOUNDATION_STATUS = [
+  ['Image Runtime', 'not configured'],
+  ['Workflow JSON', 'foundation ready'],
+  ['Job Queue', 'preview'],
+  ['ComfyUI', 'dependency yok'],
+] as const;
+
 export default function ImageGenerationPanel() {
   const model = MODEL_REGISTRY[DEFAULT_IMAGE_GENERATION_MODEL_ID];
   const [prompt, setPrompt] = useState('');
@@ -27,12 +34,7 @@ export default function ImageGenerationPanel() {
       const response = await fetch('/api/image-generation', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          prompt,
-          negativePrompt,
-          preset,
-          steps,
-        }),
+        body: JSON.stringify({ prompt, negativePrompt, preset, steps }),
       });
 
       const payload = await response.json();
@@ -54,13 +56,22 @@ export default function ImageGenerationPanel() {
       <header className="mb-8">
         <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 mb-4">
           <FiImage size={14} className="text-indigo-300" />
-          <span className="text-[10px] font-black uppercase tracking-[0.3em] text-indigo-400">Pro Visual Generation</span>
+          <span className="text-[10px] font-black uppercase tracking-[0.3em] text-indigo-400">Image Workflow Foundation</span>
         </div>
         <h1 className="text-4xl md:text-6xl font-black tracking-tight text-white">Görsel Üretim</h1>
         <p className="mt-3 text-gray-400 max-w-2xl">
-          {model.label} ile yerel metinden görsel üretimi.
+          {model.label} ile yerel görsel üretim arayüzü. Faz 4 foundation: workflow JSON, job queue ve SDXL-like adapter şu an güvenli preview/not-configured modundadır.
         </p>
       </header>
+
+      <section className="mb-6 grid gap-3 md:grid-cols-4">
+        {FOUNDATION_STATUS.map(([label, value]) => (
+          <div key={label} className="glass-card rounded-2xl border-white/5 p-4">
+            <p className="text-[10px] font-black uppercase tracking-[0.22em] text-gray-500">{label}</p>
+            <p className="mt-2 text-sm font-semibold text-gray-200">{value}</p>
+          </div>
+        ))}
+      </section>
 
       <div className="grid grid-cols-1 lg:grid-cols-[420px_1fr] gap-5">
         <section className="glass-card rounded-[28px] p-5 border-white/5">
@@ -113,14 +124,7 @@ export default function ImageGenerationPanel() {
                 <label className="block text-[10px] font-black uppercase tracking-[0.25em] text-gray-500">Adım</label>
                 <span className="text-xs font-mono text-gray-500">{steps}</span>
               </div>
-              <input
-                type="range"
-                min={10}
-                max={60}
-                value={steps}
-                onChange={(event) => setSteps(Number(event.target.value))}
-                className="w-full"
-              />
+              <input type="range" min={10} max={60} value={steps} onChange={(event) => setSteps(Number(event.target.value))} className="w-full" />
             </div>
 
             {error && (
@@ -150,20 +154,17 @@ export default function ImageGenerationPanel() {
                 </div>
                 <div className="flex items-center justify-between gap-3">
                   <span className="text-[10px] font-mono text-gray-500">Seed: {seed ?? 'auto'}</span>
-                  <a
-                    href={image}
-                    download="aillame-sdxl.png"
-                    className="h-10 px-4 rounded-xl bg-white/5 hover:bg-white/10 text-gray-200 text-xs font-bold uppercase tracking-widest flex items-center gap-2"
-                  >
+                  <a href={image} download="aillame-image.png" className="h-10 px-4 rounded-xl bg-white/5 hover:bg-white/10 text-gray-200 text-xs font-bold uppercase tracking-widest flex items-center gap-2">
                     <FiDownload size={14} />
                     Dışa Aktar
                   </a>
                 </div>
               </div>
             ) : (
-              <div className="text-center opacity-40">
+              <div className="text-center opacity-50">
                 <FiImage size={96} className="mx-auto mb-4" />
-                <p className="text-[10px] font-black uppercase tracking-[0.4em]">SDXL Önizleme</p>
+                <p className="text-[10px] font-black uppercase tracking-[0.4em]">SDXL-like Önizleme</p>
+                <p className="mt-2 text-xs text-gray-500">Gerçek model çalıştırma bu fazda kapalıdır.</p>
               </div>
             )}
           </div>

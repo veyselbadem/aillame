@@ -122,6 +122,19 @@ export default function MemoryPage() {
           ))}
         </div>
 
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          {[
+            ['Vector Memory', 'placeholder embedding · in-memory store'],
+            ['Document Ingestion', 'txt/md/json supported · PDF/DOC placeholder'],
+            ['Attribution', 'diagnostic preview · kaynak şeffaflığı'],
+          ].map(([label, value]) => (
+            <div key={label} className="glass-card rounded-2xl p-4">
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500">{label}</p>
+              <p className="mt-2 text-xs text-gray-400">{value}</p>
+            </div>
+          ))}
+        </div>
+
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-6">
           {[
             { label: 'Sohbet Sayısı', value: conversations.length, icon: FiMessageSquare, color: 'text-indigo-400' },

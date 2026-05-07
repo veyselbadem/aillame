@@ -13,6 +13,7 @@
                     "smoke:foundation":  "node scripts/aillame-foundation-smoke.mjs",
                     "smoke:project-provider":  "node scripts/smoke-project-provider-api.mjs",
                     "smoke:code-agent":  "node scripts/smoke-code-agent.mjs",
+                    "smoke:image-rag-nano":  "node scripts/smoke-image-rag-nano.mjs",
                     "smoke:external-api":  "node scripts/smoke-external-api.mjs",
                     "core:build":  "napi build --platform --release --cargo-cwd aillame-core",
                     "core:dev":  "napi build --cargo-cwd aillame-core",

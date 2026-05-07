@@ -70,6 +70,15 @@ export type NanoLongTermCapabilityHooks = {
   diagnosticsOnly: true;
 };
 
+export type NanoLongTermCapabilityHookNormalization = {
+  hooks: NanoLongTermCapabilityHooks;
+  warnings: string[];
+  diagnostics: {
+    autonomousActionsForcedDisabled: boolean;
+    advisoryOnly: true;
+  };
+};
+
 export type NanoProjectRuntimeDecisionMetadata = {
   projectId: string;
   mode?: string;

@@ -49,6 +49,10 @@ const FOUNDATION_STATUS = [
   { label: 'External Provider API', desc: '/api/external/v1 ve OpenAI-compatible route hazırlığı.', variant: 'protected' as const },
   { label: 'Code Agent Foundation', desc: 'Plan-only, patch proposal ve approval-gated akış.', variant: 'review' as const },
   { label: 'Nano Diagnostics', desc: 'Advisory decision metadata ve Türkçe diagnostic akışı.', variant: 'active' as const },
+  { label: 'Image Workflow', desc: 'Workflow JSON, job queue ve SDXL-like adapter foundation; runtime not configured.', variant: 'disabled' as const },
+  { label: 'RAG / Vector Memory', desc: 'Placeholder embedding, in-memory vector store ve document ingestion foundation.', variant: 'review' as const },
+  { label: 'Memory Attribution', desc: 'Cevaplarda kaynak/hafıza şeffaflığı için diagnostic attribution yüzeyi.', variant: 'review' as const },
+  { label: 'Nano Feedback Loop', desc: 'Feedback doğrudan eğitime gitmez; pending-review candidate olarak tutulur.', variant: 'protected' as const },
   { label: 'Security Hardening', desc: 'API key ve policy sertleştirmesi Faz 5 kapsamındadır.', variant: 'disabled' as const },
 ];
 
