@@ -421,60 +421,128 @@ export default function AdminAgentTasksPage() {
           </div>
 
           <div className="grid gap-6 xl:grid-cols-[1.3fr_0.7fr]">
-            <div className="rounded-3xl border border-white/10 bg-white/5 p-6">
-              <div className="flex items-center justify-between mb-6">
-                <div>
-                  <p className="text-sm text-gray-400 uppercase tracking-[0.3em]">Plan Adımları</p>
-                  <h3 className="text-xl font-black text-slate-900 dark:text-white">{steps.length} adım</h3>
+            <div className="space-y-6">
+              <div className="rounded-3xl border border-white/10 bg-white/5 p-6">
+                <div className="flex items-center justify-between mb-6">
+                  <div>
+                    <p className="text-sm text-gray-400 uppercase tracking-[0.3em]">Patch Proposal Preview (Foundation)</p>
+                    <h3 className="text-xl font-black text-slate-900 dark:text-white">Proposed Changes</h3>
+                  </div>
+                  <StatusBadge variant="review" label="Awaiting Approval" />
                 </div>
-              </div>
-              {detailLoading ? (
-                <div className="rounded-2xl border border-white/10 bg-black/10 p-6 text-sm text-gray-400">Detay yükleniyor...</div>
-              ) : steps.length === 0 ? (
-                <div className="rounded-2xl border border-white/10 bg-black/10 p-6 text-sm text-gray-400">Adım kaydı yok.</div>
-              ) : (
+                
                 <div className="space-y-4">
-                  {steps.map((step) => (
-                    <div key={step.id} className="rounded-3xl border border-white/10 bg-slate-950/20 p-4">
-                      <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
-                        <div>
-                          <p className="text-sm text-gray-400">{step.type}</p>
-                          <h4 className="text-lg font-bold text-white">{step.title}</h4>
+                  {[
+                    { path: 'src/core/example.ts', type: 'update', additions: 12, deletions: 4, risk: 'low' },
+                    { path: 'src/app/page.tsx', type: 'update', additions: 5, deletions: 0, risk: 'low' }
+                  ].map((file) => (
+                    <div key={file.path} className="rounded-2xl border border-white/10 bg-black/20 p-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-2">
+                          <FiFileText className="text-indigo-400" />
+                          <span className="text-sm font-bold">{file.path}</span>
+                          <span className="text-[10px] uppercase px-1.5 py-0.5 rounded bg-indigo-500/10 text-indigo-300 font-black">{file.type}</span>
                         </div>
-                        <span className="rounded-full bg-white/5 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-white">{STEP_STATUS_LABELS[step.status]}</span>
+                        <div className="flex gap-2 text-[10px] font-mono">
+                          <span className="text-emerald-400">+{file.additions}</span>
+                          <span className="text-rose-400">-{file.deletions}</span>
+                        </div>
                       </div>
-                      <div className="grid gap-2 md:grid-cols-2 text-sm text-gray-300">
-                        <DetailField label="Tool" value={step.toolName ?? '-'} />
-                        <DetailField label="Input" value={step.inputSummary ? formatValue(step.inputSummary) : '-'} />
-                        <DetailField label="Output" value={step.outputSummary ? formatValue(step.outputSummary) : '-'} />
-                        <DetailField label="Error" value={step.error ?? '-'} />
+                      <div className="rounded-xl bg-slate-950/40 p-3 font-mono text-[11px] text-gray-500 overflow-x-auto whitespace-pre">
+                        {`--- ${file.path}\n+++ ${file.path}\n@@ -1,4 +1,12 @@\n+ // Updated by Aillame Code Agent\n+ export const foundation = true;\n- // old content`}
                       </div>
                     </div>
                   ))}
                 </div>
-              )}
+              </div>
+
+              <div className="rounded-3xl border border-white/10 bg-white/5 p-6">
+                <div className="flex items-center justify-between mb-6">
+                  <div>
+                    <p className="text-sm text-gray-400 uppercase tracking-[0.3em]">Plan Adımları</p>
+                    <h3 className="text-xl font-black text-slate-900 dark:text-white">{steps.length} adım</h3>
+                  </div>
+                </div>
+                {detailLoading ? (
+                  <div className="rounded-2xl border border-white/10 bg-black/10 p-6 text-sm text-gray-400">Detay yükleniyor...</div>
+                ) : steps.length === 0 ? (
+                  <div className="rounded-2xl border border-white/10 bg-black/10 p-6 text-sm text-gray-400">Adım kaydı yok.</div>
+                ) : (
+                  <div className="space-y-4">
+                    {steps.map((step) => (
+                      <div key={step.id} className="rounded-3xl border border-white/10 bg-slate-950/20 p-4">
+                        <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
+                          <div>
+                            <p className="text-sm text-gray-400">{step.type}</p>
+                            <h4 className="text-lg font-bold text-white">{step.title}</h4>
+                          </div>
+                          <span className="rounded-full bg-white/5 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-white">{STEP_STATUS_LABELS[step.status]}</span>
+                        </div>
+                        <div className="grid gap-2 md:grid-cols-2 text-sm text-gray-300">
+                          <DetailField label="Tool" value={step.toolName ?? '-'} />
+                          <DetailField label="Input" value={step.inputSummary ? formatValue(step.inputSummary) : '-'} />
+                          <DetailField label="Output" value={step.outputSummary ? formatValue(step.outputSummary) : '-'} />
+                          <DetailField label="Error" value={step.error ?? '-'} />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
 
-            <div className="rounded-3xl border border-white/10 bg-white/5 p-6">
-              <div className="mb-6">
-                <p className="text-sm text-gray-400 uppercase tracking-[0.3em]">Execution Log</p>
-                <h3 className="text-xl font-black text-slate-900 dark:text-white">{logs.length} kayıt</h3>
-              </div>
-              {logs.length === 0 ? (
-                <div className="rounded-2xl border border-white/10 bg-black/10 p-6 text-sm text-gray-400">Log kaydı yok.</div>
-              ) : (
-                <div className="space-y-4">
-                  {logs.map((log) => (
-                    <div key={log.id} className="rounded-3xl border border-white/10 bg-slate-950/20 p-4 text-sm text-gray-300">
-                      <div className="flex items-center justify-between gap-3 mb-3">
-                        <span className="rounded-full bg-white/5 px-3 py-1 text-xs uppercase tracking-[0.2em] text-white">{log.level}</span>
-                        <span className="text-xs text-gray-500">{formatTimestamp(log.createdAt)}</span>
-                      </div>
-                      <p className="text-sm text-white mb-2">{log.message}</p>
-                    </div>
-                  ))}
+            <div className="space-y-6">
+              <div className="rounded-3xl border border-white/10 bg-white/5 p-6">
+                <div className="mb-6">
+                  <p className="text-sm text-gray-400 uppercase tracking-[0.3em]">Approval Flow & Safety</p>
+                  <h3 className="text-xl font-black text-slate-900 dark:text-white">Security Guards</h3>
                 </div>
-              )}
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between p-3 rounded-2xl bg-black/20 border border-white/5">
+                    <span className="text-xs text-gray-400">Sensitive Path Guard</span>
+                    <span className="text-[10px] font-black text-emerald-400 uppercase tracking-widest">ACTIVE</span>
+                  </div>
+                  <div className="flex items-center justify-between p-3 rounded-2xl bg-black/20 border border-white/5">
+                    <span className="text-xs text-gray-400">Approval Token Requirement</span>
+                    <span className="text-[10px] font-black text-emerald-400 uppercase tracking-widest">STRICT</span>
+                  </div>
+                  <div className="flex items-center justify-between p-3 rounded-2xl bg-black/20 border border-white/5">
+                    <span className="text-xs text-gray-400">Verifier Allowlist</span>
+                    <span className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">PREVIEW</span>
+                  </div>
+                  <div className="mt-4 p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20">
+                    <div className="flex items-center gap-2 mb-2">
+                      <FiShield className="text-amber-400" size={14} />
+                      <span className="text-xs font-bold text-amber-200 uppercase tracking-wider">Safety Policy Warning</span>
+                    </div>
+                    <p className="text-[10px] text-amber-100/70 leading-relaxed">
+                      Herhangi bir dosya yazma işlemi öncesinde explicit kullanıcı onayı (Approval Token) gereklidir.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="rounded-3xl border border-white/10 bg-white/5 p-6">
+                <div className="mb-6">
+                  <p className="text-sm text-gray-400 uppercase tracking-[0.3em]">Execution Log</p>
+                  <h3 className="text-xl font-black text-slate-900 dark:text-white">{logs.length} kayıt</h3>
+                </div>
+                {logs.length === 0 ? (
+                  <div className="rounded-2xl border border-white/10 bg-black/10 p-6 text-sm text-gray-400">Log kaydı yok.</div>
+                ) : (
+                  <div className="space-y-4">
+                    {logs.map((log) => (
+                      <div key={log.id} className="rounded-3xl border border-white/10 bg-slate-950/20 p-4 text-sm text-gray-300">
+                        <div className="flex items-center justify-between gap-3 mb-3">
+                          <span className="rounded-full bg-white/5 px-3 py-1 text-xs uppercase tracking-[0.2em] text-white">{log.level}</span>
+                          <span className="text-xs text-gray-500">{formatTimestamp(log.createdAt)}</span>
+                        </div>
+                        <p className="text-sm text-white mb-2">{log.message}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </section>

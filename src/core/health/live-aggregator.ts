@@ -72,7 +72,11 @@ export class LiveHealthAggregator implements HealthAggregator {
         codeAgent: {
           name: "Code Agent",
           status: "ready",
-          diagnostics: { detail: "Plan-only verifier active" }
+          diagnostics: { 
+            detail: "Approval-gated patch workflow active",
+            features: ["safe-patch-apply", "verifier-allowlist", "approval-gate"],
+            mode: "foundation-safety"
+          }
         },
         imageWorkflow: {
           name: "Image Workflow",

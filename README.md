@@ -101,3 +101,17 @@ Provider E2E testi için:
 ```bash
 npm run smoke:provider-e2e
 ```
+
+## Post-Beta Phase 4: Code Agent Approval + Patch Workflow
+
+Code Agent, plan-only seviyesinden güvenli yama (patch) uygulama seviyesine taşındı:
+- **Approval-Gated Workflow:** Herhangi bir dosya yazma veya komut çalıştırma işlemi için açık kullanıcı onayı (Approval Token) şart koşuldu.
+- **Safe Patch Apply:** Yama uygulama işlemi öncesinde `dry-run` ve `preview-only` modları eklendi; hassas dosyalar (.env, keys vb.) otomatik olarak bloklandı.
+- **Verifier Allowlist:** Yama sonrası doğrulama komutları (`npm run build`, `typecheck` vb.) için sıkı bir allowlist ve kabuk operatörü (shell operator) denetimi getirildi.
+- **Unified Diff Preview:** Kullanıcıya yapılacak değişiklikler, gizli bilgiler (secret) temizlenmiş ve renklendirilmiş diff formatında sunulur.
+- **Audit & Rollback:** Tüm yama süreçleri audit log'a kaydedilir ve geri alma (rollback) notları oluşturulur.
+
+Code Agent Patch testi için:
+```bash
+npm run smoke:code-agent-patch-workflow
+```

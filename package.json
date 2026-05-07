@@ -22,6 +22,7 @@
                     "smoke:external-provider-e2e": "node scripts/smoke-external-provider-e2e.mjs",
                     "smoke:openai-compatible-e2e": "node scripts/smoke-openai-compatible-e2e.mjs",
                     "smoke:provider-e2e": "npm run smoke:external-provider-e2e && npm run smoke:openai-compatible-e2e",
+                    "smoke:code-agent-patch-workflow": "node scripts/smoke-code-agent-patch-workflow.mjs",
                     "cli:aillame":  "node scripts/aillame-cli.mjs",
                     "core:build":  "napi build --platform --release --cargo-cwd aillame-core",
                     "core:dev":  "napi build --cargo-cwd aillame-core",
