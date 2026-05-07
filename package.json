@@ -28,6 +28,8 @@
                     "smoke:rag-document-library": "node scripts/smoke-rag-document-library.mjs",
                     "smoke:image-runtime-assets": "node scripts/smoke-image-runtime-assets.mjs",
                     "smoke:live-image-runtime": "node scripts/smoke-live-image-runtime.mjs",
+                    "smoke:live-text-runtime": "node scripts/smoke-live-text-runtime.mjs",
+                    "smoke:desktop-readiness": "node scripts/smoke-desktop-readiness.mjs",
                     "eval:nano": "node scripts/evaluate-nano-pipeline.mjs",
                     "validate:nano-training-candidates": "node scripts/validate-nano-training-candidates.mjs",
                     "cli:aillame":  "node scripts/aillame-cli.mjs",

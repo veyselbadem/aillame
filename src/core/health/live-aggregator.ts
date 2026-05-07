@@ -5,8 +5,11 @@ import { VectorMemoryFileStore } from '../memory/vector/vector-memory-file-store
 import { AuditFileStore } from '../security/audit-file-store';
 import { ApiKeyService } from '../security/api-key-service';
 
+import { RuntimeAcceptanceService } from '../runtime/acceptance/acceptance-service';
+
 export class LiveHealthAggregator implements HealthAggregator {
   async getSystemHealth(): Promise<SystemHealth> {
+    const acceptance = RuntimeAcceptanceService.getReport();
     const storageDiag = ensureStorageRoot();
     
     let pmDiag;
@@ -128,7 +131,11 @@ export class LiveHealthAggregator implements HealthAggregator {
         },
         desktopReadiness: {
           name: "Desktop Readiness",
-          status: "planned"
+          status: acceptance.overall.finalAcceptanceReady ? "ready" : "degraded",
+          diagnostics: {
+            acceptance,
+            detail: "Desktop shell and local server bridge active"
+          }
         }
       }
     };

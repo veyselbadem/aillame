@@ -1,16 +1,37 @@
-export type DesktopBootStatus = "starting" | "ready" | "degraded" | "failed";
-export type LocalServerStatus = "stopped" | "running" | "unreachable";
+export type DesktopShellStatus = 'ready' | 'degraded' | 'not-configured' | 'planned' | 'failed';
+export type LocalServerBootStatus = 'starting' | 'running' | 'stopped' | 'failed';
 
-export interface DesktopRuntimeCheck {
-  serverReachable: boolean;
-  port: number;
-  environment: "development" | "production";
+export interface DesktopRuntimeAcceptance {
+  textRuntimeReady: boolean;
+  imageRuntimeReady: boolean;
+  finalAcceptanceReady: boolean;
+  blockers: string[];
+}
+
+export interface DesktopPackagingReadiness {
+  manifestValid: boolean;
+  iconsAvailable: boolean;
+  binariesIncluded: boolean;
+  status: 'planned' | 'in-progress' | 'ready';
+}
+
+export interface DesktopReadinessReport {
+  shellAvailable: boolean;
+  localServerBootPlanned: boolean;
+  healthCheckReady: boolean;
+  runtimeAcceptance: DesktopRuntimeAcceptance;
+  storageReady: boolean;
+  securityReady: boolean;
+  packagingReady: boolean;
+  status: DesktopShellStatus;
+  timestamp: number;
 }
 
 export interface DesktopReadinessDiagnostics {
-  bootStatus: DesktopBootStatus;
-  serverStatus: LocalServerStatus;
-  runtime: DesktopRuntimeCheck;
-  offlineMode: boolean;
-  issues?: string[];
+  shellStatus: DesktopShellStatus;
+  serverBootStatus: LocalServerBootStatus;
+  report: DesktopReadinessReport;
+  packaging: DesktopPackagingReadiness;
+  issues: string[];
+  nextActions: string[];
 }

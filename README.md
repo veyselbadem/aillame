@@ -171,3 +171,17 @@ Image Runtime/Asset testi için:
 ```bash
 npm run smoke:image-runtime-assets
 ```
+
+## Post-Beta Phase 9: Desktop Shell Prototype + Runtime Acceptance Bridge
+
+Aillame, masaüstü (desktop) uygulama prototipi ve final yayın kabul kriterleri (acceptance) için tek merkezli bir altyapıya kavuştu:
+- **Desktop Readiness Model v2:** Masaüstü uygulamanın hazır olma durumunu ölçen, typed ve detaylı raporlama sistemi kuruldu.
+- **Local Server Boot Strategy:** Desktop kabuğunun (shell) yerel API sunucusunu nasıl başlatacağına dair güvenli strateji ve plan oluşturuldu.
+- **Runtime Acceptance Bridge:** LLM (metin) ve IGM (görsel) üretiminin gerçek hayatta çalışıp çalışmadığını ölçen, final kabul raporu hazırlayan köprü altyapısı eklendi.
+- **Beta Acceptance UI:** Admin panelinde final yayın için engel teşkil eden unsurları (blockers) ve hazır olma durumunu gösteren görsel dashboard eklendi.
+- **smoke:live-text-runtime:** Yerel metin üretiminin (Nano) final kabul kriterlerini karşılayıp karşılamadığını doğrulayan kabul testi eklendi.
+
+Desktop Readiness testi için:
+```bash
+npm run smoke:desktop-readiness
+```
