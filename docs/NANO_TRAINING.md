@@ -1,53 +1,50 @@
-# Aillame Nano Training Altyapısı
+# Nano Evaluation and Training Preparation
 
-Bu doküman, Aillame Nano modelinin eğitim hazırlık sürecini ve veri export pipeline'ını açıklar.
+Nano, Aillame'in ana chat modeli değildir. Güncel rolü; karar, değerlendirme, güvenlik, fallback ve learning-candidate önerileri üreten **advisory/eval çekirdeği** olmaktır.
 
-## 1. Eğitim Pipeline Akışı
+Nano hiçbir fazda kullanıcı onayı olmadan dosya yazma, komut çalıştırma, dış network çağrısı veya self-training başlatma yetkisi almaz. `autonomousActionsEnabled` false kalır.
 
-Sistem, kullanıcı etkileşimlerinden otonom olarak öğrenme adayları türetir:
+## Güvenli Veri Akışı
 
-1.  **Feedback**: Kullanıcı bir cevaba like/dislike bırakır.
-2.  **Learning Candidate**: Feedback'e göre otomatik bir öğrenme adayı oluşur.
-3.  **AI Lab**: Admin kontrollü modeller arası tartışmalardan yüksek kaliteli eğitim verisi üretilir.
-4.  **Distillation Preview**: Aday, admin panelinde incelenmek üzere bir "eğitim önizlemesi"ne dönüşür.
-5.  **Memory Write Queue**: Admin onayından geçen preview'lar yazım kuyruğuna alınır.
-6.  **Memory Card**: Kuyruktaki kayıtlar aktif eğitim verisi (hafıza kartı) haline gelir.
+1. **Feedback:** Kullanıcı geri bildirimi alınır.
+2. **Learning Candidate:** Feedback veya Lab çıktısı candidate olarak kaydedilir.
+3. **Validation:** Secret/sensitive content, kalite, Türkçe karakter ve schema kontrolleri yapılır.
+4. **Admin Review:** Candidate admin onayı bekler.
+5. **Export:** Yalnızca approved candidate kayıtları dataset export kapsamına girer.
 
-## 2. Dataset Export (MVP)
+Feedback doğrudan eğitime gitmez. Rejected, ignored veya pending-review kayıtlar training dataset'e aktarılmaz.
 
-Gerçek model eğitimi (fine-tuning) için güvenli veri setleri dışarı aktarılabilir.
+## AI Lab ile İlişki
 
-**Endpoint:** `POST /api/admin/nano-training/export`
-**Auth:** `x-aillame-admin-token` header'ı zorunludur.
+Aillame Lab, model ve prompt davranışlarını denemek için kullanılan evaluation/playground alanıdır. Lab çıktıları, Nano'yu doğrudan eğitmez. Lab yalnızca kaliteli candidate üretmek için bir kaynak olabilir; final karar validator ve admin review tarafından verilir.
 
-### Güvenlik Kuralları:
-- Sadece **Approved** (Admin tarafından onaylanmış) veriler export edilir.
-- Sadece **Low-Risk** veya **Medium-Risk** veriler export edilir. **High-Risk** veriler filtrelenir.
-- **Bozuk Çıktı Filtresi**: "İşlem durduruldu", "hata oluştu" gibi ifadeler içeren kayıtlar otomatik olarak elenir.
-- **Source Isolation**: Veriler `memory_card` ve `distillation_preview` kaynaklarından toplanır.
+## Dataset Standartları
 
-## 3. Nano Engine Entegrasyonu
+Nano datasetleri şu kategorilerde tutulur:
 
-Mevcut eğitim döngüsü (`src/core/engine/train-rust.ts`) henüz `MemoryCard` sistemine doğrudan bağlı değildir. Eğitim şu an `src/core/engine/data/input.txt` dosyasındaki ham metin verisi üzerinden yapılmaktadır.
+- `instruction`
+- `classification`
+- `project-aware`
+- `safety`
+- `eval`
+- `feedback`
 
-Gelecek aşamada, `export` endpoint'inden gelen yapılandırılmış verilerin (Instruction/Input/Output) Rust Core eğitim döngüsüne beslenmesi planlanmaktadır.
+Her kayıt project isolation, metadata source ve expectedDecision kontrollerinden geçmelidir. Project-aware örneklerde geçerli project preset kullanılmalıdır.
 
-## 4. Veri Kalitesi Denetimi
+## Runtime Acceptance ile İlişki
 
-`input.txt` içindeki veriler periyodik olarak taranmalı ve "İşlem durduruldu" gibi asistan hatalarından arındırılmalıdır. Bu işlem için `nano-training/validator.ts` içindeki mantık kullanılabilir.
+Nano eval pipeline'ın başarılı olması, Live Runtime Acceptance anlamına gelmez. Final kabul için:
 
-## 5. Smoke Training Phase (v1.3.1) & Cognitive Strategy
+1. Bir yerel LLM gerçek metin üretmelidir.
+2. Bir yerel IGM gerçek görsel üretmelidir.
+3. İkisi de Aillame-controlled runtime/worker üzerinden yönetilmelidir.
 
-Eğitim sisteminin doğrulanması için "Smoke Training" fazı uygulanmıştır.
+Nano bu kabulde yardımcı karar/eval katmanıdır; yerel LLM kabul kriterinin yerine geçmez.
 
--   **Yeni Checkpoint:** `aillame_rust_tuned_v1_3_1_smoke.safetensors` (Teknik olarak başarılı, kalite olarak yetersiz).
--   **Önemli Karar:** Smoke checkpoint testlerden (kalite/Türkçe doğallığı) geçemediği için **aktif edilmemiştir**.
--   **Aktif Checkpoint:** `aillame_rust_tuned.safetensors` kullanılmaya devam etmektedir.
+## Doğrulama
 
-### Yeni Strateji: Cognitive Layer (Atom Karınca)
-Nano modelini ham metin üretmeye zorlamak yerine, önce "Görev Zekâsı" (Cognitive Layer) ile güçlendirilmiştir:
-1.  **Nano Ham Çıktı Güvenliği:** Nano'nun ham çıktıları gibberish (anlamsız) ise asla kullanıcıya gösterilmez; bunun yerine akıllı fallback veya Qwen/Pro cevabı devreye girer.
-2.  **Merkezi Orkestratör (Intent Detection):** Nano, gelen isteği anlar. `social_chat`, `definition`, `list_examples`, `compare`, `research`, `continue_context` gibi niyetleri ayırt ederek doğru modüle (Web Search, SDXL, Qwen) paslar.
-3.  **AI Lab Katılımı:** Nano artık AI Lab'de diyalogları yorumlar ve "öğrenme adayı" önerir, ancak ham model çıktısı doğrudan tartışmaya girmez.
-4.  **Güvenli Öğrenme Adayı (Candidate Guard):** Nano; hata mesajlarından (timeout, degraded, fetch failed), çok kısa yanıtlardan veya bozuk JSON çıktılarından kesinlikle öğrenme adayı türetmez. Adaylar en az 40 karakter uzunluğunda ve temiz bilgi içermelidir.
-4.  **Kontrollü Eğitim:** Gerçek Nano checkpoint iyileştirmesi (tokenizer/decode/dataset) ayrı ve kontrollü bir fazda, admin onayıyla yapılacaktır.
+```bash
+npm run validate:nano-data
+npm run diagnostic:nano-tokenizer
+npm run smoke:nano-eval-training
+```

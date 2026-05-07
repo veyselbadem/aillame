@@ -1,5 +1,7 @@
 # Qwen3-VL 8B Kurulum Rehberi
 
+> Compatibility note: Qwen bu projede zorunlu dependency değildir. Aillame'in ana mimarisi generic LLM runtime, IGM runtime ve Aillame-controlled worker katmanlarıdır. Bu belge yalnızca Aillame Lab içindeki opsiyonel/evaluation amaçlı Qwen profilini açıklar.
+
 Aillame AI Lab'de Qwen modelinin gerçek zamanlı (inference) çalışabilmesi için bir Python çalışma zamanı ve gerekli kütüphanelerin yüklü olması gerekir. Eğer bu kurulum tamamlanmazsa, Qwen "Planning Mode" (fallback) ile çalışmaya devam eder.
 
 ## 1. Python Gereksinimleri

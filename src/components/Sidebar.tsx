@@ -42,7 +42,7 @@ const TOOLS_NAV = [
 
 const ADMIN_NAV = [
   { href: '/admin/dashboard',           label: 'Admin Paneli',          icon: FiShield },
-  { href: '/admin/ai-lab',              label: 'AI Lab',                icon: FiCpu },
+  { href: '/admin/ai-lab',              label: 'Developer Lab',         icon: FiCpu },
   { href: '/admin/model-library',       label: 'Runtime & Modeller',    icon: FiPackage },
   { href: '/admin/api-clients',         label: 'Provider API',          icon: FiKey },
   { href: '/admin/agent-tasks',         label: 'Code Agent',            icon: FiClipboard },

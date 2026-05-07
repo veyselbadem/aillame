@@ -271,11 +271,11 @@ export default function AiLabPage() {
       <main className="flex-1 overflow-y-auto p-4 md:p-8 custom-scrollbar">
         <header className="mb-8 flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-black tracking-tight text-gradient">AI Laboratory</h1>
-            <p className="text-[var(--text-muted)] mt-1 font-medium">Modeller arası orkestrasyon ve kontrollü eğitim ortamı.</p>
+            <h1 className="text-3xl font-black tracking-tight text-gradient">Aillame Developer Lab</h1>
+            <p className="text-[var(--text-muted)] mt-1 font-medium">Model, prompt ve Nano kararlarını deneyen evaluation playground.</p>
           </div>
           <div className="flex items-center gap-3">
-            <StatusBadge variant="protected" label="Orchestrator v1.3" />
+            <StatusBadge variant="protected" label="Evaluation Lab" />
           </div>
         </header>
 
@@ -339,12 +339,12 @@ export default function AiLabPage() {
                 <label className="mb-2 block text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest">Katılımcı Modeller</label>
                 <div className="flex flex-wrap gap-2">
                   {[
-                    { id: 'nano', icon: <FiCpu />, role: 'Orchestrator' },
+                    { id: 'nano', icon: <FiCpu />, role: 'Advisory / Eval' },
                     { id: 'web_search', icon: <FiSearch />, role: 'Data Collector' },
-                    { id: 'gemma', icon: <FiTerminal />, role: 'Fast Analysis' },
-                    { id: 'qwen', icon: <FiCpu />, role: 'Deep Analysis / Vision' },
-                    { id: 'sdxl', icon: <FiImage />, role: 'Visual Gen' },
-                    { id: 'ollama', icon: <FiActivity />, role: 'Fast Text / Optional' }
+                    { id: 'gemma', icon: <FiTerminal />, role: 'LLM profile' },
+                    { id: 'qwen', icon: <FiCpu />, role: 'LLM/Vision profile' },
+                    { id: 'sdxl', icon: <FiImage />, role: 'IGM profile' },
+                    { id: 'ollama', icon: <FiActivity />, role: 'Compatibility fallback' }
                   ].map(p => (
                     <button
                       key={p.id}
@@ -369,12 +369,12 @@ export default function AiLabPage() {
                 </div>
                 {selectedParticipants.includes('qwen') && (
                   <div className="mt-3 p-2 rounded-lg bg-purple-500/10 border border-purple-500/20 text-[10px] text-purple-400 font-medium italic">
-                    Qwen3-VL 8B ağır bir modeldir. Oturumu yavaşlatabilir; sadece seçili derin analiz/görsel analiz adımlarında çalışır.
+                    Qwen opsiyonel bir evaluation profilidir; Aillame için zorunlu dependency değildir.
                   </div>
                 )}
                 {selectedParticipants.includes('sdxl') && sessionGoal !== 'image_generation_plan' && (
                   <div className="mt-2 p-2 rounded-lg bg-amber-500/10 border border-amber-500/20 text-[10px] text-amber-500 font-medium italic">
-                    SDXL yalnızca Görsel Planlama hedefinde otomatik çalışır.
+                    SDXL adı yalnızca compatibility/örnek IGM profili olarak kullanılır; yeni mimari dili IGM runtime ve diffusion worker'dır.
                   </div>
                 )}
               </div>
@@ -391,18 +391,18 @@ export default function AiLabPage() {
           {/* Model Status Card */}
           <div className="col-span-1 lg:col-span-2 glass-card rounded-3xl p-6">
             <div className="flex items-center justify-between mb-5">
-              <h2 className="text-lg font-bold">Orkestrasyon Durumu</h2>
-              <StatusBadge variant="protected" label="AI Lab" />
+              <h2 className="text-lg font-bold">Evaluation Runtime Durumu</h2>
+              <StatusBadge variant="protected" label="Lab / Playground" />
             </div>
             <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
               {[
-                { name: 'Nano', status: 'AKTİF', color: 'text-emerald-500', desc: 'Orchestrator', icon: <FiCpu className="text-emerald-500" /> },
+                { name: 'Nano', status: 'AKTİF', color: 'text-emerald-500', desc: 'Advisory / Eval', icon: <FiCpu className="text-emerald-500" /> },
                 { name: 'Web Search', status: 'HAZIR', color: 'text-orange-500', desc: 'Data Collector', icon: <FiSearch className="text-orange-500" /> },
-                { name: 'Gemma', status: gemmaStatus?.isReady ? 'AKTİF' : gemmaStatus?.status === 'planning_only' ? 'PLANNING' : 'DEGRADED', color: gemmaStatus?.isReady ? 'text-indigo-400' : 'text-amber-500', desc: gemmaStatus?.message || gemmaStatus?.details?.error || 'Fast Analysis', icon: <FiTerminal className={gemmaStatus?.isReady ? 'text-indigo-400' : 'text-amber-500'} /> },
-                { name: 'Qwen', status: qwenStatus?.isReady ? 'AKTİF' : qwenStatus?.status === 'planning_only' ? 'PLANNING' : 'DEGRADED', color: qwenStatus?.isReady ? 'text-purple-500' : 'text-amber-500', desc: qwenStatus?.message || qwenStatus?.details?.error || 'Deep Analysis / Vision, heavy', icon: <FiCpu className={qwenStatus?.isReady ? 'text-purple-500' : 'text-amber-500'} /> },
-                { name: 'SDXL', status: sdxlStatus?.isReady ? 'AKTİF' : sdxlStatus?.status === 'planning_only' ? 'PLANNING' : 'DEGRADED', color: sdxlStatus?.isReady ? 'text-amber-500' : 'text-rose-500', desc: sdxlStatus?.details?.cudaAvailable ? 'Visual Generation (CUDA)' : sdxlStatus?.details?.error || 'Visual Generation', icon: <FiImage className={sdxlStatus?.isReady ? 'text-amber-500' : 'text-rose-500'} /> },
-                { name: 'Ollama', status: ollamaStatus?.isReady ? 'AKTİF' : ollamaStatus?.status === 'planning_only' ? 'PLANNING' : 'DEGRADED', color: ollamaStatus?.isReady ? 'text-emerald-500' : 'text-amber-500', desc: ollamaStatus?.message || ollamaStatus?.details?.error || 'Optional Fast Text', icon: <FiActivity className={ollamaStatus?.isReady ? 'text-emerald-500' : 'text-amber-500'} /> },
-                { name: 'AI Lab', status: 'AKTİF', color: 'text-indigo-500', desc: 'Oturum Yöneticisi', icon: <FiActivity className="text-indigo-500" /> },
+                { name: 'Gemma', status: gemmaStatus?.isReady ? 'AKTİF' : gemmaStatus?.status === 'planning_only' ? 'PLANNING' : 'DEGRADED', color: gemmaStatus?.isReady ? 'text-indigo-400' : 'text-amber-500', desc: gemmaStatus?.message || gemmaStatus?.details?.error || 'LLM profile', icon: <FiTerminal className={gemmaStatus?.isReady ? 'text-indigo-400' : 'text-amber-500'} /> },
+                { name: 'Qwen', status: qwenStatus?.isReady ? 'AKTİF' : qwenStatus?.status === 'planning_only' ? 'PLANNING' : 'DEGRADED', color: qwenStatus?.isReady ? 'text-purple-500' : 'text-amber-500', desc: qwenStatus?.message || qwenStatus?.details?.error || 'LLM/Vision profile', icon: <FiCpu className={qwenStatus?.isReady ? 'text-purple-500' : 'text-amber-500'} /> },
+                { name: 'SDXL', status: sdxlStatus?.isReady ? 'AKTİF' : sdxlStatus?.status === 'planning_only' ? 'PLANNING' : 'DEGRADED', color: sdxlStatus?.isReady ? 'text-amber-500' : 'text-rose-500', desc: sdxlStatus?.details?.cudaAvailable ? 'IGM profile (CUDA)' : sdxlStatus?.details?.error || 'IGM profile', icon: <FiImage className={sdxlStatus?.isReady ? 'text-amber-500' : 'text-rose-500'} /> },
+                { name: 'Ollama', status: ollamaStatus?.isReady ? 'AKTİF' : ollamaStatus?.status === 'planning_only' ? 'PLANNING' : 'DEGRADED', color: ollamaStatus?.isReady ? 'text-emerald-500' : 'text-amber-500', desc: ollamaStatus?.message || ollamaStatus?.details?.error || 'Optional compatibility fallback', icon: <FiActivity className={ollamaStatus?.isReady ? 'text-emerald-500' : 'text-amber-500'} /> },
+                { name: 'Lab', status: 'AKTİF', color: 'text-indigo-500', desc: 'Evaluation playground', icon: <FiActivity className="text-indigo-500" /> },
               ].map(m => (
                 <div key={m.name} className="rounded-2xl border border-[var(--glass-border)] bg-[var(--bg-surface)]/30 p-4 transition-all hover:border-indigo-500/30 group">
                   <div className="flex items-center justify-between gap-2">

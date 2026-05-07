@@ -19,8 +19,10 @@ Bu belge, Aillame projesinin "Post-Beta" fazları sonundaki genel durumunu, tama
 
 ## Final Kabul Kriterleri (Final Acceptance Criteria)
 Aillame'in "Beta" olarak tam kullanılabilir sayılabilmesi için şu iki yerel motorun gerçek üretim yapması şarttır:
-1. **Local LLM (Nano/GGUF):** Metin üretimi (`smoke:live-text-runtime`) başarılı olmalı.
-2. **Local IGM (Diffusion):** Görsel üretimi (`smoke:live-image-runtime`) başarılı olmalı.
+1. **Local LLM (GGUF/text runtime):** Metin üretimi (`smoke:live-text-runtime`) başarılı olmalı.
+2. **Local IGM (Diffusion worker):** Görsel üretimi (`smoke:live-image-runtime`) başarılı olmalı.
+
+Nano bu kriterde ana chat modeli değildir; decision/eval/advisory çekirdeği olarak kalır. `foundation`, `preview`, `degraded`, `planning_only` veya `not-configured` durumları Live Runtime Acceptance için yeterli değildir.
 
 ## Bilinen Sorunlar (Known Issues)
 - **ISS-1:** PDF ve DOCX dosyaları için şu an sadece plain-text extraction desteği mevcuttur.
