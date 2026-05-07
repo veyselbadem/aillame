@@ -18,18 +18,37 @@ import {
   FiSquare,
   FiCpu,
   FiShield,
+  FiLayers,
 } from 'react-icons/fi';
 
 interface ChatShellProps {
   conversationId: string;
 }
 
+interface ProjectContextItem {
+  label: string;
+  value: string;
+  tone: string;
+}
+
+const PROJECT_PRESETS = ['general', 'aillame', 'boss-ai', 'doomsgame-engine', 'badem-akademi'] as const;
+
+const DEFAULT_PROJECT_CONTEXT: ProjectContextItem[] = [
+  { label: 'Project', value: 'general', tone: 'text-indigo-300 border-indigo-500/20 bg-indigo-500/10' },
+  { label: 'Mode', value: 'general', tone: 'text-slate-300 border-slate-500/20 bg-slate-500/10' },
+  { label: 'Task', value: 'chat', tone: 'text-cyan-300 border-cyan-500/20 bg-cyan-500/10' },
+  { label: 'Memory', value: 'project scope', tone: 'text-emerald-300 border-emerald-500/20 bg-emerald-500/10' },
+  { label: 'Source', value: 'aillame-ui', tone: 'text-slate-300 border-slate-500/20 bg-slate-500/10' },
+  { label: 'Runtime', value: 'local text · degraded preview', tone: 'text-amber-300 border-amber-500/20 bg-amber-500/10' },
+  { label: 'Nano', value: 'advisory diagnostics', tone: 'text-purple-300 border-purple-500/20 bg-purple-500/10' },
+] as const;
+
 const TOOL_META: Record<string, { label: string; icon: React.ReactNode; color: string }> = {
-  web_search:   { label: 'Web Araması', icon: <FiSearch size={10} />, color: 'running' },
-  memory_search: { label: 'Hafıza',    icon: <FiDatabase size={10} />, color: 'running' },
-  calculate:    { label: 'Hesaplama',  icon: <FiZap size={10} />, color: 'running' },
-  code_execute: { label: 'Kod',        icon: <FiZap size={10} />, color: 'running' },
-  learn_content:{ label: 'Öğreniliyor',icon: <FiDatabase size={10} />, color: 'running' },
+  web_search:    { label: 'Web Araması', icon: <FiSearch size={10} />, color: 'running' },
+  memory_search: { label: 'Hafıza', icon: <FiDatabase size={10} />, color: 'running' },
+  calculate:     { label: 'Hesaplama', icon: <FiZap size={10} />, color: 'running' },
+  code_execute:  { label: 'Kod Önizleme', icon: <FiZap size={10} />, color: 'running' },
+  learn_content: { label: 'Öğreniliyor', icon: <FiDatabase size={10} />, color: 'running' },
 };
 
 function ToolCallBar({ tools }: { tools: ActiveTool[] }) {
@@ -52,6 +71,47 @@ function ToolCallBar({ tools }: { tools: ActiveTool[] }) {
           </span>
         );
       })}
+    </div>
+  );
+}
+
+function ProjectContextBar({ modelLabel }: { modelLabel: string }) {
+  const contextItems = DEFAULT_PROJECT_CONTEXT.map((item) =>
+    item.label === 'Runtime'
+      ? { ...item, value: `local text · ${modelLabel} · diagnostic preview` }
+      : item
+  );
+
+  return (
+    <div className="border-b border-white/5 bg-slate-950/20 px-5 py-3">
+      <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+        <div className="min-w-0">
+          <div className="flex items-center gap-2">
+            <FiLayers size={13} className="text-indigo-300" />
+            <p className="text-[10px] font-black uppercase tracking-[0.24em] text-slate-300">
+              Project Context
+            </p>
+          </div>
+          <p className="mt-1 text-[11px] text-slate-500">
+            Runtime ve project memory bilgisi bu fazda güvenli diagnostic preview olarak gösterilir.
+          </p>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          {contextItems.map((item) => (
+            <span key={item.label} className={`rounded-lg border px-2.5 py-1.5 text-[10px] font-bold ${item.tone}`}>
+              <span className="mr-1 uppercase tracking-[0.16em] opacity-60">{item.label}</span>
+              {item.value}
+            </span>
+          ))}
+        </div>
+      </div>
+      <div className="mt-2 flex flex-wrap gap-1.5">
+        {PROJECT_PRESETS.map((projectId) => (
+          <span key={projectId} className="rounded-md border border-white/8 bg-white/[0.03] px-2 py-1 text-[9px] font-semibold text-slate-400">
+            {projectId}
+          </span>
+        ))}
+      </div>
     </div>
   );
 }
@@ -102,7 +162,6 @@ export default function ChatShell({ conversationId }: ChatShellProps) {
       className="flex flex-col h-full w-full neural-grid rounded-[inherit] overflow-hidden relative"
       {...dragHandlers}
     >
-      {/* Drag overlay */}
       {isDragOver && (
         <div className="absolute inset-0 z-50 glass-card flex flex-col items-center justify-center bg-indigo-600/10 backdrop-blur-md animate-fade-in">
           <div className="w-16 h-16 rounded-3xl bg-indigo-600/20 flex items-center justify-center mb-4 border border-indigo-500/30">
@@ -113,10 +172,8 @@ export default function ChatShell({ conversationId }: ChatShellProps) {
         </div>
       )}
 
-      {/* ── Workspace Header ── */}
       <div className="px-5 py-3 border-b border-white/5 bg-white/[0.01] flex items-center justify-between flex-shrink-0 gap-4 backdrop-blur-sm relative z-20">
         <div className="flex items-center gap-4 min-w-0">
-          {/* Logo/Icon section */}
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-indigo-600 to-indigo-800 flex items-center justify-center shadow-lg shadow-indigo-500/20">
               <span className="text-white font-black text-xs">A</span>
@@ -125,21 +182,20 @@ export default function ChatShell({ conversationId }: ChatShellProps) {
               <span className="text-[10px] font-black text-white uppercase tracking-[0.25em] leading-tight">Aillame Workspace</span>
               <div className="flex items-center gap-1.5 mt-0.5">
                 <span className="relative flex h-1.5 w-1.5">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-60" />
-                  <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500" />
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-60" />
+                  <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-amber-500" />
                 </span>
-                <span className="text-[8px] font-bold text-emerald-400/80 uppercase tracking-widest">{chatModel.shortLabel}</span>
+                <span className="text-[8px] font-bold text-amber-400/80 uppercase tracking-widest">{chatModel.shortLabel} · diagnostic</span>
               </div>
             </div>
           </div>
 
           <div className="h-4 w-px bg-white/5 hidden sm:block" />
 
-          {/* Status chips */}
           <div className="hidden sm:flex items-center gap-2">
             <div className="flex items-center gap-1.5 rounded-lg border border-indigo-500/20 bg-indigo-500/5 px-2 py-1 text-[8px] font-bold uppercase tracking-[0.1em] text-indigo-400/90 transition-colors hover:bg-indigo-500/10">
               <FiCpu size={9} />
-              Nano Core
+              Nano Advisory
             </div>
             <div className="flex items-center gap-1.5 rounded-lg border border-emerald-500/20 bg-emerald-500/5 px-2 py-1 text-[8px] font-bold uppercase tracking-[0.1em] text-emerald-400/90 transition-colors hover:bg-emerald-500/10">
               <FiShield size={9} />
@@ -147,7 +203,7 @@ export default function ChatShell({ conversationId }: ChatShellProps) {
             </div>
             <div className="hidden md:flex items-center gap-1.5 rounded-lg border border-amber-500/20 bg-amber-500/5 px-2 py-1 text-[8px] font-bold uppercase tracking-[0.1em] text-amber-400/90 transition-colors hover:bg-amber-500/10">
               <FiZap size={9} />
-              Safe Mode
+              Safe Fallback
             </div>
           </div>
         </div>
@@ -165,9 +221,9 @@ export default function ChatShell({ conversationId }: ChatShellProps) {
         </button>
       </div>
 
+      <ProjectContextBar modelLabel={chatModel.shortLabel ?? chatModel.id} />
       <ToolCallBar tools={activeTools} />
 
-      {/* ── Message Area ── */}
       <div className="flex-1 overflow-hidden relative flex flex-col">
         <MessageList messages={messages} loading={loading} listRef={listRef} conversationId={conversationId} />
         {loading && (
@@ -183,7 +239,6 @@ export default function ChatShell({ conversationId }: ChatShellProps) {
         )}
       </div>
 
-      {/* ── Input ── */}
       <div className="p-4 bg-gradient-to-t from-black/20 to-transparent flex-shrink-0">
         <ChatInput
           value={input}

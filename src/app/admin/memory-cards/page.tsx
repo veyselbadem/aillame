@@ -153,9 +153,15 @@ export default function AdminMemoryCardsPage() {
         <div>
           <p className="text-[10px] font-black uppercase tracking-[0.34em] text-gray-500 mb-3">Admin · Learning Pipeline</p>
           <h1 className="text-4xl font-black tracking-tight text-slate-900 dark:text-white">Hafıza Kartları</h1>
-          <p className="text-sm text-gray-400 mt-2 max-w-2xl">MemoryCard kayıtlarını görüntüleyin, filtreleyin ve arşivleyin. Bu, learning pipeline'nın son adımıdır.</p>
+          <p className="text-sm text-gray-400 mt-2 max-w-2xl">MemoryCard kayıtlarını projectId, memoryScope ve risk düzeyiyle görüntüleyin. Global, project ve session hafızaları birbirinden ayrı değerlendirilir.</p>
         </div>
       </header>
+
+      <section className="mb-6 grid gap-3 md:grid-cols-3">
+        <ScopeNote title="Global Memory" body="Ortak bağlam yalnızca açıkça seçilirse kullanılır." />
+        <ScopeNote title="Project Memory" body="BOSS AI hafızası Doomsgame Engine isteklerine otomatik karışmaz." />
+        <ScopeNote title="Session Memory" body="Geçici bağlam uzun dönem hafızadan ayrı tutulur." />
+      </section>
 
       {/* Pipeline flow */}
       <div className="mb-6 flex flex-wrap items-center gap-2 text-xs">
@@ -276,6 +282,15 @@ function Card({ label, value }: { label: string; value: string }) {
     <div className="rounded-3xl border border-white/10 bg-black/10 p-4">
       <p className="text-[10px] uppercase tracking-[0.3em] text-gray-400 mb-2">{label}</p>
       <p className="text-sm text-white break-all">{value}</p>
+    </div>
+  );
+}
+
+function ScopeNote({ title, body }: { title: string; body: string }) {
+  return (
+    <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4">
+      <p className="text-sm font-black text-white">{title}</p>
+      <p className="mt-1 text-xs text-gray-400 leading-relaxed">{body}</p>
     </div>
   );
 }

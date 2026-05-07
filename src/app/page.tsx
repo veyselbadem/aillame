@@ -16,8 +16,6 @@ export default function HomePage() {
   return (
     <div className="flex-1 flex flex-col items-center">
       <div className="w-full max-w-5xl flex flex-col animate-fade-in px-4 pt-8 md:pt-12 pb-8">
-
-        {/* ── Workspace Header ── */}
         <header className="mb-6">
           <div className="flex flex-wrap items-center gap-2 mb-3">
             {WORKSPACE_BADGES.map(({ icon: Icon, label, color }) => (
@@ -40,10 +38,9 @@ export default function HomePage() {
           </p>
         </header>
 
-        {/* ── Chat Workspace Area ── */}
         <section
           aria-label="Aillame AI Sohbet Alanı"
-          className="glass-card rounded-[32px] overflow-hidden flex flex-col shadow-2xl border border-white/5 backdrop-blur-3xl h-[700px] relative z-10"
+          className="glass-card rounded-[24px] overflow-hidden flex flex-col shadow-2xl border border-white/5 backdrop-blur-3xl h-[700px] relative z-10"
         >
           {conversationId ? (
             <ChatShell key={conversationId} conversationId={conversationId} />
@@ -55,7 +52,6 @@ export default function HomePage() {
           )}
         </section>
 
-        {/* ── Footer ── */}
         <footer className="text-center pt-6">
           <p className="text-gray-700 text-[9px] font-black tracking-[0.5em] uppercase opacity-50">
             Aillame AI Project · Local Edge · Privacy First · 2026

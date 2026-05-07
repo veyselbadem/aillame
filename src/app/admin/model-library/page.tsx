@@ -20,7 +20,7 @@ export default function ModelLibraryPage() {
       <Sidebar isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} />
       <main className={`flex-1 overflow-y-auto transition-all duration-200 ${isSidebarOpen ? 'ml-64' : 'ml-0'}`}>
         {authorized === null ? (
-          <div className="flex items-center justify-center h-full text-zinc-500 text-sm">Kontrol ediliyor…</div>
+          <div className="flex items-center justify-center h-full text-zinc-500 text-sm">Kontrol ediliyor...</div>
         ) : !authorized ? (
           <div className="flex flex-col items-center justify-center h-full gap-3 text-zinc-400">
             <FiPackage size={32} className="text-zinc-600" />
@@ -28,23 +28,35 @@ export default function ModelLibraryPage() {
             <a href="/admin/login" className="text-xs text-indigo-400 hover:underline">Admin girişine git</a>
           </div>
         ) : (
-        <div className="max-w-5xl mx-auto px-6 py-8">
-          {/* Page header */}
-          <div className="mb-6">
-            <div className="flex items-center gap-2 mb-1">
-              <FiPackage className="text-indigo-400" size={20} />
-              <h1 className="text-xl font-bold text-white">Model Kütüphanesi</h1>
+          <div className="max-w-5xl mx-auto px-6 py-8">
+            <div className="mb-6">
+              <div className="flex items-center gap-2 mb-1">
+                <FiPackage className="text-indigo-400" size={20} />
+                <h1 className="text-xl font-bold text-white">Runtime & Model Kütüphanesi</h1>
+              </div>
+              <p className="text-sm text-zinc-400">
+                Yerel model keşfi, runtime readiness ve güvenli hazırlık işlemleri.
+              </p>
             </div>
-            <p className="text-sm text-zinc-400">
-              Yerel model keşfi, durum izleme ve güvenli hazırlık işlemleri
-            </p>
-          </div>
 
-          {/* Panel */}
-          <div className="rounded-xl border border-zinc-700/40 bg-zinc-900/50 p-5">
-            <ModelLibraryPanel />
+            <section className="mb-5 grid gap-3 md:grid-cols-4">
+              {[
+                ['Text Runtime', 'degraded preview'],
+                ['GGUF Readiness', 'not configured'],
+                ['Registry', 'model count visible'],
+                ['Fallback', 'safe response enabled'],
+              ].map(([label, value]) => (
+                <div key={label} className="rounded-xl border border-zinc-700/40 bg-zinc-900/50 p-4">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-zinc-500">{label}</p>
+                  <p className="mt-2 text-sm font-semibold text-zinc-200">{value}</p>
+                </div>
+              ))}
+            </section>
+
+            <div className="rounded-xl border border-zinc-700/40 bg-zinc-900/50 p-5">
+              <ModelLibraryPanel />
+            </div>
           </div>
-        </div>
         )}
       </main>
     </div>

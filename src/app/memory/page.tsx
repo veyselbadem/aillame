@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { LocalMemoryStore } from '@providers/memory/local';
-import { FiDatabase, FiTrash2, FiMessageSquare, FiClock, FiAlertTriangle } from 'react-icons/fi';
+import { FiDatabase, FiTrash2, FiMessageSquare, FiClock, FiAlertTriangle, FiLayers } from 'react-icons/fi';
 
 interface ConversationEntry {
   id: string;
@@ -12,6 +12,12 @@ interface ConversationEntry {
 }
 
 const memory = new LocalMemoryStore();
+
+const MEMORY_SCOPES = [
+  { title: 'Global Memory', body: 'Ortak hafıza yalnızca açıkça istenirse kullanılır.', status: 'guarded' },
+  { title: 'Project Memory', body: 'ProjectId bazlı kayıtlar diğer projelere otomatik karışmaz.', status: 'default' },
+  { title: 'Session Memory', body: 'Geçici konuşma bağlamı yerel oturum içinde tutulur.', status: 'local' },
+] as const;
 
 export default function MemoryPage() {
   const [conversations, setConversations] = useState<ConversationEntry[]>([]);
@@ -50,7 +56,7 @@ export default function MemoryPage() {
   };
 
   const handleClearAll = async () => {
-    if (!confirm('Tüm hafıza silinecek! Emin misin?')) return;
+    if (!confirm('Tüm tarayıcı sohbet hafızası silinecek. Emin misin?')) return;
     setClearing(true);
     for (const conv of conversations) {
       await memory.deleteConversation(conv.id);
@@ -70,13 +76,15 @@ export default function MemoryPage() {
   return (
     <div className="flex-1 flex flex-col items-center">
       <div className="w-full max-w-5xl flex flex-col animate-fade-in px-4 pt-8 md:pt-12 pb-8">
-
-        {/* ── Header ── */}
         <header className="mb-8">
           <div className="flex flex-wrap items-center gap-2 mb-3">
             <span className="inline-flex items-center gap-1.5 rounded-full border border-indigo-500/20 bg-indigo-500/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.2em] text-indigo-400">
               <FiDatabase size={10} />
               Local IndexedDB
+            </span>
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.2em] text-emerald-400">
+              <FiLayers size={10} />
+              Project Isolation
             </span>
           </div>
           <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
@@ -85,8 +93,8 @@ export default function MemoryPage() {
                 <span className="text-gradient">Bellek</span>
                 <span className="text-gray-600 font-normal text-2xl ml-3 tracking-normal">Yönetimi</span>
               </h1>
-              <p className="text-gray-500 text-sm mt-2 max-w-lg leading-relaxed">
-                Yerel tarayıcı hafızasında saklanan tüm sohbet geçmişini görüntüle ve yönet.
+              <p className="text-gray-500 text-sm mt-2 max-w-2xl leading-relaxed">
+                Yerel sohbet hafızasını ve global/project/session ayrımını görüntüleyin. BOSS AI hafızası Doomsgame Engine isteklerinde otomatik kullanılmaz.
               </p>
             </div>
             {conversations.length > 0 && (
@@ -102,7 +110,18 @@ export default function MemoryPage() {
           </div>
         </header>
 
-        {/* ── Stats ── */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          {MEMORY_SCOPES.map((scope) => (
+            <div key={scope.title} className="glass-card rounded-2xl p-4">
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500">{scope.title}</span>
+                <span className="rounded-lg border border-white/10 bg-white/[0.04] px-2 py-1 text-[9px] font-bold text-gray-400">{scope.status}</span>
+              </div>
+              <p className="mt-2 text-xs text-gray-400 leading-relaxed">{scope.body}</p>
+            </div>
+          ))}
+        </div>
+
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-6">
           {[
             { label: 'Sohbet Sayısı', value: conversations.length, icon: FiMessageSquare, color: 'text-indigo-400' },
@@ -121,51 +140,44 @@ export default function MemoryPage() {
           ))}
         </div>
 
-        {/* ── Conversations List ── */}
-        <div className="glass-card rounded-[28px] overflow-hidden">
+        <div className="glass-card rounded-[24px] overflow-hidden">
           {loading ? (
             <div className="flex items-center justify-center py-20">
               <div className="w-8 h-8 border-[3px] border-indigo-500/20 border-t-indigo-500 rounded-full animate-spin" />
             </div>
           ) : conversations.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-20 gap-4 opacity-40">
+            <div className="flex flex-col items-center justify-center py-20 gap-4 opacity-60">
               <FiDatabase size={40} className="text-gray-600" />
-              <p className="text-gray-500 font-bold uppercase tracking-widest text-[11px]">Hafıza Boş</p>
-              <p className="text-gray-600 text-xs">Henüz hiçbir sohbet kaydedilmemiş.</p>
+              <p className="text-gray-500 font-bold uppercase tracking-widest text-[11px]">Bu proje için henüz hafıza kaydı yok.</p>
+              <p className="text-gray-600 text-xs">Yeni sohbetler session memory olarak yerel tarayıcıda tutulur.</p>
             </div>
           ) : (
             <div>
-              {/* Table header */}
-              <div className="px-5 py-3 border-b border-white/5 bg-white/[0.02] flex items-center gap-4">
-                <span className="text-[9px] font-black uppercase tracking-[0.25em] text-gray-600 flex-1">Sohbet</span>
-                <span className="text-[9px] font-black uppercase tracking-[0.25em] text-gray-600 w-20 text-center hidden sm:block">Mesajlar</span>
-                <span className="text-[9px] font-black uppercase tracking-[0.25em] text-gray-600 w-36 text-right hidden md:block">Son Aktivite</span>
+              <div className="px-5 py-3 border-b border-white/5 bg-white/[0.02] grid grid-cols-[1fr_auto_auto_auto] gap-4 items-center">
+                <span className="text-[9px] font-black uppercase tracking-[0.25em] text-gray-600">Sohbet</span>
+                <span className="text-[9px] font-black uppercase tracking-[0.25em] text-gray-600 hidden sm:block">Scope</span>
+                <span className="text-[9px] font-black uppercase tracking-[0.25em] text-gray-600 hidden md:block">Son Aktivite</span>
                 <span className="w-8" />
               </div>
 
               <div className="divide-y divide-white/[0.03]">
                 {conversations.map((conv) => (
-                  <div
-                    key={conv.id}
-                    className="px-5 py-4 flex items-center gap-4 hover:bg-white/[0.02] transition-all group"
-                  >
-                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                  <div key={conv.id} className="px-5 py-4 grid grid-cols-[1fr_auto_auto_auto] gap-4 items-center hover:bg-white/[0.02] transition-all group">
+                    <div className="flex items-center gap-3 min-w-0">
                       <div className="w-8 h-8 rounded-xl bg-indigo-600/10 border border-indigo-500/20 flex items-center justify-center flex-shrink-0">
                         <FiMessageSquare size={13} className="text-indigo-400" />
                       </div>
                       <div className="min-w-0">
                         <p className="text-sm font-semibold text-gray-200 truncate">{conv.firstMessage}</p>
-                        <p className="text-[10px] text-gray-600 font-mono mt-0.5">ID: {conv.id}</p>
+                        <p className="text-[10px] text-gray-600 font-mono mt-0.5">projectId: general · sourceApp: aillame-ui · ID: {conv.id}</p>
                       </div>
                     </div>
 
-                    <div className="w-20 text-center hidden sm:block">
-                      <span className="inline-flex items-center gap-1 text-[11px] font-bold text-gray-400 bg-white/5 rounded-lg px-2 py-1">
-                        {conv.messageCount}
-                      </span>
-                    </div>
+                    <span className="hidden sm:inline-flex rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-2 py-1 text-[10px] font-bold text-emerald-300">
+                      session
+                    </span>
 
-                    <div className="w-36 text-right text-[11px] text-gray-600 font-mono hidden md:block">
+                    <div className="hidden md:block text-[11px] text-gray-600 font-mono">
                       {formatDate(conv.lastActivity)}
                     </div>
 
@@ -184,14 +196,12 @@ export default function MemoryPage() {
           )}
         </div>
 
-        {/* ── Warning ── */}
         <div className="mt-4 flex items-center gap-2 px-4 py-3 rounded-2xl border border-amber-500/15 bg-amber-500/[0.05]">
           <FiAlertTriangle size={12} className="text-amber-500 flex-shrink-0" />
           <p className="text-[11px] text-amber-400/70 font-medium">
-            Hafıza yalnızca bu tarayıcıda saklanır. Tarayıcı verilerini temizlerseniz sohbet geçmişi de silinir.
+            Secret, token, key ve credential içerikleri otomatik hafızaya alınmamalıdır. Project memory yazımı onay ve guard katmanlarından geçmelidir.
           </p>
         </div>
-
       </div>
     </div>
   );
