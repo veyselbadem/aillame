@@ -16,6 +16,7 @@ const sdk = read("src/core/sdk/aillame-client.ts");
 const sdkTypes = read("src/core/sdk/types.ts");
 const nanoDecision = read("src/core/nano/decision/nano-constrained-decision-decoder.ts");
 const validator = read("scripts/validate-nano-data.mjs");
+const externalTasks = read("src/core/external-provider/handler.ts");
 
 check(
   "projectId normalization is present",
@@ -81,6 +82,12 @@ check(
   "validator checks project-aware records",
   validator.includes("expectedDecision") && validator.includes("safeProjectIdPattern"),
   "Nano data validator validates project-aware fields."
+);
+
+check(
+  "external tasks can carry code-agent plan-only contract",
+  externalTasks.includes("createCodeAgentTask") && externalTasks.includes("plan-only"),
+  "External provider task handler has a Code Agent placeholder without execution."
 );
 
 console.log(JSON.stringify({ success: checks.every((item) => item.ok), checks, server: { required: false, skipped: true } }, null, 2));

@@ -4,6 +4,7 @@ import type { AillameTaskType } from "@core/contracts/aillame-request";
 import { getDefaultProjectMemoryStore } from "@core/memory/project-memory-store";
 import { listProjectPresets, normalizeCoreMode, normalizeProjectIdentity } from "@core/projects/project-identity";
 import { generateWithBestTextRuntime } from "@core/runtime/text/text-runtime-router";
+import { createCodeAgentTask } from "@core/agent/code-agent/code-agent-service";
 import { authorizeExternalProviderRequest } from "./external-auth";
 import type { ExternalChatData, ExternalProviderError, ExternalProviderSuccess, ExternalTaskData } from "./types";
 
@@ -155,14 +156,29 @@ export function handleExternalProviderTask(input: {
       requiredCapabilities: identityResult.identity.requiredCapabilities,
     },
   };
+  const codeAgent = identityResult.identity.taskType === "code-agent"
+    || identityResult.identity.taskType === "project-scan"
+    || input.body.agentType === "code-agent"
+    ? createCodeAgentTask({
+        projectId: identityResult.identity.projectId,
+        mode: identityResult.identity.mode,
+        sourceApp: identityResult.identity.sourceApp,
+        userRequest: typeof input.body.message === "string" ? input.body.message : "Plan code agent task",
+        taskType: identityResult.identity.taskType === "project-scan" ? "project-scan" : "analyze",
+        targetFiles: Array.isArray(input.body.targetFiles) ? input.body.targetFiles.filter((item): item is string => typeof item === "string") : undefined,
+      })
+    : undefined;
 
   return json(202, {
     success: true,
     requestId: identityResult.identity.requestId,
     projectId: identityResult.identity.projectId,
     mode: identityResult.identity.mode,
-    data,
-    diagnostics: { auth: auth.mode, note: "Task queue execution is not enabled in this phase." },
+    data: {
+      ...data,
+      codeAgent,
+    },
+    diagnostics: { auth: auth.mode, note: "Task queue execution is not enabled in this phase; Code Agent responses are plan-only." },
   });
 }
 
