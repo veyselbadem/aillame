@@ -37,22 +37,56 @@ const WORKSPACE_NAV = [
 ];
 
 const TOOLS_NAV = [
-  { href: '/feedback',  label: 'Feedback',        icon: FiThumbsUp },
+  { href: '/feedback', label: 'Feedback', icon: FiThumbsUp },
 ];
 
-const ADMIN_NAV = [
-  { href: '/admin/dashboard',           label: 'Admin Paneli',          icon: FiShield },
-  { href: '/admin/ai-lab',              label: 'Developer Lab',         icon: FiCpu },
-  { href: '/admin/model-library',       label: 'Runtime & Modeller',    icon: FiPackage },
-  { href: '/admin/api-clients',         label: 'Provider API',          icon: FiKey },
-  { href: '/admin/agent-tasks',         label: 'Code Agent',            icon: FiClipboard },
-  { href: '/admin/learning-candidates', label: 'Öğrenme Adayları',      icon: FiStar },
-  { href: '/admin/distillation-preview',label: 'Damıtma Önizleme',      icon: FiLayers },
-  { href: '/admin/memory-write-queue',  label: 'Hafıza Kuyruğu',        icon: FiDatabase },
-  { href: '/admin/memory-cards',        label: 'Hafıza Kartları',       icon: FiLayers },
-  { href: '/admin/feedback',            label: 'Feedback Yönetimi',     icon: FiMessageSquare },
-  { href: '/admin/research-results',    label: 'Araştırma Sonuçları',   icon: FiBook },
-  { href: '/admin/intelligence',        label: 'Zekâ',                  icon: FiCpu },
+const ADMIN_NAV_GROUPS = [
+  {
+    label: 'Overview',
+    items: [
+      { href: '/admin/dashboard', label: 'Dashboard', icon: FiShield },
+    ],
+  },
+  {
+    label: 'Runtime',
+    items: [
+      { href: '/admin/model-library', label: 'Runtime & Modeller', icon: FiPackage },
+      { href: '/admin/image-assets', label: 'IGM Assets', icon: FiImage },
+      { href: '/admin/desktop-readiness', label: 'Desktop Readiness', icon: FiCpu },
+    ],
+  },
+  {
+    label: 'Memory',
+    items: [
+      { href: '/admin/documents', label: 'Documents / RAG', icon: FiBook },
+      { href: '/admin/memory-cards', label: 'Hafıza Kartları', icon: FiLayers },
+      { href: '/admin/memory-write-queue', label: 'Hafıza Kuyruğu', icon: FiDatabase },
+    ],
+  },
+  {
+    label: 'Agent / Provider',
+    items: [
+      { href: '/admin/agent-tasks', label: 'Code Agent', icon: FiClipboard },
+      { href: '/admin/api-clients', label: 'Provider API', icon: FiKey },
+    ],
+  },
+  {
+    label: 'Release',
+    items: [
+      { href: '/admin/release-candidate', label: 'Release Candidate', icon: FiShield },
+      { href: '/admin/feedback', label: 'Feedback Yönetimi', icon: FiMessageSquare },
+      { href: '/admin/learning-candidates', label: 'Öğrenme Adayları', icon: FiStar },
+    ],
+  },
+  {
+    label: 'Developer / Lab',
+    items: [
+      { href: '/admin/ai-lab', label: 'Aillame Lab', icon: FiCpu },
+      { href: '/admin/intelligence', label: 'Nano Eval', icon: FiCpu },
+      { href: '/admin/distillation-preview', label: 'Damıtma Önizleme', icon: FiLayers },
+      { href: '/admin/research-results', label: 'Araştırma Sonuçları', icon: FiBook },
+    ],
+  },
 ];
 
 interface SidebarProps {
@@ -181,17 +215,21 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
 
             {isAdmin ? (
               <>
-                <SectionLabel label="Admin Control" />
-                <div className="space-y-0.5">
-                  {ADMIN_NAV.map((item) => (
-                    <NavLink key={item.href} {...item} active={pathname === item.href} />
-                  ))}
-                </div>
+                {ADMIN_NAV_GROUPS.map((group) => (
+                  <div key={group.label}>
+                    <SectionLabel label={group.label} />
+                    <div className="space-y-0.5">
+                      {group.items.map((item) => (
+                        <NavLink key={item.href} {...item} active={pathname === item.href} />
+                      ))}
+                    </div>
+                  </div>
+                ))}
                 <div className="mt-4 px-2">
                   <button
                     type="button"
                     onClick={handleLogout}
-                    className="flex w-full items-center gap-3 px-4 py-2.5 rounded-xl text-rose-500/70 hover:text-rose-400 hover:bg-rose-500/10 border border-transparent transition-all duration-200 group"
+                    className="flex w-full items-center gap-3 px-4 py-2.5 rounded-xl text-rose-500/80 hover:text-rose-400 hover:bg-rose-500/10 border border-transparent transition-all duration-200 group"
                     aria-label="Admin oturumunu kapat"
                   >
                     <FiLogOut size={16} className="group-hover:scale-110 transition-transform" />

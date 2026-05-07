@@ -32,6 +32,7 @@
                     "smoke:desktop-readiness": "node scripts/smoke-desktop-readiness.mjs",
                     "smoke:beta-rc": "node scripts/smoke-beta-rc.mjs",
                     "smoke:legacy-cleanup": "node scripts/smoke-legacy-cleanup.mjs",
+                    "smoke:ui-cleanup": "node scripts/smoke-ui-cleanup.mjs",
                     "qa:beta": "node scripts/run-beta-qa.mjs",
                     "eval:nano": "node scripts/evaluate-nano-pipeline.mjs",
                     "validate:nano-training-candidates": "node scripts/validate-nano-training-candidates.mjs",

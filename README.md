@@ -29,6 +29,10 @@ Final/beta kabul kriterleri:
 - **Security:** API key, permission, audit log, rate limit ve production guard foundation.
 - **Desktop Readiness:** Local server boot, health bridge ve packaging hazırlığı.
 
+## UI Rol Ayrımı
+
+Aillame Lab, deney/evaluation/playground alanıdır. Ana operasyon ekranları runtime, memory, agent, provider, security ve release başlıkları altında ayrılır; Lab bu alanların yerine geçmez.
+
 ## CLI
 
 CLI güvenli ve sınırlı bir ürünleşme yüzeyidir:

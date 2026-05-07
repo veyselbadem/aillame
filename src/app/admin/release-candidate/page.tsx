@@ -41,7 +41,9 @@ export default function ReleaseCandidatePage() {
             <RiFlagLine className="mr-4 text-emerald-500" />
             Beta Release Candidate
           </h1>
-          <p className="mt-2 text-sm text-slate-500">QA checklists, runtime acceptance status and release blockers for {report?.versionLabel || 'RC1'}.</p>
+          <p className="mt-2 text-sm text-slate-400">
+            Beta Foundation RC ayrı, Live Runtime Acceptance ayrı izlenir. LLM ve IGM gerçek üretim yapmadan final-ready sayılmaz.
+          </p>
         </div>
         <div className="flex gap-3">
           <button onClick={loadReport} className="rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-xs hover:bg-white/10 transition-colors">
@@ -58,22 +60,22 @@ export default function ReleaseCandidatePage() {
               <div className={`rounded-3xl border ${report.betaFoundationReady ? 'border-emerald-500/20 bg-emerald-500/5' : 'border-rose-500/20 bg-rose-500/5'} p-6`}>
                 <div className="flex items-center justify-between mb-4">
                   <RiCheckDoubleLine className={`text-2xl ${report.betaFoundationReady ? 'text-emerald-500' : 'text-rose-500'}`} />
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Foundation Ready</span>
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Beta Foundation RC</span>
                 </div>
                 <h3 className="text-xl font-bold text-white">{report.betaFoundationReady ? 'READY' : 'INCOMPLETE'}</h3>
                 <p className="mt-2 text-[11px] text-slate-400 leading-relaxed">
-                  All security, storage, memory and workflow foundation layers are verified.
+                  Security, storage, memory and workflow foundation layers are verified.
                 </p>
               </div>
 
               <div className={`rounded-3xl border ${report.liveRuntimeAcceptanceReady ? 'border-emerald-500/20 bg-emerald-500/5' : 'border-amber-500/20 bg-amber-500/5'} p-6`}>
                 <div className="flex items-center justify-between mb-4">
                   <RiPulseLine className={`text-2xl ${report.liveRuntimeAcceptanceReady ? 'text-emerald-500' : 'text-amber-500'} animate-pulse`} />
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Live Runtime Ready</span>
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Live Runtime Acceptance</span>
                 </div>
                 <h3 className="text-xl font-bold text-white">{report.liveRuntimeAcceptanceReady ? 'VERIFIED' : 'NOT READY'}</h3>
                 <p className="mt-2 text-[11px] text-slate-400 leading-relaxed">
-                  Final acceptance requires at least one local LLM and IGM to be producing live results.
+                  Final acceptance requires one local LLM text output and one local IGM image output through Aillame-controlled workers.
                 </p>
               </div>
             </div>
@@ -157,7 +159,7 @@ export default function ReleaseCandidatePage() {
               <h3 className="text-lg font-bold text-white mb-2">Aillame Beta Foundation</h3>
               <p className="text-[11px] text-slate-500 leading-relaxed italic">
                 This report represents the "Foundation Release Candidate" state. 
-                Full Beta usability requires live LLM and IGM model weight configuration.
+                Foundation can be ready while live runtime acceptance remains NOT_CONFIGURED. Full Beta usability requires live LLM and IGM configuration.
               </p>
             </div>
           </div>

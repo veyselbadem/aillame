@@ -193,24 +193,19 @@ export default function AdminDashboard() {
           </div>
         </header>
 
-        <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mb-8">
+        <section className="mb-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {FOUNDATION_STATUS.map(({ label, desc, variant: defaultVariant, status: defaultStatus }) => {
             const { status, variant, isLive } = getLiveStatus(label, defaultStatus, defaultVariant);
             return (
-              <div key={label} className="glass-card rounded-[20px] p-5 border border-white/10 flex flex-col justify-between">
-                <div>
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="p-2.5 rounded-xl bg-white/[0.03] border border-white/5">
-                      <FiCpu size={14} className="text-slate-400" />
-                    </div>
-                    <div className="flex flex-col items-end gap-1">
-                      {isLive && <span className="text-[8px] text-emerald-400 uppercase font-bold tracking-widest">LIVE</span>}
-                      <StatusBadge variant={variant} label={status} />
-                    </div>
+              <div key={label} className="glass-card rounded-[22px] p-5 border border-white/8 bg-white/[0.025] transition-colors hover:bg-white/[0.04]">
+                <div className="flex items-center justify-between gap-3 mb-3">
+                  <span className="text-[10px] font-black text-slate-300 uppercase tracking-[0.16em]">{label}</span>
+                  <div className="flex items-center gap-1.5">
+                    {isLive && <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />}
+                    <StatusBadge variant={variant} label={status} className="!px-2 !py-0 !text-[8px]" />
                   </div>
-                  <p className="text-sm font-black text-slate-900 dark:text-white tracking-tight">{label}</p>
-                  <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">{desc}</p>
                 </div>
+                <p className="text-[11px] text-slate-400 leading-relaxed">{desc}</p>
               </div>
             );
           })}
@@ -233,7 +228,7 @@ export default function AdminDashboard() {
           </div>
         </section>
 
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_1.2fr] gap-6 mb-6">
+        <div className="grid grid-cols-1 lg:grid-cols-[0.85fr_1.15fr] gap-6 mb-6">
           <div className="grid grid-cols-2 gap-3">
             <StatCard icon={<FiMessageCircle className="text-indigo-400" />} label="Konuşmalar" value={stats.conversations.toString()} accent="indigo" />
             <StatCard icon={<FiActivity className="text-rose-400" />} label="Mesajlar" value={stats.messages.toString()} accent="rose" />
@@ -241,24 +236,24 @@ export default function AdminDashboard() {
             <StatCard icon={<FiCpu className="text-amber-400" />} label="Epoch" value={brainStats ? brainStats.totalEpochs.toLocaleString() : '-'} accent="amber" />
           </div>
 
-          <div className="glass-card p-6 rounded-[24px] border border-white/5">
-            <h2 className="text-[10px] font-black uppercase tracking-[0.25em] text-gray-500 mb-5 flex items-center gap-2">
+          <div className="glass-card p-6 rounded-[24px] border border-white/8 bg-white/[0.025]">
+            <h2 className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-400 mb-5 flex items-center gap-2">
               <FiCpu className="text-indigo-400" size={12} />
-              Runtime Status Preview
+              Runtime Stack Preview
             </h2>
             <div className="grid gap-2 md:grid-cols-2">
               {RUNTIME_ROWS.map((row) => (
                 <StatusRow key={row.label} {...row} />
               ))}
               <StatusRow label="Registry Models" value="diagnostic count" ok />
-              <StatusRow label="GGUF Readiness" value="not configured until model path is set" ok={false} />
+              <StatusRow label="GGUF Readiness" value="pending model path" ok={false} />
             </div>
           </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-          <div className="glass-card p-6 rounded-[24px] border border-white/5">
-            <h2 className="text-[10px] font-black uppercase tracking-[0.25em] text-gray-500 mb-4 flex items-center gap-2">
+          <div className="glass-card p-6 rounded-[24px] border border-white/8 bg-white/[0.025]">
+            <h2 className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-400 mb-4 flex items-center gap-2">
               <FiCheckCircle className="text-indigo-400" size={12} />
               Beta Readiness Checklist
             </h2>
@@ -275,8 +270,8 @@ export default function AdminDashboard() {
             </div>
           </div>
           
-          <div className="glass-card p-6 rounded-[24px] border border-white/5">
-            <h2 className="text-[10px] font-black uppercase tracking-[0.25em] text-gray-500 mb-4 flex items-center gap-2">
+          <div className="glass-card p-6 rounded-[24px] border border-white/8 bg-white/[0.025]">
+            <h2 className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-400 mb-4 flex items-center gap-2">
               <FiPackage className="text-indigo-400" size={12} />
               Desktop Readiness
             </h2>
@@ -287,14 +282,14 @@ export default function AdminDashboard() {
               <StatusRow label="Tray/Background App" value="planned" ok={false} />
               <StatusRow label="Packaging" value="planned" ok={false} />
             </div>
-            <p className="text-xs text-gray-500 mt-4 leading-relaxed">
+            <p className="text-xs text-slate-400 mt-4 leading-relaxed">
               Desktop packaging ön hazırlığı tamamlandı. Tauri veya Electron paketi ile çevrimdışı çalışma hedeflenmektedir.
             </p>
           </div>
         </div>
 
-        <div className="glass-card p-6 rounded-[24px] border border-white/5 mb-6">
-          <h2 className="text-[10px] font-black uppercase tracking-[0.25em] text-gray-500 mb-4">CLI Usage (Plan-Only)</h2>
+        <div className="glass-card p-6 rounded-[24px] border border-white/8 bg-white/[0.025] mb-6">
+          <h2 className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-400 mb-4">CLI Usage (Plan-Only)</h2>
           <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
             <InfoCard title="Status & Health" body="npm run cli:aillame -- status" />
             <InfoCard title="Projects" body="npm run cli:aillame -- projects" />
@@ -303,13 +298,13 @@ export default function AdminDashboard() {
             <InfoCard title="Task Plan" body='npm run cli:aillame -- task plan --project aillame --message "Analiz et"' />
             <InfoCard title="Diagnostics" body="npm run cli:aillame -- diagnostics" />
           </div>
-          <p className="text-xs text-gray-500 mt-4 leading-relaxed">
+          <p className="text-xs text-slate-400 mt-4 leading-relaxed">
             CLI plan-only çalışır. Destructive işlem yapmaz, dosya yazmaz, otomatik komut çalıştırmaz.
           </p>
         </div>
 
-        <div className="glass-card p-6 rounded-[24px] border border-white/5">
-          <h2 className="text-[10px] font-black uppercase tracking-[0.25em] text-gray-500 mb-4">Project Memory Isolation</h2>
+        <div className="glass-card p-6 rounded-[24px] border border-white/8 bg-white/[0.025]">
+          <h2 className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-400 mb-4">Project Memory Isolation</h2>
           <div className="grid gap-3 md:grid-cols-3">
             <InfoCard title="Global Memory" body="Yalnızca açıkça istenirse ortak bağlam olarak kullanılır." />
             <InfoCard title="Project Memory" body="boss-ai hafızası doomsgame-engine isteklerine otomatik karışmaz." />

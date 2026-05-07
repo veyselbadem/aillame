@@ -2,7 +2,9 @@
 
 export type StatusBadgeVariant =
   | 'active'
+  | 'ready'
   | 'pending'
+  | 'planned'
   | 'running'
   | 'completed'
   | 'failed'
@@ -10,28 +12,40 @@ export type StatusBadgeVariant =
   | 'suspended'
   | 'revoked'
   | 'warning'
+  | 'degraded'
   | 'disabled'
+  | 'not-configured'
   | 'protected'
-  | 'review';
+  | 'review'
+  | 'info'
+  | 'neutral';
 
 const VARIANT_STYLES: Record<StatusBadgeVariant, string> = {
-  active:    'bg-emerald-500/15 text-emerald-600 dark:text-emerald-300 border-emerald-500/20',
-  pending:   'bg-slate-500/15 text-slate-600 dark:text-slate-300 border-slate-500/20',
-  running:   'bg-blue-500/15 text-blue-600 dark:text-blue-300 border-blue-500/20',
-  completed: 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-300 border-emerald-500/20',
-  failed:    'bg-rose-500/15 text-rose-600 dark:text-rose-300 border-rose-500/20',
-  cancelled: 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/20',
-  suspended: 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/20',
-  revoked:   'bg-rose-500/15 text-rose-600 dark:text-rose-300 border-rose-500/20',
-  warning:   'bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/20',
-  disabled:  'bg-slate-500/10 text-slate-500 dark:text-slate-400 border-slate-500/10',
-  protected: 'bg-indigo-500/15 text-indigo-600 dark:text-indigo-300 border-indigo-500/20',
-  review:    'bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/20',
+  active:         'bg-emerald-500/12 text-emerald-700 dark:text-emerald-300 border-emerald-500/25',
+  ready:          'bg-emerald-500/12 text-emerald-700 dark:text-emerald-300 border-emerald-500/25',
+  pending:        'bg-slate-500/12 text-slate-700 dark:text-slate-300 border-slate-500/25',
+  planned:        'bg-slate-500/12 text-slate-700 dark:text-slate-300 border-slate-500/25',
+  running:        'bg-blue-500/12 text-blue-700 dark:text-blue-300 border-blue-500/25',
+  completed:      'bg-emerald-500/12 text-emerald-700 dark:text-emerald-300 border-emerald-500/25',
+  failed:         'bg-rose-500/12 text-rose-700 dark:text-rose-300 border-rose-500/25',
+  cancelled:      'bg-amber-500/12 text-amber-800 dark:text-amber-300 border-amber-500/25',
+  suspended:      'bg-amber-500/12 text-amber-800 dark:text-amber-300 border-amber-500/25',
+  revoked:        'bg-rose-500/12 text-rose-700 dark:text-rose-300 border-rose-500/25',
+  warning:        'bg-amber-500/12 text-amber-800 dark:text-amber-300 border-amber-500/25',
+  degraded:       'bg-amber-500/12 text-amber-800 dark:text-amber-300 border-amber-500/25',
+  disabled:       'bg-slate-500/10 text-slate-700 dark:text-slate-300 border-slate-500/20',
+  'not-configured': 'bg-slate-500/10 text-slate-700 dark:text-slate-300 border-slate-500/20',
+  protected:      'bg-indigo-500/12 text-indigo-700 dark:text-indigo-300 border-indigo-500/25',
+  review:         'bg-amber-500/12 text-amber-800 dark:text-amber-300 border-amber-500/25',
+  info:           'bg-cyan-500/12 text-cyan-700 dark:text-cyan-300 border-cyan-500/25',
+  neutral:        'bg-slate-500/12 text-slate-700 dark:text-slate-300 border-slate-500/25',
 };
 
 const VARIANT_DOT: Record<StatusBadgeVariant, string> = {
   active:    'bg-emerald-400',
+  ready:     'bg-emerald-400',
   pending:   'bg-slate-400',
+  planned:   'bg-slate-400',
   running:   'bg-blue-400',
   completed: 'bg-emerald-400',
   failed:    'bg-rose-400',
@@ -39,9 +53,13 @@ const VARIANT_DOT: Record<StatusBadgeVariant, string> = {
   suspended: 'bg-amber-400',
   revoked:   'bg-rose-400',
   warning:   'bg-amber-400',
+  degraded:  'bg-amber-400',
   disabled:  'bg-slate-500',
+  'not-configured': 'bg-slate-500',
   protected: 'bg-indigo-400',
   review:    'bg-amber-400',
+  info:      'bg-cyan-400',
+  neutral:   'bg-slate-400',
 };
 
 interface StatusBadgeProps {

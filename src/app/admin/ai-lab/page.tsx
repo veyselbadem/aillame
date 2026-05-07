@@ -271,13 +271,30 @@ export default function AiLabPage() {
       <main className="flex-1 overflow-y-auto p-4 md:p-8 custom-scrollbar">
         <header className="mb-8 flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-black tracking-tight text-gradient">Aillame Developer Lab</h1>
-            <p className="text-[var(--text-muted)] mt-1 font-medium">Model, prompt ve Nano kararlarını deneyen evaluation playground.</p>
+            <h1 className="text-3xl font-black tracking-tight text-gradient">Aillame Lab</h1>
+            <p className="text-[var(--text-muted)] mt-1 font-medium">
+              Model, prompt, Nano, RAG ve provider çıktıları için güvenli deney ve değerlendirme alanı.
+            </p>
           </div>
           <div className="flex items-center gap-3">
-            <StatusBadge variant="protected" label="Evaluation Lab" />
+            <StatusBadge variant="info" label="Experiment / Evaluation" />
           </div>
         </header>
+
+        <section className="mb-6 grid gap-3 md:grid-cols-3">
+          <div className="rounded-2xl border border-white/8 bg-white/[0.03] p-4">
+            <p className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">Overview</p>
+            <p className="mt-2 text-sm font-semibold text-slate-200">Aillame Lab ana ürün merkezi değil; kontrollü deney ve evaluation yüzeyidir.</p>
+          </div>
+          <div className="rounded-2xl border border-white/8 bg-white/[0.03] p-4">
+            <p className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">Playground</p>
+            <p className="mt-2 text-sm font-semibold text-slate-200">Prompt, structured JSON, provider output ve RAG context testleri burada denenir.</p>
+          </div>
+          <div className="rounded-2xl border border-white/8 bg-white/[0.03] p-4">
+            <p className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">Diagnostics</p>
+            <p className="mt-2 text-sm font-semibold text-slate-200">LLM / IGM runtime durumları yalnızca diagnostic preview olarak gösterilir.</p>
+          </div>
+        </section>
 
         <section className="mb-10 grid grid-cols-1 gap-6 lg:grid-cols-3">
           {/* Create Session Card */}
@@ -391,20 +408,20 @@ export default function AiLabPage() {
           {/* Model Status Card */}
           <div className="col-span-1 lg:col-span-2 glass-card rounded-3xl p-6">
             <div className="flex items-center justify-between mb-5">
-              <h2 className="text-lg font-bold">Evaluation Runtime Durumu</h2>
-              <StatusBadge variant="protected" label="Lab / Playground" />
+              <h2 className="text-lg font-bold flex items-center gap-2">
+                <FiActivity className="text-indigo-400" />
+                Lab Runtime & Evaluation
+              </h2>
+              <StatusBadge variant="info" label="Diagnostic preview" />
             </div>
-            <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
+            <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
               {[
-                { name: 'Nano', status: 'AKTİF', color: 'text-emerald-500', desc: 'Advisory / Eval', icon: <FiCpu className="text-emerald-500" /> },
-                { name: 'Web Search', status: 'HAZIR', color: 'text-orange-500', desc: 'Data Collector', icon: <FiSearch className="text-orange-500" /> },
-                { name: 'Gemma', status: gemmaStatus?.isReady ? 'AKTİF' : gemmaStatus?.status === 'planning_only' ? 'PLANNING' : 'DEGRADED', color: gemmaStatus?.isReady ? 'text-indigo-400' : 'text-amber-500', desc: gemmaStatus?.message || gemmaStatus?.details?.error || 'LLM profile', icon: <FiTerminal className={gemmaStatus?.isReady ? 'text-indigo-400' : 'text-amber-500'} /> },
-                { name: 'Qwen', status: qwenStatus?.isReady ? 'AKTİF' : qwenStatus?.status === 'planning_only' ? 'PLANNING' : 'DEGRADED', color: qwenStatus?.isReady ? 'text-purple-500' : 'text-amber-500', desc: qwenStatus?.message || qwenStatus?.details?.error || 'LLM/Vision profile', icon: <FiCpu className={qwenStatus?.isReady ? 'text-purple-500' : 'text-amber-500'} /> },
-                { name: 'SDXL', status: sdxlStatus?.isReady ? 'AKTİF' : sdxlStatus?.status === 'planning_only' ? 'PLANNING' : 'DEGRADED', color: sdxlStatus?.isReady ? 'text-amber-500' : 'text-rose-500', desc: sdxlStatus?.details?.cudaAvailable ? 'IGM profile (CUDA)' : sdxlStatus?.details?.error || 'IGM profile', icon: <FiImage className={sdxlStatus?.isReady ? 'text-amber-500' : 'text-rose-500'} /> },
-                { name: 'Ollama', status: ollamaStatus?.isReady ? 'AKTİF' : ollamaStatus?.status === 'planning_only' ? 'PLANNING' : 'DEGRADED', color: ollamaStatus?.isReady ? 'text-emerald-500' : 'text-amber-500', desc: ollamaStatus?.message || ollamaStatus?.details?.error || 'Optional compatibility fallback', icon: <FiActivity className={ollamaStatus?.isReady ? 'text-emerald-500' : 'text-amber-500'} /> },
-                { name: 'Lab', status: 'AKTİF', color: 'text-indigo-500', desc: 'Evaluation playground', icon: <FiActivity className="text-indigo-500" /> },
+                { name: 'Nano Eval', status: 'ACTIVE', color: 'text-emerald-300', desc: 'Advisory', icon: <FiCpu className="text-emerald-300" /> },
+                { name: 'Provider Output', status: 'PREVIEW', color: 'text-cyan-300', desc: 'Compare', icon: <FiSearch className="text-cyan-300" /> },
+                { name: 'LLM Profiles', status: 'DIAGNOSTIC', color: 'text-amber-300', desc: 'Compatibility', icon: <FiTerminal className="text-amber-300" /> },
+                { name: 'IGM Profiles', status: 'DIAGNOSTIC', color: 'text-amber-300', desc: 'Compatibility', icon: <FiImage className="text-amber-300" /> },
               ].map(m => (
-                <div key={m.name} className="rounded-2xl border border-[var(--glass-border)] bg-[var(--bg-surface)]/30 p-4 transition-all hover:border-indigo-500/30 group">
+                <div key={m.name} className="rounded-2xl border border-white/8 bg-white/[0.03] p-4 transition-all hover:border-indigo-500/25 group">
                   <div className="flex items-center justify-between gap-2">
                     <div className="text-[10px] text-[var(--text-muted)] font-black uppercase tracking-widest group-hover:text-indigo-500 transition-colors">{m.name}</div>
                     {m.icon}
@@ -414,14 +431,9 @@ export default function AiLabPage() {
                 </div>
               ))}
             </div>
-            {!qwenStatus || !qwenStatus.isReady ? (
-              <div className="mt-4 p-3 rounded-xl bg-amber-500/5 border border-amber-500/10">
-                <p className="text-[10px] font-bold text-amber-600/80 leading-relaxed">
-                  <FiTerminal className="inline mr-1" />
-                  Qwen opsiyonel/ağır modda: {qwenStatus?.error || qwenStatus?.message || qwenStatus?.details?.error || 'Python runtime veya model cache hazır değil.'}
-                </p>
-              </div>
-            ) : null}
+            <p className="mt-4 text-[11px] font-medium leading-relaxed text-slate-400">
+              Model yönetimi, API key, release readiness, patch workflow ve document library kendi admin sayfalarında yönetilir. Lab yalnızca güvenli deney ve değerlendirme alanıdır.
+            </p>
           </div>        </section>
 
         <section className="grid grid-cols-1 gap-8 lg:grid-cols-5 h-[calc(100vh-180px)]">
