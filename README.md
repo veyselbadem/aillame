@@ -115,3 +115,17 @@ Code Agent Patch testi için:
 ```bash
 npm run smoke:code-agent-patch-workflow
 ```
+
+## Post-Beta Phase 5: Live Runtime + Model Discovery
+
+Aillame, yerel model yönetimi ve runtime hazırlığı tarafında ürün seviyesine taşındı:
+- **Model Discovery:** Yerel GGUF modellerini otomatik keşfetme ve watchlist üzerinden takip etme özelliği eklendi.
+- **GGUF Detector:** Model dosyalarından quantization (Q4_K_M, Q8_0 vb.) ve parametre boyutu (7B, 14B vb.) bilgilerini çıkaran akıllı dedektör devreye alındı.
+- **Compatibility Scoring:** Donanım (RAM/VRAM) ve çalışma zamanı (runtime) uyumluluğunu ölçen 0-1 arası skorlama sistemi eklendi.
+- **Update Watcher:** Takip edilen modellerdeki güncellemeleri kontrol eden ve kullanıcıya bildiren altyapı kuruldu.
+- **Install Plan Preview:** Model indirme/güncelleme öncesinde disk alanı ve risk analizi yapan "plan preview" akışı eklendi.
+
+Model Discovery testi için:
+```bash
+npm run smoke:model-discovery-runtime
+```

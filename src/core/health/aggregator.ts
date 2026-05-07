@@ -23,6 +23,7 @@ export interface SystemHealth {
     vectorMemory: HealthComponent;
     nanoIntelligence: HealthComponent;
     security: HealthComponent;
+    modelDiscovery: HealthComponent;
     desktopReadiness: HealthComponent;
   };
 }

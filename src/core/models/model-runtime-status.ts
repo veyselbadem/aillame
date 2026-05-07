@@ -18,6 +18,12 @@ export type AillameModelRuntimeStatusView = {
   availableForUse: boolean;
   reason?: string;
   warnings: string[];
+  ggufReadiness?: {
+    formatDetected: boolean;
+    quantizationDetected: boolean;
+    hardwareFit: string;
+    canEnable: boolean;
+  };
 };
 
 export type AillameModelsRuntimeStatusView = {

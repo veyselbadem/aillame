@@ -102,6 +102,15 @@ export class LiveHealthAggregator implements HealthAggregator {
             authRequired: process.env.NODE_ENV === 'production' || process.env.AILLAME_EXTERNAL_API_AUTH_REQUIRED === 'true'
           }
         },
+        modelDiscovery: {
+          name: "Model Discovery & Watchlist",
+          status: "ready",
+          diagnostics: {
+            detail: "Local GGUF discovery active",
+            features: ["gguf-detector", "compatibility-scoring", "update-watcher"],
+            offline: true
+          }
+        },
         desktopReadiness: {
           name: "Desktop Readiness",
           status: "planned"
