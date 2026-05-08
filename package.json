@@ -34,6 +34,7 @@
                     "smoke:live-igm-model-manager": "node scripts/smoke-live-igm-model-manager.mjs",
     "smoke:provider-api": "npx tsx scripts/smoke-provider-api.ts",
     "smoke:workspace-scanner": "npx tsx scripts/smoke-workspace-scanner.ts",
+    "smoke:agent-planner": "npx tsx scripts/smoke-agent-planner.ts",
     "smoke:live-runtime-acceptance": "node scripts/smoke-live-runtime-acceptance.mjs",
                     "smoke:desktop-readiness": "node scripts/smoke-desktop-readiness.mjs",
                     "smoke:beta-rc": "node scripts/smoke-beta-rc.mjs",
