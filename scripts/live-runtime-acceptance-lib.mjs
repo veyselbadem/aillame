@@ -169,9 +169,10 @@ async function runGgufGeneration({ enabled, runtimeBinary, modelPath }) {
     };
   }
 
+  const isServerBinary = runtimeBinary.toLowerCase().includes('llama-server');
   const timeoutMs = Number(process.env.AILLAME_TEXT_TIMEOUT_MS || DEFAULT_TEXT_TIMEOUT_MS);
   
-  // Try CLI mode first
+  // Try CLI mode first (unless we are sure it's ONLY a server)
   let result = spawnSync(runtimeBinary, buildGgufArgs(modelPath, LIVE_TEXT_PROMPT), {
     cwd: process.cwd(),
     encoding: 'utf8',
@@ -184,13 +185,14 @@ async function runGgufGeneration({ enabled, runtimeBinary, modelPath }) {
   let timedOut = Boolean(result.error && result.error.message.includes('ETIMEDOUT'));
   let succeeded = result.status === 0 && output.length > 0 && !timedOut;
 
-  // Fallback: If it's llama-server and CLI failed, try HTTP probe if already running
-  if (!succeeded && runtimeBinary.toLowerCase().includes('llama-server')) {
+  // Fallback: If it's llama-server and CLI failed (expected), try HTTP probe if already running
+  if (!succeeded && isServerBinary) {
     const port = process.env.AILLAME_GEMMA_PORT || '8080';
     const url = `http://127.0.0.1:${port}/completion`;
     const ggufWarnings = [];
     
     try {
+      // Check if port is open before fetching
       const response = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -199,7 +201,7 @@ async function runGgufGeneration({ enabled, runtimeBinary, modelPath }) {
           n_predict: 32, 
           temperature: 0.1
         }),
-        signal: AbortSignal.timeout(15000)
+        signal: AbortSignal.timeout(10000)
       });
 
       if (response.ok) {
@@ -224,17 +226,26 @@ async function runGgufGeneration({ enabled, runtimeBinary, modelPath }) {
         ggufWarnings.push(`HTTP probe failed with status ${response.status}: ${errText.slice(0, 100)}`);
       }
     } catch (e) {
-      ggufWarnings.push(`HTTP probe error (${url}): ${e.message}`);
+      if (e.name === 'AbortError' || e.message.includes('timeout')) {
+        ggufWarnings.push(`HTTP probe timed out at ${url}. Is the server loaded?`);
+      } else {
+        ggufWarnings.push(`HTTP probe error at ${url}: ${e.message}. Ensure llama-server is running.`);
+      }
     }
     
-    // If HTTP probe failed, return the original CLI failure with extra warnings
+    // If we're here, both CLI and HTTP probe failed.
     return {
       attempted: true,
       succeeded: false,
       responseLength: 0,
       outputPreview: undefined,
-      reason: result.error?.message || `GGUF_RUNTIME_EXIT_${result.status ?? 'UNKNOWN'}`,
-      warnings: [...(result.stderr ? ['Runtime wrote diagnostic output to stderr.'] : []), ...ggufWarnings],
+      reason: result.status === 1 ? 'SERVER_BINARY_REQUIRES_ACTIVE_SERVICE' : (result.error?.message || `GGUF_RUNTIME_EXIT_${result.status ?? 'UNKNOWN'}`),
+      warnings: [
+        'llama-server.exe detected. This binary usually requires an active server process.',
+        'If the app is not running, start it or run llama-server manually.',
+        ...(result.stderr ? [`Last CLI Stderr: ${result.stderr.slice(0, 200)}`] : []), 
+        ...ggufWarnings
+      ],
     };
   }
 
@@ -251,6 +262,7 @@ async function runGgufGeneration({ enabled, runtimeBinary, modelPath }) {
     warnings: result.stderr && !succeeded ? ['Runtime wrote diagnostic output to stderr.'] : [],
   };
 }
+
 
 export async function getLiveTextAcceptanceReport() {
   const missingConfig = [];
