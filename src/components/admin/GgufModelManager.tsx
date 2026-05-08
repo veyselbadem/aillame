@@ -212,37 +212,51 @@ export default function GgufModelManager() {
             <FiInfo className="opacity-40 hover:opacity-100 cursor-help" title="Curated GGUF candidates optimized for Aillame local runtimes." />
           </div>
           <div className="grid gap-3">
-            {catalog.map(entry => (
-              <div key={entry.modelId} className="theme-surface rounded-xl p-4 border border-white/5 transition-all hover:border-indigo-500/20">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <h3 className="text-sm font-bold theme-title">{entry.displayName}</h3>
-                    <p className="text-[10px] theme-muted mt-0.5">{entry.provider} · {entry.family}</p>
+            {(() => {
+              const catalogEntries = Array.isArray(catalog) 
+                ? catalog 
+                : (catalog as any)?.entries || (catalog as any)?.catalog || (catalog as any)?.data || [];
+              
+              if (catalogEntries.length === 0) {
+                return (
+                  <div className="py-12 text-center theme-surface rounded-xl border-dashed opacity-40">
+                    <p className="text-xs theme-muted italic">Model kataloğu şu anda yüklenemedi veya boş görünüyor.</p>
                   </div>
-                  <span className="text-[10px] font-bold theme-secondary px-2 py-0.5 rounded-lg bg-white/5">
-                    {entry.compatibility.score * 100}% Fit
-                  </span>
-                </div>
-                <div className="mt-3 space-y-2">
-                  {entry.files.map(file => (
-                    <div key={file.fileName} className="flex items-center justify-between text-xs p-2 rounded-lg theme-elevated bg-white/[0.02]">
-                      <div className="min-w-0 flex-1 pr-2">
-                        <p className="font-mono text-[10px] theme-title truncate">{file.fileName}</p>
-                        <p className="text-[9px] theme-muted">{formatBytes(file.sizeBytes)}</p>
-                      </div>
-                      <button 
-                        disabled={busy}
-                        onClick={() => handleDownload(entry.modelId, file.fileName)}
-                        className="p-1.5 rounded-md hover:bg-indigo-500/10 text-indigo-500 transition-colors disabled:opacity-30"
-                        title="Start Download Job"
-                      >
-                        <FiDownload size={14} />
-                      </button>
+                );
+              }
+
+              return catalogEntries.map((entry: any) => (
+                <div key={entry.modelId} className="theme-surface rounded-xl p-4 border border-white/5 transition-all hover:border-indigo-500/20">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <h3 className="text-sm font-bold theme-title">{entry.displayName}</h3>
+                      <p className="text-[10px] theme-muted mt-0.5">{entry.provider} · {entry.family}</p>
                     </div>
-                  ))}
+                    <span className="text-[10px] font-bold theme-secondary px-2 py-0.5 rounded-lg bg-white/5">
+                      {entry.compatibility.score * 100}% Fit
+                    </span>
+                  </div>
+                  <div className="mt-3 space-y-2">
+                    {Array.isArray(entry.files) && entry.files.map((file: any) => (
+                      <div key={file.fileName} className="flex items-center justify-between text-xs p-2 rounded-lg theme-elevated bg-white/[0.02]">
+                        <div className="min-w-0 flex-1 pr-2">
+                          <p className="font-mono text-[10px] theme-title truncate">{file.fileName}</p>
+                          <p className="text-[9px] theme-muted">{formatBytes(file.sizeBytes)}</p>
+                        </div>
+                        <button 
+                          disabled={busy}
+                          onClick={() => handleDownload(entry.modelId, file.fileName)}
+                          className="p-1.5 rounded-md hover:bg-indigo-500/10 text-indigo-500 transition-colors disabled:opacity-30"
+                          title="Start Download Job"
+                        >
+                          <FiDownload size={14} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            ))}
+              ));
+            })()}
           </div>
         </section>
 

@@ -268,7 +268,8 @@ export async function fetchGgufCatalog(): Promise<ModelCatalogEntry[]> {
   try {
     const res = await adminFetch('/api/admin/models/catalog');
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    return await res.json();
+    const json = await res.json();
+    return Array.isArray(json) ? json : json?.entries || json?.catalog || json?.data || [];
   } catch (err) {
     console.error('[model-library-client] fetchGgufCatalog:', err);
     return [];
@@ -306,7 +307,7 @@ export async function fetchGgufDownloadJobs(): Promise<ModelDownloadJob[]> {
     const res = await adminFetch('/api/admin/models/download/jobs');
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const json = await res.json();
-    return json.jobs ?? [];
+    return Array.isArray(json) ? json : json?.jobs || json?.data || [];
   } catch (err) {
     console.error('[model-library-client] fetchGgufDownloadJobs:', err);
     return [];

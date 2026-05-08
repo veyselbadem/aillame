@@ -55,6 +55,14 @@ const filesToCheck = [
       'Kabul Kriterleri',
       'Yerel Bağımsızlık'
     ]
+  },
+  {
+    path: 'src/components/admin/GgufModelManager.tsx',
+    patterns: [
+      'Array.isArray(catalog)',
+      'catalogEntries.map',
+      'Model kataloğu şu anda yüklenemedi'
+    ]
   }
 ];
 
