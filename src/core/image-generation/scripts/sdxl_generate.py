@@ -1,16 +1,28 @@
+import argparse
 import base64
 import io
 import json
+import os
 import random
 import sys
 
 
 def main() -> int:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--request", help="Path to JSON request file")
+    args, unknown = parser.parse_known_args()
+
     try:
-        payload = json.loads(sys.stdin.read() or "{}")
+        if args.request and os.path.exists(args.request):
+            with open(args.request, "r", encoding="utf-8") as f:
+                payload = json.load(f)
+        else:
+            payload = json.loads(sys.stdin.read() or "{}")
+
     except json.JSONDecodeError as exc:
         print(json.dumps({"error": f"Invalid JSON input: {exc}"}), file=sys.stderr)
         return 2
+
 
     model_id = payload.get("modelId") or "stabilityai/stable-diffusion-xl-base-1.0"
     prompt = payload.get("prompt") or ""
@@ -25,9 +37,9 @@ def main() -> int:
 
     try:
         import torch
-        import os
         from diffusers import StableDiffusionXLPipeline
     except Exception as exc:
+
         print(
             json.dumps(
                 {
