@@ -80,6 +80,24 @@ export class IGMRuntimeReadiness {
     const workerExists = Boolean(workerCommand && fs.existsSync(workerCommand));
     const workerAvailable = enabled && workerExists;
 
+    let packagesInstalled = false;
+    if (enabled && workerExists) {
+      try {
+        const { spawnSync } = require('child_process');
+        const depCheck = spawnSync(workerCommand, ['-c', 'import torch, diffusers, transformers, accelerate, safetensors, PIL, huggingface_hub; print("OK")'], { encoding: 'utf8' });
+        if (depCheck.status === 0 && depCheck.stdout.includes('OK')) {
+          packagesInstalled = true;
+        } else {
+          missingWorker.push('IGM Python dependencies missing: torch, diffusers, transformers, accelerate, safetensors, pillow, huggingface_hub.');
+          if (depCheck.stderr) {
+             warnings.push(`Dependency check error: ${depCheck.stderr.slice(0, 100)}`);
+          }
+        }
+      } catch (e) {
+        warnings.push('Failed to run IGM dependency check.');
+      }
+    }
+
     if (enabled && !workerCommand) {
       missingWorker.push('AILLAME_IGM_WORKER_COMMAND is not set.');
     } else if (enabled && !workerExists) {
@@ -91,7 +109,8 @@ export class IGMRuntimeReadiness {
       && modelDirExists
       && activeModelExists
       && outputDirWritable
-      && workerExists;
+      && workerExists
+      && packagesInstalled;
 
     let attempted = false;
 
