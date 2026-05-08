@@ -79,7 +79,7 @@ function ProjectContextSurface({ modelLabel }: { modelLabel: string }) {
           <div className="hidden h-4 w-px bg-slate-300 dark:bg-slate-700 sm:block" />
           <div className="flex items-center gap-2">
             <span className="text-[9px] font-bold uppercase tracking-[0.14em] theme-muted">Runtime</span>
-            <span className="text-[10px] font-semibold text-amber-300">{modelLabel} · diagnostic</span>
+            <span className="text-[10px] font-semibold text-amber-800 dark:text-amber-300">{modelLabel} · diagnostic</span>
           </div>
         </div>
 
@@ -176,7 +176,7 @@ export default function ChatShell({ conversationId }: ChatShellProps) {
         <div className="flex items-center gap-4 min-w-0">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-indigo-600 to-indigo-800 flex items-center justify-center shadow-lg shadow-indigo-500/20">
-              <span className="text-white font-black text-xs">A</span>
+              <span className="theme-on-dark font-black text-xs">A</span>
             </div>
             <div className="flex flex-col">
               <span className="text-[10px] font-black uppercase tracking-[0.25em] leading-tight theme-title">Aillame Workspace</span>
@@ -185,7 +185,7 @@ export default function ChatShell({ conversationId }: ChatShellProps) {
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-60" />
                   <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-amber-500" />
                 </span>
-                <span className="text-[8px] font-bold text-amber-400/80 uppercase tracking-widest">{chatModel.shortLabel} · diagnostic</span>
+                <span className="text-[8px] font-bold text-amber-800 dark:text-amber-400 uppercase tracking-widest">{chatModel.shortLabel} · diagnostic</span>
               </div>
             </div>
           </div>

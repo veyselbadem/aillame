@@ -44,7 +44,7 @@ export default function MessageItem({ message, index = 0, conversationId, prompt
       {!isUser && (
         <div className="flex-shrink-0 mr-3 mt-auto">
           <div className="w-7 h-7 rounded-xl bg-gradient-to-br from-indigo-600 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/20">
-            <span className="text-white text-[9px] font-black">A</span>
+            <span className="theme-on-dark text-[9px] font-black">A</span>
           </div>
         </div>
       )}
@@ -80,7 +80,7 @@ export default function MessageItem({ message, index = 0, conversationId, prompt
           <div
             className={`relative px-5 py-4 rounded-3xl text-sm leading-relaxed shadow-2xl transition-all duration-300 border ${
               isUser
-                ? 'bg-gradient-to-br from-indigo-600 via-indigo-700 to-indigo-800 text-white border-white/10 rounded-tr-sm shadow-indigo-500/20'
+                ? 'bg-gradient-to-br from-indigo-600 via-indigo-700 to-indigo-800 theme-on-dark border-white/10 rounded-tr-sm shadow-indigo-500/20'
                 : 'glass-card dark:text-gray-100 text-gray-800 border-white/5 dark:border-white/5 border-indigo-100/50 rounded-tl-sm'
             }`}
           >
@@ -93,7 +93,7 @@ export default function MessageItem({ message, index = 0, conversationId, prompt
             )}
             
             {isUser && (
-              <span className="block text-[10px] font-black uppercase tracking-[0.3em] mb-2.5 text-indigo-200/50">
+              <span className="block text-[10px] font-black uppercase tracking-[0.3em] mb-2.5 theme-on-dark-muted">
                 Sen
               </span>
             )}
@@ -132,7 +132,7 @@ export default function MessageItem({ message, index = 0, conversationId, prompt
         )}
 
         {/* Timestamp */}
-        <div className={`mt-1 text-[9px] text-gray-700 font-mono ${isUser ? 'text-right' : 'text-left'}`}>
+        <div className={`mt-1 text-[9px] font-mono ${isUser ? 'text-right theme-muted' : 'text-left theme-muted'}`}>
           {new Date(message.createdAt).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}
         </div>
       </div>
@@ -141,7 +141,7 @@ export default function MessageItem({ message, index = 0, conversationId, prompt
       {isUser && (
         <div className="flex-shrink-0 ml-3 mt-auto">
           <div className="w-7 h-7 rounded-xl bg-gradient-to-br from-slate-600 to-slate-800 flex items-center justify-center shadow-lg">
-            <span className="text-white text-[9px] font-black">S</span>
+            <span className="theme-on-dark text-[9px] font-black">S</span>
           </div>
         </div>
       )}

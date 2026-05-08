@@ -151,18 +151,20 @@ export default function AdminApiClientsPage() {
     <div className="theme-admin-page min-h-screen bg-transparent relative p-6 md:p-10 max-w-7xl mx-auto animate-fade-in">
       <header className="mb-10 flex flex-col md:flex-row md:items-end md:justify-between gap-6">
         <div>
+
+
           <div className="flex items-center gap-2.5 mb-2">
             <div className="w-6 h-6 rounded-lg bg-indigo-500/20 flex items-center justify-center">
-              <FiKey size={12} className="text-indigo-400" />
+              <FiKey size={12} className="text-indigo-600 dark:text-indigo-400" />
             </div>
-            <p className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-500">Security · API Management</p>
+            <p className="text-[10px] font-black uppercase tracking-[0.4em] theme-muted">Security · API Management</p>
           </div>
-          <h1 className="text-4xl font-black tracking-tight text-white">API Anahtarları ve Güvenlik</h1>
-          <p className="text-sm text-slate-400 mt-2 max-w-2xl font-medium">
+          <h1 className="text-4xl font-black tracking-tight theme-title">API Anahtarları ve Güvenlik</h1>
+          <p className="text-sm theme-muted mt-2 max-w-2xl font-medium">
             External uygulamalar için API anahtarı yönetimi ve güvenlik denetimi.
           </p>
         </div>
-        <button onClick={() => loadData()} className="group flex items-center gap-2 rounded-2xl border border-white/10 bg-white/[0.03] px-5 py-3 text-xs font-bold text-slate-300 hover:bg-white/10 hover:text-indigo-400 transition-all">
+        <button onClick={() => loadData()} className="group flex items-center gap-2 rounded-2xl border theme-divider bg-white/5 dark:bg-white/[0.03] px-5 py-3 text-xs font-bold theme-secondary hover:bg-white/10 hover:text-indigo-600 dark:hover:text-indigo-400 transition-all">
           <FiRefreshCw className={loading ? 'animate-spin' : 'group-hover:rotate-180 transition-transform duration-500'} /> Yenile
         </button>
       </header>
@@ -361,10 +363,10 @@ export default function AdminApiClientsPage() {
 
 function InfoPanel({ icon, title, children }: { icon: React.ReactNode; title: string; children: React.ReactNode }) {
   return (
-    <section className="glass-card rounded-[24px] border border-white/10 p-5">
+    <section className="glass-card rounded-[24px] border theme-divider p-5">
       <div className="mb-4 flex items-center gap-2">
-        <span className="text-indigo-300">{icon}</span>
-        <h2 className="text-sm font-black uppercase tracking-[0.2em] text-white">{title}</h2>
+        <span className="text-indigo-600 dark:text-indigo-300">{icon}</span>
+        <h2 className="text-sm font-black uppercase tracking-[0.2em] theme-title">{title}</h2>
       </div>
       {children}
     </section>
