@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { 
   FiSearch, FiActivity, FiCode, FiShield, FiCheckCircle, 
   FiInfo, FiAlertTriangle, FiArrowRight, FiRotateCw, 
-  FiFileText, FiCpu, FiExternalLink, FiLock
+  FiFileText, FiCpu, FiExternalLink, FiLock, FiDatabase
 } from 'react-icons/fi';
 import StatusBadge from '@/components/ui/StatusBadge';
 
@@ -33,6 +33,8 @@ export default function AgentCommandCenter() {
   const [error, setError] = useState<string | null>(null);
   const [approvalText, setApprovalText] = useState('');
   const [isDryRunDone, setIsDryRunDone] = useState(false);
+  const [memorySummary, setMemorySummary] = useState<any>(null);
+  const [memoryCards, setMemoryCards] = useState<any[]>([]);
 
   useEffect(() => {
     const auth = localStorage.getItem('admin_auth');
@@ -43,7 +45,24 @@ export default function AgentCommandCenter() {
     }
     setAuthorized(true);
     setAdminToken(token);
+    loadMemory(token);
   }, [router]);
+
+  const loadMemory = async (token?: string | null) => {
+    try {
+      const response = await fetch('/api/admin/agent/memory/summary', {
+        headers: { 'x-aillame-admin-token': token || adminToken || '' }
+      });
+      const data = await response.json();
+      if (data.success) setMemorySummary(data.summary);
+
+      const cardsRes = await fetch('/api/admin/agent/memory/cards?limit=5', {
+        headers: { 'x-aillame-admin-token': token || adminToken || '' }
+      });
+      const cardsData = await cardsRes.json();
+      if (cardsData.success) setMemoryCards(cardsData.cards);
+    } catch {}
+  };
 
   const apiCall = async (endpoint: string, body: any) => {
     setError(null);
@@ -140,7 +159,18 @@ export default function AgentCommandCenter() {
       originalProposal: patchProposalResult,
       userTask
     });
-    if (result) setAuditResult(result);
+    if (result) {
+      setAuditResult(result);
+      // Auto-learn if successful
+      if (result.status === 'verified' || result.status === 'partially-verified') {
+        await apiCall('/api/admin/agent/memory/learn', {
+          audit: result,
+          userTask,
+          safeRootName: scanResult?.safeRootName || 'unknown'
+        });
+        loadMemory();
+      }
+    }
     setLoading(false);
   };
 
@@ -425,6 +455,31 @@ export default function AgentCommandCenter() {
                 </div>
               </div>
             </div>
+          )}
+          {/* Learning Cards (Memory) */}
+          {memoryCards.length > 0 && (
+            <section className="bg-white/5 border border-white/10 rounded-3xl p-6 animate-slide-up">
+               <h3 className="text-white font-bold flex items-center gap-2 italic mb-6">
+                <FiDatabase className="text-emerald-400" />
+                SON ÖĞRENME KARTLARI (AGENT MEMORY)
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {memoryCards.map((card) => (
+                  <div key={card.id} className="p-4 bg-black/30 border border-white/5 rounded-2xl hover:border-emerald-500/30 transition-all">
+                    <div className="flex items-center justify-between mb-2">
+                      <StatusBadge variant={card.outcome === 'success' ? 'active' : 'warning'} label={card.taskCategory} />
+                      <span className="text-[9px] text-slate-500 font-mono">{new Date(card.createdAt).toLocaleDateString()}</span>
+                    </div>
+                    <p className="text-xs text-white font-medium mb-3 line-clamp-2">{card.taskSummary}</p>
+                    <div className="flex flex-wrap gap-1">
+                      {card.changedAreas.map((area: string, i: number) => (
+                        <span key={i} className="text-[8px] px-1.5 py-0.5 rounded bg-white/5 text-slate-400 border border-white/5">{area}</span>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
           )}
 
         </div>

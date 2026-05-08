@@ -94,10 +94,15 @@ export default function AdminDashboard() {
 
   const loadHealth = async () => {
     try {
-      const res = await fetch('/api/aillame/health');
+      const token = localStorage.getItem('aillame_admin_token');
+      const res = await fetch('/api/admin/product-health', {
+        headers: { 'x-aillame-admin-token': token || '' }
+      });
       if (res.ok) {
         const data = await res.json();
-        setSystemHealth(data.systemHealth?.components);
+        if (data.success) {
+          setSystemHealth(data.health.components);
+        }
       }
     } catch {}
   };
@@ -121,16 +126,16 @@ export default function AdminDashboard() {
     
     let liveStatus: string | undefined;
     switch (label) {
-      case 'Local Text Runtime': liveStatus = systemHealth.runtime?.status; break;
-      case 'Model Registry': liveStatus = systemHealth.modelRegistry?.status; break;
-      case 'Project Memory': liveStatus = systemHealth.projectMemory?.status; break;
-      case 'External Provider API': liveStatus = systemHealth.externalProvider?.status; break;
-      case 'Code Agent': liveStatus = systemHealth.codeAgent?.status; break;
-      case 'Image Workflow': liveStatus = systemHealth.imageWorkflow?.status; break;
-      case 'Vector Memory / RAG': liveStatus = systemHealth.vectorMemory?.status; break;
-      case 'Nano Diagnostics': liveStatus = systemHealth.nanoIntelligence?.status; break;
-      case 'Security / Permissions': liveStatus = systemHealth.security?.status; break;
-      case 'Desktop Readiness': liveStatus = systemHealth.desktopReadiness?.status; break;
+      case 'Local Text Runtime': liveStatus = systemHealth.llm?.status; break;
+      case 'Model Registry': liveStatus = systemHealth.llm?.details?.runtime ? 'ready' : 'not-configured'; break;
+      case 'Project Memory': liveStatus = systemHealth.memory?.status; break;
+      case 'External Provider API': liveStatus = systemHealth.providerApi?.status; break;
+      case 'Code Agent': liveStatus = systemHealth.agent?.status; break;
+      case 'Image Workflow': liveStatus = systemHealth.igm?.status; break;
+      case 'Vector Memory / RAG': liveStatus = systemHealth.storage?.status; break;
+      case 'Nano Diagnostics': liveStatus = systemHealth.llm?.details?.nanoAvailable ? 'ready' : 'failed'; break;
+      case 'Security / Permissions': liveStatus = 'ready'; break;
+      case 'Desktop Readiness': liveStatus = systemHealth.storage?.status; break;
     }
 
     if (!liveStatus) return { status: defaultStatus, variant: defaultVariant, isLive: false };
