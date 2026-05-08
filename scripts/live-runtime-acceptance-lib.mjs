@@ -385,10 +385,11 @@ async function runIgmGeneration({ enabled, modelPath }) {
     height: 256,
     steps: 1, // Fast probe
     seed: 42,
-    modelId: path.basename(modelPath),
+    modelId: modelPath,
     outputDir,
     jobId,
-    assetId
+    assetId,
+    device: process.env.AILLAME_IGM_DEVICE || 'cuda'
   };
 
   try {
@@ -406,10 +407,11 @@ async function runIgmGeneration({ enabled, modelPath }) {
       fs.writeFileSync(requestPath, JSON.stringify(request));
       
       const fullArgs = [...workerArgs, '--request', requestPath, '--output', responsePath];
+      const timeoutMs = Number(process.env.AILLAME_IGM_TIMEOUT_MS) || 300000;
       result = spawnSync(workerCommand, fullArgs, {
         cwd: process.cwd(),
         encoding: 'utf8',
-        timeout: 60000,
+        timeout: timeoutMs,
         windowsHide: true,
       });
 
@@ -418,11 +420,12 @@ async function runIgmGeneration({ enabled, modelPath }) {
       }
     } else {
       // Stream mode
+      const timeoutMs = Number(process.env.AILLAME_IGM_TIMEOUT_MS) || 300000;
       result = spawnSync(workerCommand, workerArgs, {
         input: JSON.stringify(request),
         cwd: process.cwd(),
         encoding: 'utf8',
-        timeout: 60000,
+        timeout: timeoutMs,
         windowsHide: true,
       });
 
@@ -459,8 +462,8 @@ async function runIgmGeneration({ enabled, modelPath }) {
     return {
       attempted: true,
       succeeded: false,
-      reason: result?.status !== 0 ? `IGM_WORKER_EXIT_${result?.status}` : 'IGM_WORKER_NO_VALID_OUTPUT',
-      warnings: result?.stderr ? ['Worker wrote to stderr.'] : [],
+      reason: result?.status !== 0 ? `IGM_WORKER_EXIT_${result?.status ?? 'TIMEOUT'}` : 'IGM_WORKER_NO_VALID_OUTPUT',
+      warnings: result?.stderr ? [`Worker stderr: ${result.stderr.slice(0, 500)}`] : [],
     };
   } catch (err) {
     return {

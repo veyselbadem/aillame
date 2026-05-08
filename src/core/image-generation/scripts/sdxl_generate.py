@@ -53,7 +53,23 @@ def main() -> int:
         return 2
 
     try:
-        device = "cuda" if torch.cuda.is_available() else "cpu"
+        # Device selection with payload override and robust CUDA check
+        device = payload.get("device")
+        if not device:
+            device = "cuda" if torch.cuda.is_available() else "cpu"
+        
+        # Binary compatibility check for CUDA (Aggressive)
+        if device == "cuda":
+            try:
+                # Force initialization
+                torch.cuda.init()
+                # Test a simple operation to trigger kernel loading
+                _test = torch.zeros(1).cuda() * 2.0
+                del _test
+            except Exception as e:
+                print(f"CUDA Error (kernel test failed): {e}. Falling back to CPU.", file=sys.stderr)
+                device = "cpu"
+
         dtype = torch.float16 if device == "cuda" else torch.float32
         
         # Determine if model_id is a file or a folder
@@ -71,7 +87,16 @@ def main() -> int:
                 variant="fp16" if device == "cuda" else None,
             )
         
-        pipe = pipe.to(device)
+        try:
+            pipe = pipe.to(device)
+        except Exception as e:
+            if device == "cuda":
+                print(f"Failed to move to CUDA: {e}. Falling back to CPU.", file=sys.stderr)
+                device = "cpu"
+                dtype = torch.float32
+                pipe = pipe.to(dtype).to(device)
+            else:
+                raise e
 
         # Optimization for SDXL Turbo if steps are very low
         if steps <= 4:
