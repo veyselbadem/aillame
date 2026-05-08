@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import { getProjectRoot, resolveProjectRelative } from '../../project-root';
 
 export interface IGMRuntimeDiagnostics {
   enabled: boolean;
@@ -76,7 +77,8 @@ export class IGMRuntimeReadiness {
       missingConfig.push('AILLAME_IGM_OUTPUT_DIR is not writable');
     }
 
-    const workerCommand = process.env.AILLAME_IGM_WORKER_COMMAND;
+    const rawWorkerCommand = process.env.AILLAME_IGM_WORKER_COMMAND;
+    const workerCommand = rawWorkerCommand ? resolveProjectRelative(rawWorkerCommand) : undefined;
     const workerExists = Boolean(workerCommand && fs.existsSync(workerCommand));
     const workerAvailable = enabled && workerExists;
 
@@ -88,9 +90,11 @@ export class IGMRuntimeReadiness {
         if (depCheck.status === 0 && depCheck.stdout.includes('OK')) {
           packagesInstalled = true;
         } else {
+          const projectRoot = getProjectRoot();
           missingWorker.push('IGM Python dependencies missing: torch, diffusers, transformers, accelerate, safetensors, pillow, huggingface_hub.');
           if (depCheck.stderr) {
-             warnings.push(`Dependency check error: ${depCheck.stderr.slice(0, 100)}`);
+             const sanitizedPath = workerCommand ? path.basename(workerCommand) : 'unknown';
+             warnings.push(`Dependency check failed with ${sanitizedPath} in ${path.basename(projectRoot)}. Details: ${depCheck.stderr.slice(0, 100)}`);
           }
         }
       } catch (e) {

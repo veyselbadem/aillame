@@ -1,11 +1,14 @@
-import { spawnSync } from 'child_process';
-import path from 'path';
 import fs from 'fs';
+import path from 'path';
 import type { IGMWorker, IGMWorkerRequest, IGMWorkerResponse, IGMWorkerCapabilities } from './igm-worker-contract';
+import { getProjectRoot, resolveProjectRelative } from '../../../project-root';
 
 export class IGMWorkerProcessBridge implements IGMWorker {
   async generate(request: IGMWorkerRequest): Promise<IGMWorkerResponse> {
-    const command = process.env.AILLAME_IGM_WORKER_COMMAND;
+    const { spawnSync } = require('child_process');
+    const projectRoot = getProjectRoot();
+    const rawCommand = process.env.AILLAME_IGM_WORKER_COMMAND;
+    const command = rawCommand ? resolveProjectRelative(rawCommand) : undefined;
     const argsString = process.env.AILLAME_IGM_WORKER_ARGS || '';
     
     if (!command) {
@@ -25,7 +28,7 @@ export class IGMWorkerProcessBridge implements IGMWorker {
     // 2. Stream Mode: JSON via stdin, JSON result via stdout (used by sdxl_generate.py)
     const protocol = process.env.AILLAME_IGM_PROTOCOL || 'stream'; 
     
-    const tempDir = path.join(process.cwd(), '.aillame-data', 'temp');
+    const tempDir = path.join(projectRoot, '.aillame-data', 'temp');
     if (!fs.existsSync(tempDir)) fs.mkdirSync(tempDir, { recursive: true });
     
     const requestPath = path.join(tempDir, `igm_req_${Date.now()}.json`);
@@ -38,7 +41,7 @@ export class IGMWorkerProcessBridge implements IGMWorker {
         fs.writeFileSync(requestPath, JSON.stringify(request, null, 2));
         const fullArgs = [...args, '--request', requestPath, '--output', responsePath];
         const result = spawnSync(command, fullArgs, {
-          cwd: process.cwd(),
+          cwd: projectRoot,
           encoding: 'utf8',
           timeout: Number(process.env.AILLAME_IGM_TIMEOUT_MS) || 300000,
           windowsHide: true,
@@ -51,7 +54,7 @@ export class IGMWorkerProcessBridge implements IGMWorker {
         // Stream mode (sdxl_generate.py style)
         const result = spawnSync(command, args, {
           input: JSON.stringify(request),
-          cwd: process.cwd(),
+          cwd: projectRoot,
           encoding: 'utf8',
           timeout: Number(process.env.AILLAME_IGM_TIMEOUT_MS) || 300000,
           windowsHide: true,
