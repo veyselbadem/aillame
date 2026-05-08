@@ -38,7 +38,7 @@ const readme = read('README.md');
 const pkg = JSON.parse(read('package.json'));
 
 check('Aillame Lab is positioned as evaluation playground', () => {
-  if (!aiLab.includes('Aillame Lab')) return 'Aillame Lab title missing.';
+  if (!aiLab.includes('Compatibility Lab')) return 'Compatibility Lab title missing.';
   if (!aiLab.includes('güvenli deney ve değerlendirme alanı')) return 'Evaluation role copy missing.';
   if (aiLab.includes('AI Laboratory')) return 'Old AI Laboratory title returned.';
   return true;
@@ -48,7 +48,7 @@ check('Sidebar uses Local AI Hub information architecture', () => {
   for (const label of ['Yönetim', 'Ayarlar', 'Kontrol Merkezi', 'Modeller', 'Görseller', 'Code Agent', 'Hafıza / RAG', 'Provider API']) {
     if (!sidebar.includes(label)) return `Missing sidebar group: ${label}`;
   }
-  if (!sidebar.includes('Aillame Lab')) return 'Aillame Lab nav label missing.';
+  if (!sidebar.includes('Compatibility Lab')) return 'Compatibility Lab nav label missing.';
   return true;
 });
 

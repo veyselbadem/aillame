@@ -82,7 +82,7 @@ check('Chat context surface uses semantic theme classes', () => {
 });
 
 check('Aillame Lab cards are themed and role copy remains intact', () => {
-  if (!aiLab.includes('Aillame Lab')) return 'Aillame Lab title missing.';
+  if (!aiLab.includes('Compatibility Lab')) return 'Compatibility Lab title missing.';
   if (!aiLab.includes('güvenli deney ve değerlendirme alanı')) return 'Aillame Lab role copy missing.';
   if (!aiLab.includes('theme-surface rounded-2xl')) return 'Aillame Lab summary cards are not themed.';
   return true;
