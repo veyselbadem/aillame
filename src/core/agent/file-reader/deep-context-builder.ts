@@ -36,6 +36,11 @@ export class DeepContextBuilder {
         original: plan.task.original,
         sanitized: plan.task.sanitized,
         category: plan.task.intent.category,
+        intent: {
+          category: plan.task.intent.category,
+          confidence: plan.task.intent.confidence,
+          riskLevel: plan.task.intent.riskLevel
+        }
       },
       selectedFiles,
       skippedFiles,

@@ -46,6 +46,7 @@ export class PatchProposalBuilder {
       willRunCommands: false,
       requiresHumanApproval: true,
       task: context.task,
+      workspace: context.workspace,
       targets,
       changes,
       testSuggestions: this.generateTestSuggestions(context.workspace.projectType),

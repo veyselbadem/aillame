@@ -36,6 +36,17 @@ export type PatchProposal = {
     original: string;
     sanitized: string;
     category: string;
+    intent: {
+      category: string;
+      confidence: number;
+      riskLevel: "low" | "medium" | "high";
+    };
+  };
+  workspace: {
+    safeRootName: string;
+    projectType: string;
+    detectedFrameworks: string[];
+    detectedLanguages: string[];
   };
   targets: PatchTarget[];
   changes: PatchChange[];

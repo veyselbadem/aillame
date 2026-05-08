@@ -46,7 +46,8 @@ const ADMIN_NAV_MAIN = [
   { href: '/admin/dashboard',       label: 'Kontrol Merkezi',   icon: FiShield },
   { href: '/admin/model-library',   label: 'Modeller',          icon: FiPackage },
   { href: '/admin/image-assets',    label: 'Görseller',         icon: FiImage },
-  { href: '/admin/agent-tasks',     label: 'Code Agent',        icon: FiClipboard },
+  { href: '/admin/agent-tasks',     label: 'Dış Görevler',       icon: FiClipboard },
+  { href: '/admin/agent',           label: 'Kod Asistanı',       icon: FiCpu },
   { href: '/admin/documents',       label: 'Hafıza / RAG',      icon: FiBook },
   { href: '/admin/api-clients',     label: 'Provider API',      icon: FiKey },
 ];

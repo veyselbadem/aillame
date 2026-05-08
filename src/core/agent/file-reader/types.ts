@@ -39,6 +39,11 @@ export type DeepContextPackage = {
     original: string;
     sanitized: string;
     category: string;
+    intent: {
+      category: string;
+      confidence: number;
+      riskLevel: "low" | "medium" | "high";
+    };
   };
   selectedFiles: AgentFileSummary[];
   skippedFiles: Array<{
