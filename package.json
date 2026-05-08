@@ -36,6 +36,7 @@
     "smoke:workspace-scanner": "npx tsx scripts/smoke-workspace-scanner.ts",
     "smoke:agent-planner": "npx tsx scripts/smoke-agent-planner.ts",
     "smoke:agent-file-reader": "npx tsx scripts/smoke-agent-file-reader.ts",
+    "smoke:agent-patch-proposal": "npx tsx scripts/smoke-agent-patch-proposal.ts",
     "smoke:live-runtime-acceptance": "node scripts/smoke-live-runtime-acceptance.mjs",
                     "smoke:desktop-readiness": "node scripts/smoke-desktop-readiness.mjs",
                     "smoke:beta-rc": "node scripts/smoke-beta-rc.mjs",
