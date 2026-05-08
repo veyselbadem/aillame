@@ -5,27 +5,46 @@ let cachedRoot: string | undefined = undefined;
 
 /**
  * Reliably finds the project root directory by searching for package.json
- * starting from the current directory and climbing up.
- * Falls back to process.cwd() if not found.
+ * and validating it's not inside a build folder like .next or dist.
  */
 export function getProjectRoot(): string {
   if (cachedRoot) return cachedRoot;
 
-  // In Next.js/Webpack, __dirname might be mangled or point to a build folder.
-  // We try to find package.json starting from the current module's location.
+  // Search starting from __dirname
   let currentDir = __dirname;
-  
-  // Basic climb-up search for package.json
-  while (currentDir !== path.parse(currentDir).root) {
-    if (fs.existsSync(path.join(currentDir, 'package.json'))) {
-      cachedRoot = currentDir;
-      return cachedRoot;
+  const rootDir = path.parse(currentDir).root;
+
+  while (currentDir !== rootDir) {
+    const pkgPath = path.join(currentDir, 'package.json');
+    
+    // Check if package.json exists here
+    if (fs.existsSync(pkgPath)) {
+      const dirName = path.basename(currentDir).toLowerCase();
+      
+      // Safety: Ensure we didn't stop in a build/runtime directory
+      // that might contain a generated package.json
+      const isBuildDir = ['.next', 'dist', 'build', 'node_modules'].includes(dirName);
+      
+      // Validation: Repo root should typically have a src directory or next.config.js
+      const hasRootMarkers = fs.existsSync(path.join(currentDir, 'src')) || 
+                             fs.existsSync(path.join(currentDir, 'next.config.js')) ||
+                             fs.existsSync(path.join(currentDir, 'next.config.mjs'));
+
+      if (!isBuildDir && hasRootMarkers) {
+        cachedRoot = currentDir;
+        return cachedRoot;
+      }
     }
     currentDir = path.dirname(currentDir);
   }
 
-  // Fallback if we can't find package.json (unlikely in this setup)
-  cachedRoot = process.cwd();
+  // Fallback to process.cwd() but with same build dir safety
+  let fallback = process.cwd();
+  if (path.basename(fallback).toLowerCase() === '.next') {
+    fallback = path.dirname(fallback);
+  }
+  
+  cachedRoot = fallback;
   return cachedRoot;
 }
 
