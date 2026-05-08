@@ -25,29 +25,45 @@ def main() -> int:
 
     try:
         import torch
+        import os
         from diffusers import StableDiffusionXLPipeline
     except Exception as exc:
         print(
             json.dumps(
                 {
+                    "success": False,
                     "error": "Python dependencies missing: install torch, diffusers, transformers, accelerate, safetensors, and pillow.",
                     "details": str(exc),
                 }
             ),
-            file=sys.stderr,
+            file=sys.stdout,
         )
         return 2
 
     try:
         device = "cuda" if torch.cuda.is_available() else "cpu"
         dtype = torch.float16 if device == "cuda" else torch.float32
-        pipe = StableDiffusionXLPipeline.from_pretrained(
-            model_id,
-            torch_dtype=dtype,
-            use_safetensors=True,
-            variant="fp16" if device == "cuda" else None,
-        )
+        
+        # Determine if model_id is a file or a folder
+        if os.path.isfile(model_id) or model_id.endswith(".safetensors"):
+            pipe = StableDiffusionXLPipeline.from_single_file(
+                model_id,
+                torch_dtype=dtype,
+                use_safetensors=True,
+            )
+        else:
+            pipe = StableDiffusionXLPipeline.from_pretrained(
+                model_id,
+                torch_dtype=dtype,
+                use_safetensors=True,
+                variant="fp16" if device == "cuda" else None,
+            )
+        
         pipe = pipe.to(device)
+
+        # Optimization for SDXL Turbo if steps are very low
+        if steps <= 4:
+            pipe.upcast_vae() # Helpful for some turbo variants
 
         generator = torch.Generator(device=device).manual_seed(seed)
         image = pipe(
@@ -57,7 +73,9 @@ def main() -> int:
             height=height,
             num_inference_steps=steps,
             generator=generator,
+            guidance_scale=0.0 if steps <= 4 else 7.5, # SDXL Turbo uses 0.0 guidance
         ).images[0]
+
 
         output = io.BytesIO()
         image.save(output, format="PNG")
@@ -69,6 +87,7 @@ def main() -> int:
     print(
         json.dumps(
             {
+                "success": True,
                 "image": f"data:image/png;base64,{encoded}",
                 "mimeType": "image/png",
                 "modelId": model_id,
@@ -76,6 +95,7 @@ def main() -> int:
             }
         )
     )
+
     return 0
 
 

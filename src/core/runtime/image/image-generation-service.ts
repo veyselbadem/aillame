@@ -36,7 +36,7 @@ export class ImageGenerationService {
       mode: 'text-to-image',
       prompt: request.prompt,
       negativePrompt: request.negativePrompt,
-      status: readiness.finalAcceptanceReady ? 'queued' : 'not-configured',
+      status: readiness.configured ? 'queued' : 'not-configured',
       progress: 0,
       modelId: request.modelId || process.env.AILLAME_IGM_ACTIVE_MODEL,
       outputAssetIds: [],
@@ -53,12 +53,13 @@ export class ImageGenerationService {
       metadata: { jobId, projectId: request.projectId }
     });
 
-    if (readiness.finalAcceptanceReady) {
-      // Background execution simulation
+    if (readiness.configured) {
+      // Background execution
       this.runJob(jobId, request);
     }
 
     return { success: true, jobId };
+
   }
 
   private async runJob(jobId: string, request: TextToImageRequest) {

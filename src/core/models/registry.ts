@@ -21,7 +21,9 @@ import type { AillameTier, ModelRuntime, ModelCapability, ManagedModel } from '.
 export const NANO_CHAT_MODEL_ID = 'aillame-nano-v1';
 export const PRO_CHAT_MODEL_ID = 'qwen3-vl-8b-instruct';
 export const PRO_IMAGE_MODEL_ID = 'sdxl-base-1.0';
+export const SDXL_TURBO_MODEL_ID = 'sdxl-turbo-1.0';
 export const INTERNAL_TEXT_GGUF_MODEL_ID = 'internal-text-gemma-gguf';
+
 export const OLLAMA_TEXT_MODEL_ID = 'ollama-text-default';
 export const AILLAME_NANO_MODEL_ID = NANO_CHAT_MODEL_ID;
 
@@ -101,6 +103,30 @@ export const MODEL_REGISTRY: Record<string, ManagedModel> = {
     enabled: false,
     experimental: true,
   },
+  [SDXL_TURBO_MODEL_ID]: {
+
+    id: SDXL_TURBO_MODEL_ID,
+    displayName: 'Stable Diffusion XL Turbo 1.0',
+    label: 'SDXL Turbo 1.0',
+    shortLabel: 'SDXL Turbo',
+    tier: 'pro',
+    purpose: 'image-generation',
+    type: 'image',
+    family: 'sdxl',
+    repoId: 'stabilityai/sdxl-turbo',
+    runtime: 'python-diffusers',
+    sizeLabel: 'SDXL turbo pipeline (1-4 steps)',
+    licenseLabel: 'OpenRAIL++',
+    capabilities: ['image-generation'],
+    description: 'High-speed local text-to-image generation. Optimized for 1-4 inference steps.',
+    installHint: 'Downloaded from Hugging Face. Requires local IGM worker setup.',
+    recommendedRamGb: 16,
+    recommendedVramGb: 8,
+    enabled: true,
+    experimental: false,
+    defaultForModes: ['image'],
+  },
+
   [INTERNAL_TEXT_GGUF_MODEL_ID]: {
     id: INTERNAL_TEXT_GGUF_MODEL_ID,
     displayName: 'Internal Text Runtime - Gemma GGUF',

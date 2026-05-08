@@ -395,6 +395,9 @@ async function runIgmGeneration({ enabled, modelPath }) {
     let result;
     let response;
 
+    const workerArgsString = process.env.AILLAME_IGM_WORKER_ARGS || '';
+    const workerArgs = workerArgsString.split(' ').filter(Boolean);
+
     if (protocol === 'foundation') {
       const tempDir = path.join(process.cwd(), '.aillame-data', 'temp');
       if (!fs.existsSync(tempDir)) fs.mkdirSync(tempDir, { recursive: true });
@@ -402,7 +405,8 @@ async function runIgmGeneration({ enabled, modelPath }) {
       const responsePath = path.join(tempDir, `${jobId}_res.json`);
       fs.writeFileSync(requestPath, JSON.stringify(request));
       
-      result = spawnSync(workerCommand, ['--request', requestPath, '--output', responsePath], {
+      const fullArgs = [...workerArgs, '--request', requestPath, '--output', responsePath];
+      result = spawnSync(workerCommand, fullArgs, {
         cwd: process.cwd(),
         encoding: 'utf8',
         timeout: 60000,
@@ -414,13 +418,14 @@ async function runIgmGeneration({ enabled, modelPath }) {
       }
     } else {
       // Stream mode
-      result = spawnSync(workerCommand, [], {
+      result = spawnSync(workerCommand, workerArgs, {
         input: JSON.stringify(request),
         cwd: process.cwd(),
         encoding: 'utf8',
         timeout: 60000,
         windowsHide: true,
       });
+
 
       if (result.status === 0) {
         const jsonMatch = result.stdout.match(/\{[\s\S]*\}/);

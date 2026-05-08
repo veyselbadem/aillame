@@ -80,7 +80,6 @@ export class IGMRuntimeReadiness {
     } else if (enabled && !workerExists) {
       missingWorker.push(`IGM worker binary not found: ${workerCommand}`);
     }
-
     const configured = enabled
       && Boolean(modelDir)
       && Boolean(activeModel)
@@ -89,19 +88,54 @@ export class IGMRuntimeReadiness {
       && outputDirWritable
       && workerExists;
 
-    const attempted = false;
-    const succeeded = false;
+    let attempted = false;
+
+    let succeeded = false;
+
+    // Check actual job history for acceptance
+    const dataDir = process.env.AILLAME_DATA_DIR || '.aillame-data';
+    const jobsFile = path.join(dataDir, 'image-jobs.jsonl');
+    
+    if (fs.existsSync(jobsFile)) {
+      try {
+        const content = fs.readFileSync(jobsFile, 'utf8');
+        const lines = content.split('\n').filter(l => l.trim());
+        if (lines.length > 0) {
+          attempted = true;
+          succeeded = lines.some(line => {
+            try {
+              const job = JSON.parse(line);
+              return job.status === 'completed' && !job.isPlaceholder && !job.isMock;
+            } catch {
+              return false;
+            }
+          });
+        }
+      } catch (e) {
+        warnings.push(`Error reading job history: ${e.message}`);
+      }
+    }
+
     const finalAcceptanceReady = configured && attempted && succeeded;
 
     if (!enabled) nextActions.push('Set AILLAME_IGM_RUNTIME_ENABLED=true after a local IGM worker is available.');
     if (!modelDir) nextActions.push('Set AILLAME_IGM_MODEL_DIR to a local diffusion model directory.');
     if (!activeModel) nextActions.push('Set AILLAME_IGM_ACTIVE_MODEL to the local model filename.');
-    if (!workerAvailable) nextActions.push('Configure an Aillame-controlled IGM worker; placeholders do not count for final acceptance.');
+    if (!workerAvailable) nextActions.push('Set AILLAME_IGM_WORKER_COMMAND to a local IGM worker binary or script.');
     if (!outputDirWritable) nextActions.push('Set AILLAME_IGM_OUTPUT_DIR to a writable local output directory.');
+    
+    if (configured && !succeeded) {
+      nextActions.push('Run a real image generation job to pass final acceptance.');
+    }
 
     const reason = finalAcceptanceReady
       ? 'REAL_IGM_GENERATION_SUCCEEDED'
-      : missingConfig[0] ?? missingFiles[0] ?? missingWorker[0] ?? 'REAL_IGM_GENERATION_NOT_ATTEMPTED';
+      : (configured && !attempted) 
+        ? 'Awaiting first real generation attempt.'
+        : (configured && !succeeded)
+          ? 'Generation attempts failed or only placeholders produced.'
+          : missingConfig[0] ?? missingFiles[0] ?? missingWorker[0] ?? 'REAL_IGM_GENERATION_NOT_ATTEMPTED';
+
 
     return {
       enabled,
