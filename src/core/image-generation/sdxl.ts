@@ -39,7 +39,8 @@ export async function generateImageWithSdxl(request: ImageGenerationRequest): Pr
         modelId: model.repoId,
         ...normalized,
       },
-      20 * 60 * 1000
+      20 * 60 * 1000,
+      process.env.AILLAME_IGM_WORKER_COMMAND
     );
 
     return parsePythonJson<ImageGenerationResult>(result);

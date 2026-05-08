@@ -1,5 +1,6 @@
 import { spawn } from 'child_process';
 import * as path from 'path';
+import { getProjectRoot, resolveProjectRelative } from '../project-root';
 
 export type PythonRunResult = {
   stdout: string;
@@ -7,22 +8,26 @@ export type PythonRunResult = {
 };
 
 export function getPythonCommand(): string {
-  return process.env.AILLAME_PYTHON || 'python';
+  const cmd = process.env.AILLAME_PYTHON || 'python';
+  return resolveProjectRelative(cmd);
 }
 
 export function getScriptPath(...segments: string[]): string {
-  return path.join(process.cwd(), 'src', 'core', ...segments);
+  return path.join(getProjectRoot(), 'src', 'core', ...segments);
 }
 
 export function runPythonScript(
   scriptPath: string,
   args: string[] = [],
   input?: unknown,
-  timeoutMs = 120000
+  timeoutMs = 120000,
+  pythonCommand?: string
 ): Promise<PythonRunResult> {
+  const projectRoot = getProjectRoot();
+  const command = pythonCommand ? resolveProjectRelative(pythonCommand) : getPythonCommand();
   return new Promise((resolve, reject) => {
-    const child = spawn(getPythonCommand(), [scriptPath, ...args], {
-      cwd: process.cwd(),
+    const child = spawn(command, [scriptPath, ...args], {
+      cwd: projectRoot,
       stdio: ['pipe', 'pipe', 'pipe'],
       env: {
         ...process.env,
