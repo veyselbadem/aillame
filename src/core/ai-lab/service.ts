@@ -855,8 +855,15 @@ Konuyu teknik ve analitik açıdan değerlendir. 2-4 net maddeyle cevap ver.`;
           });
           imageUrl = `data:${result.mimeType};base64,${result.image}`;
           content = `SDXL Görsel Üretimi Tamamlandı.\nPrompt: ${imagePrompt}`;
-        } catch (err) {
-          content = `SDXL Execution Hatası: Model veya çalışma zamanı hazır değil. Fallback planına geçiliyor.`;
+          generationMetadata = {
+            status: 'completed',
+            device: result.device,
+            deviceDetails: result.deviceDetails,
+            deviceReason: result.deviceReason,
+            performanceWarning: result.deviceDetails?.toLowerCase().includes('fallback')
+          };
+        } catch (err: any) {
+          content = `SDXL Execution Hatası: ${err.message || 'Model veya çalışma zamanı hazır değil.'} Fallback planına geçiliyor.`;
           outputType = 'planning';
         }
       } else {

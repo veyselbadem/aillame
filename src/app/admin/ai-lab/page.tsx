@@ -32,6 +32,7 @@ export default function AiLabPage() {
   const [gemmaStatus, setGemmaStatus] = useState<any>(null);
   const [ollamaStatus, setOllamaStatus] = useState<any>(null);
   const [runInFlightSessionId, setRunInFlightSessionId] = useState<string | null>(null);
+  const [readiness, setReadiness] = useState<any>(null);
 
   useEffect(() => {
     const savedToken = localStorage.getItem('aillame_admin_token');
@@ -42,6 +43,7 @@ export default function AiLabPage() {
       fetchSdxlStatus(savedToken);
       fetchGemmaStatus(savedToken);
       fetchOllamaStatus(savedToken);
+      fetchReadiness(savedToken);
     } else {
       setLoading(false);
     }
@@ -90,6 +92,18 @@ export default function AiLabPage() {
       });
       const data = await res.json();
       setSdxlStatus(data);
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const fetchReadiness = async (authToken: string) => {
+    try {
+      const res = await fetch('/api/admin/ai-lab/readiness', {
+        headers: { 'x-aillame-admin-token': authToken }
+      });
+      const data = await res.json();
+      if (data.success) setReadiness(data.report);
     } catch (e) {
       console.error(e);
     }
@@ -271,7 +285,7 @@ export default function AiLabPage() {
       <main className="flex-1 overflow-y-auto p-4 md:p-8 custom-scrollbar">
         <header className="mb-8 flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-black tracking-tight text-gradient">Aillame Lab</h1>
+            <h1 className="text-3xl font-black tracking-tight text-gradient">Aillame Lab Plus</h1>
             <p className="text-[var(--text-muted)] mt-1 font-medium">
               Model, prompt, Nano, RAG ve provider çıktıları için güvenli deney ve değerlendirme alanı.
             </p>
@@ -282,17 +296,23 @@ export default function AiLabPage() {
         </header>
 
         <section className="mb-6 grid gap-3 md:grid-cols-3">
-          <div className="theme-surface rounded-2xl p-4">
-            <p className="text-[9px] font-black uppercase tracking-[0.2em] theme-muted">Genel Bakış</p>
-            <p className="mt-2 text-sm font-semibold theme-secondary">Aillame Lab ana ürün merkezi değil; kontrollü deney ve evaluation yüzeyidir.</p>
+          <div className="theme-surface rounded-2xl p-4 border border-transparent hover:border-slate-200 dark:hover:border-slate-800 transition-all">
+            <p className="text-[9px] font-black uppercase tracking-[0.2em] theme-muted">Yerel Hazırlık</p>
+            <div className="mt-2 flex items-center gap-2">
+              <div className={`w-1.5 h-1.5 rounded-full ${readiness?.overallFinalAcceptanceReady ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'}`} />
+              <p className="text-sm font-black theme-title">
+                {readiness?.overallFinalAcceptanceReady ? 'Sistem Hazır' : 'Sistem Doğrulanıyor'}
+              </p>
+            </div>
+            <p className="mt-1 text-[10px] theme-muted font-medium italic">Yerel LLM ve IGM çalışma zamanları aktif.</p>
           </div>
-          <div className="theme-surface rounded-2xl p-4">
-            <p className="text-[9px] font-black uppercase tracking-[0.2em] theme-muted">Oyun Alanı</p>
-            <p className="mt-2 text-sm font-semibold theme-secondary">Prompt, structured JSON, provider output ve RAG context testleri burada denenir.</p>
+          <div className="theme-surface rounded-2xl p-4 border border-transparent hover:border-slate-200 dark:hover:border-slate-800 transition-all">
+            <p className="text-[9px] font-black uppercase tracking-[0.2em] theme-muted">Üretim Modu</p>
+            <p className="mt-2 text-sm font-semibold theme-secondary">Gerçek yerel model çıktıları kullanılır; placeholder veya bulut servisi devre dışıdır.</p>
           </div>
-          <div className="theme-surface rounded-2xl p-4">
+          <div className="theme-surface rounded-2xl p-4 border border-transparent hover:border-slate-200 dark:hover:border-slate-800 transition-all">
             <p className="text-[9px] font-black uppercase tracking-[0.2em] theme-muted">Tanılama</p>
-            <p className="mt-2 text-sm font-semibold theme-secondary">LLM / IGM runtime durumları yalnızca diagnostic preview olarak gösterilir.</p>
+            <p className="mt-2 text-sm font-semibold theme-secondary">CPU fallback ve donanım kısıtları çalışma zamanında anlık olarak raporlanır.</p>
           </div>
         </section>
 
@@ -305,6 +325,12 @@ export default function AiLabPage() {
               </div>
               Yeni Deney Başlat
             </h2>
+            {readiness && !readiness.overallFinalAcceptanceReady && (
+              <div className="mb-4 p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-[10px] text-amber-600 dark:text-amber-400 font-bold flex items-center gap-2">
+                <FiStopCircle className="shrink-0 animate-pulse" />
+                <span>Yerel çalışma zamanları henüz tam doğrulanmadı. Deneyler kısıtlı olabilir.</span>
+              </div>
+            )}
             <div className="space-y-5">
               <div>
                 <div className="flex justify-between items-center mb-2">
@@ -585,6 +611,24 @@ export default function AiLabPage() {
                               <div className="text-sm leading-relaxed whitespace-pre-wrap font-medium">
                                 {m.content}
                               </div>
+
+                              {m.generationMetadata?.deviceDetails && (
+                                <div className={`mt-3 pt-3 border-t flex flex-col gap-1 ${
+                                  m.model === 'sdxl' ? 'border-amber-500/20' : 'border-indigo-500/20'
+                                }`}>
+                                  <div className="flex items-center justify-between">
+                                    <span className="text-[9px] font-black uppercase opacity-40">Donanım</span>
+                                    <span className={`text-[9px] font-black uppercase ${m.generationMetadata?.performanceWarning ? 'text-amber-500' : 'text-emerald-500'}`}>
+                                      {m.generationMetadata?.deviceDetails}
+                                    </span>
+                                  </div>
+                                  {m.generationMetadata?.performanceWarning && (
+                                    <p className="text-[8px] text-amber-500 font-bold uppercase tracking-widest italic text-right">
+                                      ⚠️ Üretim performansı düşük olabilir (CPU fallback)
+                                    </p>
+                                  )}
+                                </div>
+                              )}
 
                               {/* Safety Flags */}
                               {m.safetyFlags && m.safetyFlags.length > 0 && (

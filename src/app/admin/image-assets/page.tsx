@@ -10,6 +10,7 @@ export default function ImageAssetManagerPage() {
   const [jobs, setJobs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [authorized, setAuthorized] = useState(false);
+  const [readiness, setReadiness] = useState<any>(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -17,7 +18,18 @@ export default function ImageAssetManagerPage() {
     if (!token) return;
     setAuthorized(true);
     loadJobs();
+    loadReadiness();
   }, []);
+
+  const loadReadiness = async () => {
+    try {
+      const res = await adminFetch('/api/admin/ai-lab/readiness');
+      const data = await res.json();
+      if (data.success) setReadiness(data.report);
+    } catch {
+      // Diagnostic only
+    }
+  };
 
   const loadJobs = async () => {
     setLoading(true);
@@ -33,6 +45,10 @@ export default function ImageAssetManagerPage() {
   };
 
   if (!authorized) return null;
+
+  const igmStatus = readiness?.image?.finalAcceptanceReady ? 'HAZIR' : 'DOĞRULANIYOR';
+  const igmDevice = readiness?.image?.deviceDetails || 'CUDA/GPU';
+  const isFallback = igmDevice.toLowerCase().includes('fallback');
 
   return (
     <div className="min-h-screen theme-shell theme-admin-page">
@@ -51,7 +67,7 @@ export default function ImageAssetManagerPage() {
             </p>
           </div>
           <button
-            onClick={loadJobs}
+            onClick={() => { loadJobs(); loadReadiness(); }}
             className="flex items-center justify-center gap-2 px-6 py-3 rounded-2xl theme-surface hover:border-indigo-500/50 transition-all active:scale-95 text-[10px] font-black uppercase tracking-widest"
           >
             <RiPulseLine className={loading ? 'animate-spin' : ''} />
@@ -64,10 +80,14 @@ export default function ImageAssetManagerPage() {
           <StatCardSmall label="Tamamlanan" value={jobs.filter((j) => j.status === 'completed').length.toString()} icon={<RiCheckboxCircleLine className="text-emerald-500" />} />
           <StatCardSmall 
             label="IGM Runtime" 
-            value={process.env.NEXT_PUBLIC_AILLAME_IGM_RUNTIME_ENABLED === 'true' ? 'AKTİF' : 'DEVRE DIŞI'} 
-            icon={<RiPulseLine className={process.env.NEXT_PUBLIC_AILLAME_IGM_RUNTIME_ENABLED === 'true' ? 'text-emerald-500' : 'text-slate-400'} />}
+            value={igmStatus} 
+            icon={<RiPulseLine className={readiness?.image?.finalAcceptanceReady ? 'text-emerald-500' : 'text-amber-500'} />}
           />
-          <StatCardSmall label="Hedef Cihaz" value="CUDA/GPU" icon={<RiPulseLine />} />
+          <StatCardSmall 
+            label="Hedef Cihaz" 
+            value={igmDevice} 
+            icon={<RiPulseLine className={isFallback ? 'text-amber-500' : 'text-emerald-500'} />} 
+          />
         </section>
 
         <div className="theme-surface rounded-[28px] overflow-hidden border-transparent shadow-2xl">
@@ -84,9 +104,9 @@ export default function ImageAssetManagerPage() {
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="bg-slate-500/5 theme-muted text-[9px] uppercase tracking-[0.2em] font-black">
-                  <th className="py-5 px-8">Varlık Kimliği</th>
+                  <th className="py-5 px-8">Varlık</th>
                   <th className="py-5 px-4">Prompt Bağlamı</th>
-                  <th className="py-5 px-4">Motor / Model</th>
+                  <th className="py-5 px-4">Cihaz / Motor</th>
                   <th className="py-5 px-4 text-center">Durum</th>
                   <th className="py-5 px-8 text-right">Zaman Damgası</th>
                 </tr>
@@ -95,16 +115,36 @@ export default function ImageAssetManagerPage() {
                 {jobs.map((job) => (
                   <tr key={job.jobId} className="hover:bg-indigo-500/5 transition-colors group">
                     <td className="py-6 px-8">
-                      <p className="text-xs font-black theme-title tracking-tight">{job.jobId}</p>
-                      <p className="text-[9px] theme-muted font-bold uppercase mt-1 tracking-wider">{job.projectId}</p>
+                      <div className="flex items-center gap-4">
+                        {job.imagePath && (
+                          <div className="w-12 h-12 rounded-lg overflow-hidden border theme-divider shrink-0 bg-black/5">
+                            <img 
+                              src={`/api/image-generation/view?path=${encodeURIComponent(job.imagePath)}`} 
+                              alt="Varlık" 
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                        )}
+                        <div className="min-w-0">
+                          <p className="text-xs font-black theme-title tracking-tight truncate w-32">{job.jobId}</p>
+                          <p className="text-[9px] theme-muted font-bold uppercase mt-0.5 tracking-wider">{job.projectId}</p>
+                        </div>
+                      </div>
                     </td>
                     <td className="py-6 px-4">
                       <p className="text-xs theme-secondary max-w-xs truncate font-medium" title={job.prompt}>{job.prompt}</p>
                     </td>
                     <td className="py-6 px-4">
-                      <span className="px-2 py-1 rounded bg-indigo-500/10 text-indigo-500 text-[9px] font-black uppercase tracking-wider">
-                        {job.modelId || 'sdxl-turbo'}
-                      </span>
+                      <div className="flex flex-col gap-1">
+                        <span className="px-2 py-1 rounded bg-indigo-500/10 text-indigo-500 text-[9px] font-black uppercase tracking-wider w-fit">
+                          {job.modelId || 'sdxl-turbo'}
+                        </span>
+                        {job.device && (
+                          <span className={`text-[8px] font-bold uppercase ${job.device.toLowerCase() === 'cpu' ? 'text-amber-500' : 'text-emerald-500'}`}>
+                            Cihaz: {job.device}
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td className="py-6 px-4">
                       <div className="flex items-center justify-center">

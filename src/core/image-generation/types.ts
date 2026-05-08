@@ -15,6 +15,9 @@ export type ImageGenerationResult = {
   mimeType: 'image/png';
   modelId: string;
   seed?: number;
+  device?: string;
+  deviceDetails?: string;
+  deviceReason?: string;
 };
 
 export const IMAGE_SIZE_PRESETS: Record<ImageSizePreset, { width: number; height: number; label: string }> = {
