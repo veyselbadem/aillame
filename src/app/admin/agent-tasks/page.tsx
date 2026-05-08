@@ -263,13 +263,13 @@ export default function AdminAgentTasksPage() {
 
   const renderContextPreview = (context?: Record<string, unknown>) => {
     const entries = getSafeContextEntries(context);
-    if (entries.length === 0) return <span className="text-sm theme-muted">Gizli, hassas veya görüntülenemiyor.</span>;
+    if (entries.length === 0) return <span className="text-sm text-gray-400">Gizli, hassas veya görüntülenemiyor.</span>;
     return (
       <div className="space-y-1">
         {entries.map(([key, value]) => (
-          <div key={key} className="flex justify-between gap-4 text-sm theme-secondary">
-            <span className="theme-muted">{key}:</span>
-            <span className="font-mono theme-title truncate">{formatValue(value)}</span>
+          <div key={key} className="flex justify-between gap-4 text-sm text-gray-200">
+            <span className="text-gray-400">{key}:</span>
+            <span className="font-mono text-gray-100 truncate">{formatValue(value)}</span>
           </div>
         ))}
       </div>
@@ -284,12 +284,12 @@ export default function AdminAgentTasksPage() {
         <div>
           <div className="flex items-center gap-2.5 mb-2">
             <div className="w-6 h-6 rounded-lg bg-indigo-500/20 flex items-center justify-center">
-              <FiClipboard size={12} className="text-indigo-600 dark:text-indigo-400" />
+              <FiClipboard size={12} className="text-indigo-400" />
             </div>
-            <p className="text-[10px] font-black uppercase tracking-[0.4em] theme-muted">Plan-only · Approval-gated</p>
+            <p className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-500">Plan-only · Approval-gated</p>
           </div>
-          <h1 className="text-4xl font-black tracking-tight theme-title">Code Agent Çalışma Alanı</h1>
-          <p className="text-sm theme-muted mt-2 max-w-3xl font-medium">
+          <h1 className="text-4xl font-black tracking-tight text-white">Code Agent Çalışma Alanı</h1>
+          <p className="text-sm text-slate-400 mt-2 max-w-3xl font-medium">
             Code Agent şu an plan-only ve güvenlik kontrollü çalışır; dosya yazma veya komut çalıştırma kullanıcı onayı olmadan yapılmaz.
           </p>
         </div>
@@ -305,12 +305,12 @@ export default function AdminAgentTasksPage() {
 
       <section className="grid gap-3 mb-8 md:grid-cols-3 xl:grid-cols-6">
         {CODE_AGENT_FLOW.map((item) => (
-          <div key={item.label} className="rounded-2xl border theme-divider bg-white/5 dark:bg-white/[0.04] p-4">
-            <div className="mb-3 flex h-8 w-8 items-center justify-center rounded-xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-300">
+          <div key={item.label} className="rounded-2xl border border-white/10 bg-white/[0.04] p-4">
+            <div className="mb-3 flex h-8 w-8 items-center justify-center rounded-xl bg-indigo-500/10 text-indigo-300">
               {item.label === 'Safety' ? <FiShield /> : item.label === 'Verify' ? <FiCheckSquare /> : <FiFileText />}
             </div>
-            <p className="text-sm font-black theme-title">{item.label}</p>
-            <p className="mt-1 text-[11px] theme-muted leading-relaxed">{item.desc}</p>
+            <p className="text-sm font-black text-white">{item.label}</p>
+            <p className="mt-1 text-[11px] text-gray-400 leading-relaxed">{item.desc}</p>
           </div>
         ))}
       </section>
@@ -327,9 +327,9 @@ export default function AdminAgentTasksPage() {
       {actionError ? <Alert tone="rose">{actionError}</Alert> : null}
 
       {loading ? (
-        <div className="rounded-3xl border border-white/10 bg-white/5 p-8 text-center text-sm theme-muted">Yükleniyor...</div>
+        <div className="rounded-3xl border border-white/10 bg-white/5 p-8 text-center text-sm text-gray-400">Yükleniyor...</div>
       ) : filteredTasks.length === 0 ? (
-        <div className="rounded-3xl border border-white/10 bg-white/5 p-8 text-center text-sm theme-muted">Henüz Code Agent görevi yok.</div>
+        <div className="rounded-3xl border border-white/10 bg-white/5 p-8 text-center text-sm text-gray-400">Henüz Code Agent görevi yok.</div>
       ) : (
         <div className="space-y-6">
           {filteredTasks.map((task) => (
@@ -337,18 +337,18 @@ export default function AdminAgentTasksPage() {
               <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                 <div className="min-w-0 flex-1 space-y-4">
                   <div className="flex flex-wrap gap-2 items-center">
-                    <span className="rounded-full bg-indigo-500/15 px-3 py-1 text-xs font-black uppercase tracking-[0.3em] theme-title">{task.projectId}</span>
-                    <span className="rounded-full bg-slate-500/15 px-3 py-1 text-xs font-black uppercase tracking-[0.3em] theme-secondary">{task.mode}</span>
-                    <span className="rounded-full bg-slate-500/15 px-3 py-1 text-xs font-black uppercase tracking-[0.3em] theme-secondary">{task.taskType}</span>
+                    <span className="rounded-full bg-indigo-500/15 px-3 py-1 text-xs font-black uppercase tracking-[0.3em] text-indigo-200">{task.projectId}</span>
+                    <span className="rounded-full bg-slate-500/15 px-3 py-1 text-xs font-black uppercase tracking-[0.3em] text-slate-200">{task.mode}</span>
+                    <span className="rounded-full bg-slate-500/15 px-3 py-1 text-xs font-black uppercase tracking-[0.3em] text-slate-200">{task.taskType}</span>
                     <StatusBadge variant={taskStatusVariant(task.status)} label={taskStatusLabel(task.status)} pulse={task.status === 'running'} />
                     <StatusBadge variant={priorityVariant(task.priority)} label={`risk: ${task.priority}`} />
                     <StatusBadge variant="protected" label="approvalRequired" />
                     <StatusBadge variant="review" label="safety checked" />
                   </div>
-                  <h2 className="text-xl font-black theme-title truncate">{task.title}</h2>
-                  <p className="text-sm theme-secondary">{task.description ?? 'Açıklama yok.'}</p>
+                  <h2 className="text-xl font-black text-slate-900 dark:text-white truncate">{task.title}</h2>
+                  <p className="text-sm text-gray-300">{task.description ?? 'Açıklama yok.'}</p>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm theme-muted">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm text-gray-400">
                     <div className="space-y-2">
                       <TaskField label="Durum" value={taskStatusLabel(task.status)} />
                       <TaskField label="Patch Proposal" value="preview only" />
@@ -363,8 +363,8 @@ export default function AdminAgentTasksPage() {
                     </div>
                   </div>
 
-                  <div className="rounded-2xl border theme-divider bg-black/5 dark:bg-slate-950/20 p-4 text-sm theme-secondary">
-                    <div className="mb-2 text-xs uppercase tracking-[0.3em] theme-muted">Güvenli Context Önizleme</div>
+                  <div className="rounded-2xl border border-white/10 bg-slate-950/20 p-4 text-sm text-gray-300">
+                    <div className="mb-2 text-xs uppercase tracking-[0.3em] text-gray-500">Güvenli Context Önizleme</div>
                     {renderContextPreview(task.context)}
                   </div>
                 </div>
@@ -394,12 +394,12 @@ export default function AdminAgentTasksPage() {
           <div className="rounded-3xl border border-white/10 bg-white/5 p-6">
             <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
               <div>
-                <p className="text-sm theme-muted uppercase tracking-[0.3em]">Task Detayları</p>
-                <h2 className="text-2xl font-black theme-title">{selectedTask.title}</h2>
+                <p className="text-sm text-gray-400 uppercase tracking-[0.3em]">Task Detayları</p>
+                <h2 className="text-2xl font-black text-slate-900 dark:text-white">{selectedTask.title}</h2>
               </div>
               <div className="text-right space-y-1">
-                <p className="text-sm theme-muted">Durum</p>
-                <p className="text-lg font-black theme-title">{taskStatusLabel(selectedTask.status)}</p>
+                <p className="text-sm text-gray-400">Durum</p>
+                <p className="text-lg font-black text-white">{taskStatusLabel(selectedTask.status)}</p>
               </div>
             </div>
 
@@ -414,8 +414,8 @@ export default function AdminAgentTasksPage() {
               <DetailField label="Safety Flags" value={reduceSafetyFlags(selectedTask.safetyFlags)} />
             </div>
 
-            <div className="mt-6 rounded-2xl border border-white/10 bg-black/5 dark:bg-slate-950/20 p-4 text-sm theme-secondary">
-              <p className="text-xs uppercase tracking-[0.3em] theme-muted mb-3">Güvenli Context Önizleme</p>
+            <div className="mt-6 rounded-2xl border border-white/10 bg-slate-950/20 p-4 text-sm text-gray-300">
+              <p className="text-xs uppercase tracking-[0.3em] text-gray-500 mb-3">Güvenli Context Önizleme</p>
               {renderContextPreview(selectedTask.context)}
             </div>
           </div>
@@ -425,8 +425,8 @@ export default function AdminAgentTasksPage() {
               <div className="rounded-3xl border border-white/10 bg-white/5 p-6">
                 <div className="flex items-center justify-between mb-6">
                   <div>
-                    <p className="text-sm theme-muted uppercase tracking-[0.3em]">Patch Proposal Preview (Foundation)</p>
-                    <h3 className="text-xl font-black theme-title">Proposed Changes</h3>
+                    <p className="text-sm text-gray-400 uppercase tracking-[0.3em]">Patch Proposal Preview (Foundation)</p>
+                    <h3 className="text-xl font-black text-slate-900 dark:text-white">Proposed Changes</h3>
                   </div>
                   <StatusBadge variant="review" label="Awaiting Approval" />
                 </div>
@@ -448,7 +448,7 @@ export default function AdminAgentTasksPage() {
                           <span className="text-rose-400">-{file.deletions}</span>
                         </div>
                       </div>
-                      <div className="rounded-xl bg-slate-950/40 p-3 font-mono text-[11px] theme-muted overflow-x-auto whitespace-pre">
+                      <div className="rounded-xl bg-slate-950/40 p-3 font-mono text-[11px] text-gray-500 overflow-x-auto whitespace-pre">
                         {`--- ${file.path}\n+++ ${file.path}\n@@ -1,4 +1,12 @@\n+ // Updated by Aillame Code Agent\n+ export const foundation = true;\n- // old content`}
                       </div>
                     </div>
@@ -459,24 +459,24 @@ export default function AdminAgentTasksPage() {
               <div className="rounded-3xl border border-white/10 bg-white/5 p-6">
                 <div className="flex items-center justify-between mb-6">
                   <div>
-                    <p className="text-sm theme-muted uppercase tracking-[0.3em]">Plan Adımları</p>
-                    <h3 className="text-xl font-black theme-title">{steps.length} adım</h3>
+                    <p className="text-sm text-gray-400 uppercase tracking-[0.3em]">Plan Adımları</p>
+                    <h3 className="text-xl font-black text-slate-900 dark:text-white">{steps.length} adım</h3>
                   </div>
                 </div>
                 {detailLoading ? (
-                  <div className="rounded-2xl border border-white/10 bg-black/10 p-6 text-sm theme-muted">Detay yükleniyor...</div>
+                  <div className="rounded-2xl border border-white/10 bg-black/10 p-6 text-sm text-gray-400">Detay yükleniyor...</div>
                 ) : steps.length === 0 ? (
-                  <div className="rounded-2xl border border-white/10 bg-black/10 p-6 text-sm theme-muted">Adım kaydı yok.</div>
+                  <div className="rounded-2xl border border-white/10 bg-black/10 p-6 text-sm text-gray-400">Adım kaydı yok.</div>
                 ) : (
                   <div className="space-y-4">
                     {steps.map((step) => (
                       <div key={step.id} className="rounded-3xl border border-white/10 bg-slate-950/20 p-4">
                         <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
                           <div>
-                            <p className="text-sm theme-muted">{step.type}</p>
-                            <h4 className="text-lg font-bold theme-title">{step.title}</h4>
+                            <p className="text-sm text-gray-400">{step.type}</p>
+                            <h4 className="text-lg font-bold text-white">{step.title}</h4>
                           </div>
-                          <span className="rounded-full bg-white/10 dark:bg-white/5 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] theme-title">{STEP_STATUS_LABELS[step.status]}</span>
+                          <span className="rounded-full bg-white/5 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-white">{STEP_STATUS_LABELS[step.status]}</span>
                         </div>
                         <div className="grid gap-2 md:grid-cols-2 text-sm text-gray-300">
                           <DetailField label="Tool" value={step.toolName ?? '-'} />
@@ -494,20 +494,20 @@ export default function AdminAgentTasksPage() {
             <div className="space-y-6">
               <div className="rounded-3xl border border-white/10 bg-white/5 p-6">
                 <div className="mb-6">
-                  <p className="text-sm theme-muted uppercase tracking-[0.3em]">Approval Flow & Safety</p>
-                  <h3 className="text-xl font-black theme-title">Security Guards</h3>
+                  <p className="text-sm text-gray-400 uppercase tracking-[0.3em]">Approval Flow & Safety</p>
+                  <h3 className="text-xl font-black text-slate-900 dark:text-white">Security Guards</h3>
                 </div>
                 <div className="space-y-3">
                   <div className="flex items-center justify-between p-3 rounded-2xl bg-black/20 border border-white/5">
-                    <span className="text-xs theme-muted">Sensitive Path Guard</span>
+                    <span className="text-xs text-gray-400">Sensitive Path Guard</span>
                     <span className="text-[10px] font-black text-emerald-400 uppercase tracking-widest">ACTIVE</span>
                   </div>
                   <div className="flex items-center justify-between p-3 rounded-2xl bg-black/20 border border-white/5">
-                    <span className="text-xs theme-muted">Approval Token Requirement</span>
+                    <span className="text-xs text-gray-400">Approval Token Requirement</span>
                     <span className="text-[10px] font-black text-emerald-400 uppercase tracking-widest">STRICT</span>
                   </div>
                   <div className="flex items-center justify-between p-3 rounded-2xl bg-black/20 border border-white/5">
-                    <span className="text-xs theme-muted">Verifier Allowlist</span>
+                    <span className="text-xs text-gray-400">Verifier Allowlist</span>
                     <span className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">PREVIEW</span>
                   </div>
                   <div className="mt-4 p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20">
@@ -524,20 +524,20 @@ export default function AdminAgentTasksPage() {
 
               <div className="rounded-3xl border border-white/10 bg-white/5 p-6">
                 <div className="mb-6">
-                  <p className="text-sm theme-muted uppercase tracking-[0.3em]">Execution Log</p>
-                  <h3 className="text-xl font-black theme-title">{logs.length} kayıt</h3>
+                  <p className="text-sm text-gray-400 uppercase tracking-[0.3em]">Execution Log</p>
+                  <h3 className="text-xl font-black text-slate-900 dark:text-white">{logs.length} kayıt</h3>
                 </div>
                 {logs.length === 0 ? (
-                  <div className="rounded-2xl border border-white/10 bg-black/10 p-6 text-sm theme-muted">Log kaydı yok.</div>
+                  <div className="rounded-2xl border border-white/10 bg-black/10 p-6 text-sm text-gray-400">Log kaydı yok.</div>
                 ) : (
                   <div className="space-y-4">
                     {logs.map((log) => (
-                      <div key={log.id} className="rounded-3xl border theme-divider bg-black/5 dark:bg-slate-950/20 p-4 text-sm theme-secondary">
+                      <div key={log.id} className="rounded-3xl border border-white/10 bg-slate-950/20 p-4 text-sm text-gray-300">
                         <div className="flex items-center justify-between gap-3 mb-3">
-                          <span className="rounded-full bg-indigo-500/10 px-3 py-1 text-xs uppercase tracking-[0.2em] theme-title">{log.level}</span>
-                          <span className="text-xs theme-muted">{formatTimestamp(log.createdAt)}</span>
+                          <span className="rounded-full bg-white/5 px-3 py-1 text-xs uppercase tracking-[0.2em] text-white">{log.level}</span>
+                          <span className="text-xs text-gray-500">{formatTimestamp(log.createdAt)}</span>
                         </div>
-                        <p className="text-sm theme-secondary mb-2">{log.message}</p>
+                        <p className="text-sm text-white mb-2">{log.message}</p>
                       </div>
                     ))}
                   </div>
@@ -560,7 +560,7 @@ function Alert({ children }: { tone: 'rose'; children: React.ReactNode }) {
 function FilterBox({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="rounded-3xl border border-white/10 bg-white/5 p-4">
-      <p className="text-[10px] font-black uppercase tracking-[0.34em] theme-muted mb-3">{label}</p>
+      <p className="text-[10px] font-black uppercase tracking-[0.34em] text-gray-500 mb-3">{label}</p>
       {children}
     </div>
   );
@@ -568,18 +568,18 @@ function FilterBox({ label, children }: { label: string; children: React.ReactNo
 
 function TaskField({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex items-center justify-between gap-3 text-sm theme-secondary">
-      <span className="theme-muted">{label}</span>
-      <span className="font-semibold theme-title">{value}</span>
+    <div className="flex items-center justify-between gap-3 text-sm text-gray-300">
+      <span className="text-gray-400">{label}</span>
+      <span className="font-semibold text-white">{value}</span>
     </div>
   );
 }
 
 function DetailField({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-2xl border theme-divider bg-black/5 px-4 py-3">
-      <p className="text-xs uppercase tracking-[0.3em] theme-muted">{label}</p>
-      <p className="mt-2 text-sm theme-secondary break-words">{value}</p>
+    <div className="rounded-2xl border border-white/5 bg-black/10 px-4 py-3">
+      <p className="text-xs uppercase tracking-[0.3em] text-gray-500">{label}</p>
+      <p className="mt-2 text-sm text-white break-words">{value}</p>
     </div>
   );
 }

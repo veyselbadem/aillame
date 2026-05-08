@@ -28,9 +28,6 @@
   --status-warning-text: #92400e;
   --status-info-bg:      rgba(79, 70, 229, 0.08);
   --status-info-text:    #3730a3;
-  --status-success-text: #065f46;
-  --status-error-text:   #9f1239;
-  --status-neutral-text: #334155;
 
   /* Glass (Light) */
   --glass-bg:       rgba(255,255,255,0.7);
@@ -67,9 +64,6 @@
   --status-warning-text: #fcd34d;
   --status-info-bg:      rgba(129, 140, 248, 0.15);
   --status-info-text:    #a5b4fc;
-  --status-success-text: #6ee7b7;
-  --status-error-text:   #fda4af;
-  --status-neutral-text: #cbd5e1;
 
   /* Glass (Crystal Dark) */
   --glass-bg:       rgba(11,11,20,0.65);
@@ -245,22 +239,22 @@ a:focus:not(:focus-visible),
   background: var(--bg-surface) !important;
 }
 
-.theme-shell [class*="text-white"]:not(.theme-on-dark),
-.theme-shell [class*="text-slate-100"]:not(.theme-on-dark),
-.theme-shell [class*="text-slate-200"]:not(.theme-on-dark),
-.theme-shell [class*="text-slate-300"]:not(.theme-on-dark),
-.theme-shell [class*="text-gray-200"]:not(.theme-on-dark),
-.theme-shell [class*="text-gray-300"]:not(.theme-on-dark),
-.theme-shell [class*="text-zinc-200"]:not(.theme-on-dark),
-.theme-shell [class*="text-zinc-300"]:not(.theme-on-dark),
-.theme-admin-page [class*="text-white"]:not(.theme-on-dark),
-.theme-admin-page [class*="text-slate-100"]:not(.theme-on-dark),
-.theme-admin-page [class*="text-slate-200"]:not(.theme-on-dark),
-.theme-admin-page [class*="text-slate-300"]:not(.theme-on-dark),
-.theme-admin-page [class*="text-gray-200"]:not(.theme-on-dark),
-.theme-admin-page [class*="text-gray-300"]:not(.theme-on-dark),
-.theme-admin-page [class*="text-zinc-200"]:not(.theme-on-dark),
-.theme-admin-page [class*="text-zinc-300"]:not(.theme-on-dark) {
+.theme-shell [class*="text-white"],
+.theme-shell [class*="text-slate-100"],
+.theme-shell [class*="text-slate-200"],
+.theme-shell [class*="text-slate-300"],
+.theme-shell [class*="text-gray-200"],
+.theme-shell [class*="text-gray-300"],
+.theme-shell [class*="text-zinc-200"],
+.theme-shell [class*="text-zinc-300"],
+.theme-admin-page [class*="text-white"],
+.theme-admin-page [class*="text-slate-100"],
+.theme-admin-page [class*="text-slate-200"],
+.theme-admin-page [class*="text-slate-300"],
+.theme-admin-page [class*="text-gray-200"],
+.theme-admin-page [class*="text-gray-300"],
+.theme-admin-page [class*="text-zinc-200"],
+.theme-admin-page [class*="text-zinc-300"] {
   color: var(--text-main) !important;
 }
 
@@ -274,59 +268,10 @@ a:focus:not(:focus-visible),
 .theme-admin-page [class*="text-slate-500"],
 .theme-admin-page [class*="text-gray-400"],
 .theme-admin-page [class*="text-gray-500"],
+.theme-admin-page [class*="text-zinc-400"],
 .theme-admin-page [class*="text-zinc-500"] {
   color: var(--text-muted) !important;
 }
-
-.theme-admin-page [class*="text-indigo-2"],
-.theme-admin-page [class*="text-indigo-3"],
-.theme-admin-page [class*="text-indigo-4"],
-.theme-admin-page [class*="text-blue-2"],
-.theme-admin-page [class*="text-cyan-2"] {
-  color: var(--status-info-text) !important;
-}
-
-.theme-admin-page [class*="text-emerald-2"],
-.theme-admin-page [class*="text-emerald-3"],
-.theme-admin-page [class*="text-emerald-4"] {
-  color: var(--status-success-text) !important;
-}
-
-.theme-admin-page [class*="text-amber-2"],
-.theme-admin-page [class*="text-amber-3"],
-.theme-admin-page [class*="text-amber-4"] {
-  color: var(--status-warning-text) !important;
-}
-
-.theme-admin-page [class*="text-rose-2"],
-.theme-admin-page [class*="text-rose-3"],
-.theme-admin-page [class*="text-rose-4"] {
-  color: var(--status-error-text) !important;
-}
-
-.theme-admin-page [class*="text-slate-200"]:not(.theme-on-dark),
-.theme-admin-page [class*="text-slate-300"]:not(.theme-on-dark) {
-  color: var(--status-neutral-text) !important;
-}
-
-/* Force white text for dark components in light mode */
-.theme-on-dark {
-  color: #ffffff !important;
-}
-.theme-on-dark-muted {
-  color: rgba(255, 255, 255, 0.7) !important;
-}
-.theme-on-dark-amber {
-  color: #451a03 !important; /* amber-950 for high contrast in light mode alert boxes */
-}
-.dark .theme-on-dark-amber {
-  color: #fef3c7 !important; /* amber-100 for dark mode */
-}
-.theme-on-indigo {
-  color: #ffffff !important;
-}
-
-
 
 .theme-shell input,
 .theme-shell select,

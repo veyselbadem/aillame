@@ -327,8 +327,8 @@ export default function AiLabPage() {
           </div>
         </header>
 
-        <section className="mb-6 rounded-2xl border border-amber-500/35 bg-amber-500/10 px-5 py-4 text-sm text-amber-950 dark:text-amber-200">
-          <p className="font-black uppercase tracking-[0.18em] text-[10px] theme-on-dark-amber">Experimental Area</p>
+        <section className="mb-6 rounded-2xl border border-amber-500/25 bg-amber-500/10 px-5 py-4 text-sm text-amber-800 dark:text-amber-200">
+          <p className="font-black uppercase tracking-[0.18em] text-[10px]">Experimental Area</p>
           <p className="mt-1 font-medium">
             This lab is for testing model compatibility and performance. Features here may not reflect final production stability.
           </p>
@@ -437,8 +437,8 @@ export default function AiLabPage() {
                       }}
                       className={`rounded-xl px-3 py-2 text-[10px] font-black transition-all border flex items-center gap-2 ${
                         selectedParticipants.includes(p.id)
-                          ? 'bg-indigo-600 text-white border-indigo-400 shadow-lg shadow-indigo-500/20 theme-on-dark'
-                          : 'theme-elevated theme-divider theme-muted hover:theme-title'
+                          ? 'bg-indigo-500 text-white border-indigo-400 shadow-lg shadow-indigo-500/20'
+                          : 'bg-[var(--bg-main)]/30 border-[var(--glass-border)] text-[var(--text-muted)] hover:border-indigo-500/30 hover:text-[var(--text-main)]'
                       }`}
                     >
                       {p.icon}
@@ -632,12 +632,12 @@ export default function AiLabPage() {
                             </div>
 
                             <div className={`p-4 rounded-2xl border transition-all duration-300 relative group/msg ${
-                              m.model === 'nano' ? 'bg-indigo-500/5 border-indigo-500/20 theme-title' :
-                              m.model === 'gemma' ? 'bg-indigo-500/5 border-indigo-400/20 theme-title' :
-                              m.model === 'web_search' ? 'bg-emerald-500/5 border-emerald-500/20 theme-title' :
-                              m.model === 'qwen' ? 'bg-purple-500/5 border-purple-500/20 theme-title' :
-                              m.model === 'sdxl' ? 'bg-amber-500/5 border-amber-500/20 theme-title' :
-                              'theme-surface'
+                              m.model === 'nano' ? 'bg-indigo-500/5 border-indigo-500/20 text-indigo-900 dark:text-indigo-100' :
+                              m.model === 'gemma' ? 'bg-indigo-500/5 border-indigo-400/20 text-indigo-900 dark:text-indigo-100' :
+                              m.model === 'web_search' ? 'bg-emerald-500/5 border-emerald-500/20 text-emerald-900 dark:text-emerald-100' :
+                              m.model === 'qwen' ? 'bg-purple-500/5 border-purple-500/20 text-purple-900 dark:text-purple-100' :
+                              m.model === 'sdxl' ? 'bg-amber-500/5 border-amber-500/20 text-amber-900 dark:text-amber-100' :
+                              'bg-[var(--bg-surface)] border-[var(--glass-border)]'
                             }`}>
                               {/* Training Candidate Badge */}
                               {m.candidateForTraining && (

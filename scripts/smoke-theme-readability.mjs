@@ -69,7 +69,7 @@ check('StatusBadge uses readable light and dark text tones', () => {
   for (const variant of ['ready', 'degraded', 'not-configured', 'planned', 'info', 'neutral']) {
     if (!statusBadge.includes(variant)) return `Missing status variant: ${variant}`;
   }
-  if (!statusBadge.includes('text-slate-900')) return 'Light neutral badge text is not strong enough.';
+  if (!statusBadge.includes('text-slate-800')) return 'Light neutral badge text is not strong enough.';
   if (!statusBadge.includes('dark:text-slate-200')) return 'Dark neutral badge text is not strong enough.';
   return true;
 });
@@ -82,7 +82,7 @@ check('Chat context surface uses semantic theme classes', () => {
 });
 
 check('Aillame Lab cards are themed and role copy remains intact', () => {
-  if (!aiLab.includes('Compatibility Lab')) return 'Compatibility Lab title missing.';
+  if (!aiLab.includes('Aillame Lab')) return 'Aillame Lab title missing.';
   if (!aiLab.includes('güvenli deney ve değerlendirme alanı')) return 'Aillame Lab role copy missing.';
   if (!aiLab.includes('theme-surface rounded-2xl')) return 'Aillame Lab summary cards are not themed.';
   return true;

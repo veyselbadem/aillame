@@ -31,14 +31,14 @@ const VARIANT_STYLES: Record<StatusBadgeVariant, string> = {
   cancelled:      'bg-amber-500/18 text-amber-900 dark:text-amber-200 border-amber-500/35',
   suspended:      'bg-amber-500/18 text-amber-900 dark:text-amber-200 border-amber-500/35',
   revoked:        'bg-rose-500/15 text-rose-800 dark:text-rose-200 border-rose-500/35',
-  warning:        'bg-amber-500/18 text-amber-950 dark:text-amber-200 border-amber-500/35',
-  degraded:       'bg-amber-500/18 text-amber-950 dark:text-amber-200 border-amber-500/35',
-  disabled:       'bg-slate-500/14 text-slate-900 dark:text-slate-200 border-slate-500/30',
-  'not-configured': 'bg-slate-500/14 text-slate-900 dark:text-slate-200 border-slate-500/30',
-  protected:      'bg-indigo-500/15 text-indigo-900 dark:text-indigo-200 border-indigo-500/35',
-  review:         'bg-amber-500/18 text-amber-950 dark:text-amber-200 border-amber-500/35',
-  info:           'bg-cyan-500/15 text-cyan-900 dark:text-cyan-200 border-cyan-500/35',
-  neutral:        'bg-slate-500/15 text-slate-900 dark:text-slate-200 border-slate-500/30',
+  warning:        'bg-amber-500/18 text-amber-900 dark:text-amber-200 border-amber-500/35',
+  degraded:       'bg-amber-500/18 text-amber-900 dark:text-amber-200 border-amber-500/35',
+  disabled:       'bg-slate-500/14 text-slate-800 dark:text-slate-200 border-slate-500/30',
+  'not-configured': 'bg-slate-500/14 text-slate-800 dark:text-slate-200 border-slate-500/30',
+  protected:      'bg-indigo-500/15 text-indigo-800 dark:text-indigo-200 border-indigo-500/35',
+  review:         'bg-amber-500/18 text-amber-900 dark:text-amber-200 border-amber-500/35',
+  info:           'bg-cyan-500/15 text-cyan-800 dark:text-cyan-200 border-cyan-500/35',
+  neutral:        'bg-slate-500/15 text-slate-800 dark:text-slate-200 border-slate-500/30',
 };
 
 const VARIANT_DOT: Record<StatusBadgeVariant, string> = {
