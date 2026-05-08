@@ -35,86 +35,130 @@ export default function ImageAssetManagerPage() {
   if (!authorized) return null;
 
   return (
-    <div className="min-h-screen theme-shell p-8 font-sans">
-      <div className="mb-10 flex flex-col gap-4 border-b pb-6 theme-divider lg:flex-row lg:items-center lg:justify-between">
-        <div>
-          <h1 className="flex items-center text-3xl font-bold tracking-tight theme-title">
-            <RiImageLine className="mr-4 text-purple-600 dark:text-purple-300" />
-            Image Asset Manager / IGM Assets
-          </h1>
-          <p className="mt-2 text-sm theme-muted">IGM runtime readiness, job history and local asset persistence.</p>
-        </div>
-        <button onClick={loadJobs} className="rounded-lg theme-elevated px-4 py-2 text-xs font-semibold transition-colors hover:border-indigo-500/35">
-          Refresh History
-        </button>
-      </div>
-
-      <div className="mb-8 rounded-2xl theme-callout-warning p-4">
-        <div className="flex items-center gap-3">
-          <RiErrorWarningLine className="text-xl" />
+    <div className="min-h-screen theme-shell theme-admin-page">
+      <main className="mx-auto max-w-7xl p-6 md:p-10 animate-fade-in">
+        <header className="mb-12 flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
           <div>
-            <p className="text-xs font-bold uppercase tracking-wider">Final Acceptance Criteria</p>
-            <p className="text-[11px] opacity-90">Aillame final kabulü için en az bir yerel IGM (Diffusion) modelinin aktif olması gerekmektedir.</p>
+            <div className="mb-2 flex items-center gap-2.5">
+              <div className="w-2 h-2 rounded-full bg-pink-500 animate-pulse" />
+              <p className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.4em]">IGM Varlıkları ve Geçmiş</p>
+            </div>
+            <h1 className="text-5xl font-black tracking-tight theme-title">
+              Görsel <span className="text-gradient">Varlıkları</span>
+            </h1>
+            <p className="mt-2 text-sm theme-muted max-w-2xl font-medium">
+              Görsel üretim görevlerini, çalışma zamanı (runtime) hazır olma durumunu ve yerel varlık kalıcılığını izleyin.
+            </p>
+          </div>
+          <button
+            onClick={loadJobs}
+            className="flex items-center justify-center gap-2 px-6 py-3 rounded-2xl theme-surface hover:border-indigo-500/50 transition-all active:scale-95 text-[10px] font-black uppercase tracking-widest"
+          >
+            <RiPulseLine className={loading ? 'animate-spin' : ''} />
+            Varlıkları Yenile
+          </button>
+        </header>
+
+        <section className="mb-10 grid gap-6 md:grid-cols-4">
+          <StatCardSmall label="Toplam Görev" value={jobs.length.toString()} icon={<RiHistoryLine />} />
+          <StatCardSmall label="Tamamlanan" value={jobs.filter((j) => j.status === 'completed').length.toString()} icon={<RiCheckboxCircleLine className="text-emerald-500" />} />
+          <StatCardSmall 
+            label="IGM Runtime" 
+            value={process.env.NEXT_PUBLIC_AILLAME_IGM_RUNTIME_ENABLED === 'true' ? 'AKTİF' : 'DEVRE DIŞI'} 
+            icon={<RiPulseLine className={process.env.NEXT_PUBLIC_AILLAME_IGM_RUNTIME_ENABLED === 'true' ? 'text-emerald-500' : 'text-slate-400'} />}
+          />
+          <StatCardSmall label="Hedef Cihaz" value="CUDA/GPU" icon={<RiPulseLine />} />
+        </section>
+
+        <div className="theme-surface rounded-[28px] overflow-hidden border-transparent shadow-2xl">
+          <div className="p-8 border-b theme-divider flex items-center justify-between">
+            <h3 className="text-[11px] font-black uppercase tracking-[0.3em] theme-secondary flex items-center">
+              <RiHistoryLine className="mr-3 text-indigo-500" size={16} /> Varlık Geçmişi
+            </h3>
+            <div className="flex items-center gap-4">
+              <span className="text-[9px] theme-muted uppercase font-bold tracking-wider">Depolama: Yerel SQLite</span>
+            </div>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="bg-slate-500/5 theme-muted text-[9px] uppercase tracking-[0.2em] font-black">
+                  <th className="py-5 px-8">Varlık Kimliği</th>
+                  <th className="py-5 px-4">Prompt Bağlamı</th>
+                  <th className="py-5 px-4">Motor / Model</th>
+                  <th className="py-5 px-4 text-center">Durum</th>
+                  <th className="py-5 px-8 text-right">Zaman Damgası</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y theme-divider">
+                {jobs.map((job) => (
+                  <tr key={job.jobId} className="hover:bg-indigo-500/5 transition-colors group">
+                    <td className="py-6 px-8">
+                      <p className="text-xs font-black theme-title tracking-tight">{job.jobId}</p>
+                      <p className="text-[9px] theme-muted font-bold uppercase mt-1 tracking-wider">{job.projectId}</p>
+                    </td>
+                    <td className="py-6 px-4">
+                      <p className="text-xs theme-secondary max-w-xs truncate font-medium" title={job.prompt}>{job.prompt}</p>
+                    </td>
+                    <td className="py-6 px-4">
+                      <span className="px-2 py-1 rounded bg-indigo-500/10 text-indigo-500 text-[9px] font-black uppercase tracking-wider">
+                        {job.modelId || 'sdxl-turbo'}
+                      </span>
+                    </td>
+                    <td className="py-6 px-4">
+                      <div className="flex items-center justify-center">
+                        <StatusBadge variant={job.status === 'completed' ? 'completed' : 'running'} label={job.status} className="!text-[8px] !px-2 !py-0.5" />
+                      </div>
+                    </td>
+                    <td className="py-6 px-8 text-right">
+                      <p className="text-[10px] theme-muted font-bold">{new Date(job.createdAt).toLocaleDateString()}</p>
+                    </td>
+                  </tr>
+                ))}
+                {jobs.length === 0 && !loading && (
+                  <tr>
+                    <td colSpan={5} className="py-20 text-center">
+                      <div className="flex flex-col items-center gap-3 opacity-30">
+                        <RiImageLine size={40} />
+                        <p className="text-[10px] font-black uppercase tracking-[0.2em]">Kayıtlı geçmiş bulunamadı</p>
+                      </div>
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
           </div>
         </div>
+
+        <div className="mt-10 theme-soft-panel rounded-2xl p-6 flex items-start gap-4 border-transparent">
+          <div className="p-2 rounded-lg bg-pink-500/10 text-pink-500 shrink-0">
+            <RiErrorWarningLine size={20} />
+          </div>
+          <div>
+            <h3 className="text-sm font-bold theme-title mb-1">IGM Uyumluluk Notu</h3>
+            <p className="text-xs theme-muted leading-relaxed max-w-4xl">
+              Yerel görsel üretimi, SDXL Turbo ile optimal performans için 8GB+ VRAM gerektirir. 
+              Varlıklar yerel <code>ImageAssetStore</code> içinde saklanır ve bir sağlayıcı köprüsü aracılığıyla açıkça istenmedikçe 
+              dış bulutlara senkronize edilmez.
+            </p>
+          </div>
+        </div>
+
+      </main>
+    </div>
+  );
+}
+
+function StatCardSmall({ label, value, icon }: { label: string; value: string; icon: React.ReactNode }) {
+  return (
+    <div className="theme-surface rounded-[22px] p-6 flex items-center justify-between group hover:border-indigo-500/30 transition-all">
+      <div className="min-w-0">
+        <p className="text-[9px] font-black theme-muted uppercase tracking-[0.25em] mb-1.5">{label}</p>
+        <p className="text-2xl font-black theme-title tracking-tight">{value}</p>
       </div>
-
-      <section className="mb-8 grid gap-4 md:grid-cols-4">
-        {[
-          ['Total Jobs', jobs.length.toString()],
-          ['Completed', jobs.filter((j) => j.status === 'completed').length.toString()],
-          ['Runtime', process.env.NEXT_PUBLIC_AILLAME_IGM_RUNTIME_ENABLED === 'true' ? 'Enabled' : 'Not Configured'],
-          ['Device', 'Auto (CPU/GPU)'],
-        ].map(([label, value]) => (
-          <div key={label} className="theme-surface rounded-2xl p-5">
-            <p className="text-[10px] font-bold uppercase tracking-[0.24em] theme-muted">{label}</p>
-            <p className="mt-2 text-xl font-bold theme-title">{value}</p>
-          </div>
-        ))}
-      </section>
-
-      <div className="theme-surface rounded-2xl p-6">
-        <h3 className="mb-6 flex items-center text-sm font-semibold uppercase tracking-wider theme-secondary">
-          <RiHistoryLine className="mr-2" /> Image Generation History
-        </h3>
-
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs theme-secondary">
-            <thead className="border-b text-[10px] uppercase tracking-widest theme-divider theme-muted">
-              <tr>
-                <th className="pb-3 pl-4">Job Info</th>
-                <th className="pb-3">Prompt</th>
-                <th className="pb-3">Model</th>
-                <th className="pb-3">Status</th>
-                <th className="pb-3 pr-4">Created</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
-              {jobs.map((job) => (
-                <tr key={job.jobId} className="theme-table-row transition-colors">
-                  <td className="py-4 pl-4">
-                    <div className="font-bold theme-title">{job.jobId}</div>
-                    <div className="mt-0.5 font-mono text-[10px] theme-muted">{job.projectId}</div>
-                  </td>
-                  <td className="max-w-xs truncate py-4">{job.prompt}</td>
-                  <td className="py-4 font-mono text-[10px]">{job.modelId || 'default'}</td>
-                  <td className="py-4">
-                    <div className="flex items-center gap-2">
-                      {job.status === 'completed' ? <RiCheckboxCircleLine className="text-emerald-600 dark:text-emerald-300" /> : <RiPulseLine className="animate-spin text-blue-600 dark:text-blue-300" />}
-                      <StatusBadge variant={job.status === 'completed' ? 'completed' : 'running'} label={job.status} />
-                    </div>
-                  </td>
-                  <td className="py-4 pr-4 theme-muted">{new Date(job.createdAt).toLocaleDateString()}</td>
-                </tr>
-              ))}
-              {jobs.length === 0 && !loading && (
-                <tr>
-                  <td colSpan={5} className="py-10 text-center italic theme-muted">Henüz image generation history kaydı yok.</td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+      <div className="w-10 h-10 rounded-xl theme-elevated flex items-center justify-center text-indigo-500 group-hover:scale-110 transition-transform">
+        {icon}
       </div>
     </div>
   );

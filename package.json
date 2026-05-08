@@ -39,6 +39,7 @@
                     "smoke:ui-cleanup": "node scripts/smoke-ui-cleanup.mjs",
                     "smoke:theme-readability": "node scripts/smoke-theme-readability.mjs",
                     "smoke:final-ui-polish": "node scripts/smoke-final-ui-polish.mjs",
+                    "smoke:command-center-ui": "node scripts/smoke-command-center-ui.mjs",
                     "qa:beta": "node scripts/run-beta-qa.mjs",
                     "eval:nano": "node scripts/evaluate-nano-pipeline.mjs",
                     "validate:nano-training-candidates": "node scripts/validate-nano-training-candidates.mjs",

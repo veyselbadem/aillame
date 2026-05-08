@@ -48,46 +48,44 @@ const ADMIN_NAV_GROUPS = [
     ],
   },
   {
-    label: 'Runtime',
+    label: 'Operations',
     items: [
-      { href: '/admin/model-library', label: 'Runtime & Modeller', icon: FiPackage },
-      { href: '/admin/image-assets', label: 'IGM Assets', icon: FiImage },
-      { href: '/admin/desktop-readiness', label: 'Desktop Readiness', icon: FiCpu },
+      { href: '/admin/model-library', label: 'Model Library / Runtime', icon: FiPackage },
+      { href: '/admin/image-assets', label: 'Image Assets', icon: FiImage },
     ],
   },
   {
-    label: 'Memory',
-    items: [
-      { href: '/admin/documents', label: 'Documents / RAG', icon: FiBook },
-      { href: '/admin/memory-cards', label: 'Hafıza Kartları', icon: FiLayers },
-      { href: '/admin/memory-write-queue', label: 'Hafıza Kuyruğu', icon: FiDatabase },
-    ],
-  },
-  {
-    label: 'Agent / Provider',
+    label: 'Intelligence / Agent / Provider / Developer / Lab',
     items: [
       { href: '/admin/agent-tasks', label: 'Code Agent', icon: FiClipboard },
+      { href: '/admin/ai-lab', label: 'Aillame Lab', icon: FiCpu },
+      { href: '/admin/intelligence', label: 'Nano Eval', icon: FiStar },
+    ],
+  },
+  {
+    label: 'Knowledge',
+    items: [
+      { href: '/admin/documents', label: 'Documents / RAG', icon: FiBook },
+      { href: '/admin/memory-cards', label: 'Memory Cards', icon: FiLayers },
+      { href: '/admin/memory-write-queue', label: 'Write Queue', icon: FiDatabase },
+    ],
+  },
+  {
+    label: 'Stability / Verification',
+    items: [
+      { href: '/admin/desktop-readiness', label: 'Desktop Readiness', icon: FiCpu },
+      { href: '/admin/release-candidate', label: 'Release Candidate', icon: FiShield },
+      { href: '/admin/feedback', label: 'User Feedback', icon: FiMessageSquare },
+    ],
+  },
+  {
+    label: 'Infrastructure',
+    items: [
       { href: '/admin/api-clients', label: 'Provider API', icon: FiKey },
     ],
   },
-  {
-    label: 'Release',
-    items: [
-      { href: '/admin/release-candidate', label: 'Release Candidate', icon: FiShield },
-      { href: '/admin/feedback', label: 'Feedback Yönetimi', icon: FiMessageSquare },
-      { href: '/admin/learning-candidates', label: 'Öğrenme Adayları', icon: FiStar },
-    ],
-  },
-  {
-    label: 'Developer / Lab',
-    items: [
-      { href: '/admin/ai-lab', label: 'Aillame Lab', icon: FiCpu },
-      { href: '/admin/intelligence', label: 'Nano Eval', icon: FiCpu },
-      { href: '/admin/distillation-preview', label: 'Damıtma Önizleme', icon: FiLayers },
-      { href: '/admin/research-results', label: 'Araştırma Sonuçları', icon: FiBook },
-    ],
-  },
 ];
+
 
 interface SidebarProps {
   isOpen: boolean;

@@ -32,12 +32,13 @@ function shortPath(p?: string): string {
 }
 
 const STATUS_COLORS: Record<string, string> = {
-  available: 'text-emerald-400',
-  missing: 'text-red-400',
-  installing: 'text-amber-400',
-  failed: 'text-red-500',
-  disabled: 'text-zinc-400',
+  available: 'text-emerald-500 dark:text-emerald-400',
+  missing: 'text-rose-500 dark:text-rose-400',
+  installing: 'text-amber-500 dark:text-amber-400',
+  failed: 'text-rose-600 dark:text-rose-500',
+  disabled: 'var(--text-muted)',
 };
+
 
 const CAPABILITY_LABELS: Record<DefaultModelCapabilityUi, string> = {
   text: 'Metin',
@@ -59,22 +60,23 @@ const CAPABILITY_FIELD_MAP: Record<DefaultModelCapabilityUi, keyof DefaultModelP
 
 function SummaryBar({ list }: { list: ModelLibraryListResponse }) {
   return (
-    <div className="grid grid-cols-3 gap-3 mb-5">
-      <div className="rounded-lg bg-zinc-800/60 border border-zinc-700/40 p-3 text-center">
-        <p className="text-2xl font-bold text-white">{list.total}</p>
-        <p className="text-xs text-zinc-400 mt-0.5">Toplam Model</p>
+    <div className="grid grid-cols-3 gap-4 mb-8">
+      <div className="theme-elevated rounded-2xl p-4 text-center">
+        <p className="text-3xl font-black theme-title">{list.total}</p>
+        <p className="text-[10px] theme-muted uppercase tracking-widest mt-1">Total Models</p>
       </div>
-      <div className="rounded-lg bg-emerald-950/30 border border-emerald-700/25 p-3 text-center">
-        <p className="text-2xl font-bold text-emerald-400">{list.available}</p>
-        <p className="text-xs text-zinc-400 mt-0.5">Mevcut</p>
+      <div className="bg-emerald-500/5 border border-emerald-500/10 rounded-2xl p-4 text-center">
+        <p className="text-3xl font-black text-emerald-500">{list.available}</p>
+        <p className="text-[10px] theme-muted uppercase tracking-widest mt-1">Available</p>
       </div>
-      <div className="rounded-lg bg-red-950/20 border border-red-700/20 p-3 text-center">
-        <p className="text-2xl font-bold text-red-400">{list.missing}</p>
-        <p className="text-xs text-zinc-400 mt-0.5">Eksik</p>
+      <div className="bg-rose-500/5 border border-rose-500/10 rounded-2xl p-4 text-center">
+        <p className="text-3xl font-black text-rose-500">{list.missing}</p>
+        <p className="text-[10px] theme-muted uppercase tracking-widest mt-1">Missing</p>
       </div>
     </div>
   );
 }
+
 
 interface ActionFeedbackProps {
   result: ModelLibraryActionResult | null;
@@ -118,69 +120,60 @@ function DefaultModelPreferencesCard({ preferences, models, loading, prefBusy, o
   const modelById = new Map(models.map(m => [m.id, m]));
 
   return (
-    <div className="rounded-lg border border-zinc-700/40 bg-zinc-800/30 p-4 mb-5">
-      <h3 className="text-xs font-semibold text-zinc-300 uppercase tracking-wide mb-3">
-        Varsayılan Modeller
+    <div className="theme-elevated rounded-2xl p-6 mb-8">
+      <h3 className="text-[10px] font-black theme-muted uppercase tracking-[0.2em] mb-4">
+        Default Model Mapping
       </h3>
       {loading ? (
-        <p className="text-xs text-zinc-500">Tercihler yükleniyor…</p>
+        <p className="text-xs theme-muted">Loading preferences…</p>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3">
           {(Object.keys(CAPABILITY_LABELS) as DefaultModelCapabilityUi[]).map(cap => {
             const field = CAPABILITY_FIELD_MAP[cap];
             const modelId = preferences?.[field] as string | undefined;
             const matched = modelId ? modelById.get(modelId) : undefined;
-            const notInList = modelId && !matched;
             const busy = prefBusy.has(cap);
 
             return (
               <div
                 key={cap}
-                className="rounded-md border border-zinc-700/30 bg-zinc-900/50 px-3 py-2 flex flex-col gap-0.5"
+                className="theme-surface rounded-xl px-4 py-3 border-transparent hover:border-indigo-500/30 transition-all flex flex-col gap-1"
               >
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-medium text-zinc-400">{CAPABILITY_LABELS[cap]}</span>
+                  <span className="text-[9px] font-black theme-muted uppercase tracking-widest">{CAPABILITY_LABELS[cap]}</span>
                   {modelId && (
                     <button
                       disabled={busy}
                       onClick={() => onClear(cap)}
-                      className="text-xs text-zinc-600 hover:text-red-400 disabled:opacity-40 transition-colors leading-none"
-                      title={`${CAPABILITY_LABELS[cap]} tercihini temizle`}
+                      className="text-[9px] font-bold text-rose-500 hover:text-rose-400 disabled:opacity-40 transition-colors uppercase"
                     >
-                      {busy ? '…' : 'Temizle'}
+                      {busy ? '…' : 'Clear'}
                     </button>
                   )}
                 </div>
                 {modelId ? (
-                  <>
-                    <span className="text-xs text-white truncate" title={modelId}>{modelId}</span>
+                  <div className="min-w-0">
+                    <p className="text-xs font-bold theme-title truncate" title={modelId}>{modelId}</p>
                     {matched ? (
-                      <span className="text-xs text-zinc-500">
-                        {matched.provider} · {matched.runtime} ·{' '}
-                        <span className={STATUS_COLORS[matched.status] ?? 'text-zinc-400'}>
-                          {matched.status}
-                        </span>
-                      </span>
-                    ) : notInList ? (
-                      <span className="text-xs text-amber-400">Model listesinde bulunamadı</span>
-                    ) : null}
-                  </>
+                      <p className="text-[9px] theme-muted uppercase font-bold mt-0.5">
+                        {matched.provider} · <span className={STATUS_COLORS[matched.status]}>{matched.status}</span>
+                      </p>
+                    ) : (
+                      <p className="text-[9px] text-amber-500 font-bold mt-0.5">UNRESOLVED</p>
+                    )}
+                  </div>
                 ) : (
-                  <span className="text-xs text-zinc-600 italic">Seçilmedi</span>
+                  <span className="text-[10px] theme-muted italic font-medium">None</span>
                 )}
               </div>
             );
           })}
         </div>
       )}
-      {preferences?.updatedAt && !loading && (
-        <p className="text-xs text-zinc-600 mt-2">
-          Son güncelleme: {new Date(preferences.updatedAt).toLocaleString('tr-TR')} · Kaynak: {preferences.source}
-        </p>
-      )}
     </div>
   );
 }
+
 
 // ── Helpers ───────────────────────────────────────────────────────────────
 
@@ -206,52 +199,53 @@ function ModelRow({ model, onRemoveSimulate, onSetDefault, busy, prefBusy }: Mod
   const caps = validCapabilitiesOf(model);
 
   return (
-    <tr className="border-b border-zinc-700/30 hover:bg-zinc-800/30 transition-colors">
-      <td className="py-2 px-3 text-sm font-medium text-white max-w-[160px] truncate">
-        {model.name}
+    <tr className="border-b theme-divider hover:bg-indigo-500/5 transition-colors">
+      <td className="py-4 px-4">
+        <p className="text-xs font-black theme-title tracking-tight truncate max-w-[200px]" title={model.name}>{model.name}</p>
+        <p className="text-[9px] theme-muted uppercase font-bold mt-0.5 tracking-wider">{model.runtime}</p>
       </td>
-      <td className="py-2 px-3 text-xs text-zinc-400 capitalize">{model.provider}</td>
-      <td className="py-2 px-3 text-xs text-zinc-400 capitalize">{model.runtime}</td>
-      <td className={`py-2 px-3 text-xs capitalize font-medium ${STATUS_COLORS[model.status] ?? 'text-zinc-400'}`}>
-        {model.status}
+      <td className="py-4 px-4">
+        <span className="text-[10px] font-black theme-secondary uppercase">{model.provider}</span>
       </td>
-      <td className="py-2 px-3 text-xs text-zinc-500">
-        {model.capabilities.join(', ') || '—'}
+      <td className="py-4 px-4">
+        <span className={`text-[10px] font-black uppercase tracking-widest ${STATUS_COLORS[model.status]}`}>
+          {model.status}
+        </span>
       </td>
-      <td className="py-2 px-3 text-xs text-zinc-500">{formatBytes(model.sizeBytes)}</td>
-      <td className="py-2 px-3 text-xs text-zinc-600 max-w-[140px] truncate" title={model.localPath}>
-        {shortPath(model.localPath ?? model.fileName)}
+      <td className="py-4 px-4">
+        <div className="flex flex-wrap gap-1">
+          {model.capabilities.map(c => (
+            <span key={c} className="px-1.5 py-0.5 rounded bg-indigo-500/10 text-indigo-500 text-[8px] font-black uppercase">
+              {c}
+            </span>
+          ))}
+        </div>
       </td>
-      <td className="py-2 px-3 text-right">
-        <div className="flex flex-col items-end gap-1">
-          {caps.length > 0 ? (
-            caps.map(cap => (
-              <button
-                key={cap}
-                disabled={busy || prefBusy.has(cap)}
-                onClick={() => onSetDefault(cap, model.id)}
-                className="text-xs text-indigo-400 hover:text-indigo-300 disabled:opacity-40 transition-colors whitespace-nowrap"
-                title={`${CAPABILITY_LABELS[cap]} için varsayılan yap (runtime anında değişmez)`}
-              >
-                {prefBusy.has(cap) ? '…' : `${CAPABILITY_LABELS[cap]} varsayılanı`}
-              </button>
-            ))
-          ) : (
-            <span className="text-xs text-zinc-700">—</span>
-          )}
+      <td className="py-4 px-4 text-right">
+        <div className="flex flex-col items-end gap-1.5">
+          {caps.map(cap => (
+            <button
+              key={cap}
+              disabled={busy || prefBusy.has(cap)}
+              onClick={() => onSetDefault(cap, model.id)}
+              className="text-[9px] font-black text-indigo-500 hover:text-indigo-600 disabled:opacity-40 uppercase tracking-widest"
+            >
+              Set as {cap}
+            </button>
+          ))}
           <button
             disabled={busy}
             onClick={() => onRemoveSimulate(model.id)}
-            className="text-xs text-zinc-500 hover:text-red-400 disabled:opacity-40 transition-colors"
-            title="Kaldırmayı simüle et (gerçek silme yok)"
+            className="text-[9px] font-black text-rose-500/60 hover:text-rose-500 disabled:opacity-40 uppercase tracking-widest mt-1"
           >
-            Simüle Et
+            Simulate Remove
           </button>
         </div>
       </td>
     </tr>
   );
 }
+
 
 // ── Main Component ────────────────────────────────────────────────────────
 

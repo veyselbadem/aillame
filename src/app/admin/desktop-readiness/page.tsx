@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { adminFetch, requireAdminTokenOrRedirect } from '@lib/admin-fetch';
-import { RiComputerLine, RiServerLine, RiFileTextLine, RiImageLine, RiShieldCheckLine, RiAlertLine, RiCheckboxCircleLine } from 'react-icons/ri';
+import { RiComputerLine, RiServerLine, RiFileTextLine, RiImageLine, RiShieldCheckLine, RiAlertLine, RiCheckboxCircleLine, RiPulseLine } from 'react-icons/ri';
 import StatusBadge from '@components/ui/StatusBadge';
 
 export default function DesktopReadinessPage() {
@@ -37,126 +37,155 @@ export default function DesktopReadinessPage() {
   const report = data?.report;
 
   return (
-    <div className="min-h-screen theme-shell p-8 font-sans">
-      <div className="mb-10 flex flex-col gap-4 border-b pb-6 theme-divider lg:flex-row lg:items-center lg:justify-between">
-        <div>
-          <h1 className="flex items-center text-3xl font-bold tracking-tight theme-title">
-            <RiComputerLine className="mr-4 text-blue-600 dark:text-blue-300" />
-            Desktop Readiness
-          </h1>
-          <p className="mt-2 text-sm theme-muted">Desktop shell prototype, local server boot and final runtime acceptance bridge.</p>
-        </div>
-        <button onClick={loadReadiness} className="rounded-lg theme-elevated px-4 py-2 text-xs font-semibold transition-colors hover:border-indigo-500/35">
-          Run Readiness Check
-        </button>
-      </div>
+    <div className="min-h-screen theme-shell theme-admin-page">
+      <main className="mx-auto max-w-7xl p-6 md:p-10 animate-fade-in">
+        <header className="mb-12 flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <div className="mb-2 flex items-center gap-2.5">
+              <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
+              <p className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.4em]">Masaüstü Doğrulama Köprüsü</p>
+            </div>
+            <h1 className="text-5xl font-black tracking-tight theme-title">
+              Masaüstü <span className="text-gradient">Hazırlığı</span>
+            </h1>
+            <p className="mt-2 text-sm theme-muted max-w-2xl font-medium">
+              Yerel sunucu başlatma stratejisini, shell prototip kullanılabilirliğini ve final runtime kabulünü doğrulayın.
+            </p>
+          </div>
+          <button
+            onClick={loadReadiness}
+            className="flex items-center justify-center gap-2 px-6 py-3 rounded-2xl theme-surface hover:border-blue-500/50 transition-all active:scale-95 text-[10px] font-black uppercase tracking-widest"
+          >
+            <RiPulseLine className={loading ? 'animate-spin' : ''} />
+            Denetimi Çalıştır
+          </button>
+        </header>
 
-      {!report && !loading && (
-        <div className="rounded-2xl border border-rose-500/25 bg-rose-500/10 p-10 text-center">
-          <RiAlertLine className="mx-auto mb-4 text-3xl text-rose-600 dark:text-rose-300" />
-          <h2 className="text-xl font-bold theme-title">Readiness Check Failed</h2>
-          <p className="mt-2 text-sm theme-muted">Could not retrieve desktop readiness data from the server.</p>
-        </div>
-      )}
+        {!report && !loading && (
+          <div className="rounded-[28px] border border-rose-500/25 bg-rose-500/5 p-12 text-center">
+            <RiAlertLine className="mx-auto mb-4 text-4xl text-rose-500" />
+            <h2 className="text-2xl font-black theme-title">Denetim Kesildi</h2>
+            <p className="mt-2 text-sm theme-muted">Tanılama uç noktasından masaüstü hazırlık metrikleri alınamadı.</p>
+          </div>
+        )}
 
-      {report && (
-        <div className="grid gap-8 lg:grid-cols-3">
-          <div className="space-y-8 lg:col-span-2">
-            <div className={`rounded-3xl border p-8 ${report.runtimeAcceptance.finalAcceptanceReady ? 'border-emerald-500/25 bg-emerald-500/10' : 'border-amber-500/25 bg-amber-500/10'}`}>
-              <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                <div>
-                  <h2 className="text-2xl font-bold theme-title">Beta Acceptance Status</h2>
-                  <p className="mt-1 text-sm theme-muted">Final production release requirements.</p>
+        {report && (
+          <div className="grid gap-8 lg:grid-cols-3">
+            <div className="space-y-8 lg:col-span-2">
+              {/* Acceptance Hero */}
+              <div className={`rounded-[32px] border p-10 relative overflow-hidden ${report.runtimeAcceptance.finalAcceptanceReady ? 'bg-emerald-500/5 border-emerald-500/20' : 'bg-amber-500/5 border-amber-500/20'}`}>
+                <div className={`absolute top-0 right-0 w-64 h-64 -mr-20 -mt-20 rounded-full blur-3xl opacity-10 ${report.runtimeAcceptance.finalAcceptanceReady ? 'bg-emerald-500' : 'bg-amber-500'}`} />
+                
+                <div className="relative z-10">
+                  <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-10">
+                    <div>
+                      <h2 className="text-3xl font-black theme-title tracking-tight">Kabul Kriterleri</h2>
+                      <p className="mt-1 text-[11px] theme-muted uppercase font-bold tracking-wider">Final üretim sürüm kapısı</p>
+                    </div>
+                    <StatusBadge
+                      variant={report.runtimeAcceptance.finalAcceptanceReady ? 'ready' : 'warning'}
+                      label={report.runtimeAcceptance.finalAcceptanceReady ? 'BETA İÇİN HAZIR' : 'BLOKAJLAR TESPİT EDİLDİ'}
+                      className="!px-4 !py-1.5 !text-[10px] !font-black"
+                    />
+                  </div>
+
+                  <div className="grid gap-6 md:grid-cols-2">
+                    <RuntimeRequirementCard
+                      icon={<RiFileTextLine className="text-2xl text-blue-500" />}
+                      title="LLM RUNTIME"
+                      ready={report.runtimeAcceptance.textRuntimeReady}
+                      readyText="DOĞRULANDI"
+                      waitingText="KISITLI"
+                      note="GGUF/Llama-server köprü durumu."
+                    />
+                    <RuntimeRequirementCard
+                      icon={<RiImageLine className="text-2xl text-purple-500" />}
+                      title="IGM RUNTIME"
+                      ready={report.runtimeAcceptance.imageRuntimeReady}
+                      readyText="DOĞRULANDI"
+                      waitingText="BEKLENİYOR"
+                      note="SDXL/Diffusers worker köprü durumu."
+                    />
+                  </div>
+
+                  {!report.runtimeAcceptance.finalAcceptanceReady && (
+                    <div className="mt-10 p-5 rounded-2xl bg-amber-500/10 border border-amber-500/20">
+                      <p className="text-[10px] font-black uppercase tracking-widest text-amber-600 dark:text-amber-400 mb-3">Kritik Blokajlar:</p>
+                      <div className="space-y-2">
+                        {report.runtimeAcceptance.blockers.map((b: string, i: number) => (
+                          <div key={i} className="flex items-center gap-3 text-xs theme-title font-medium">
+                            <div className="h-1.5 w-1.5 rounded-full bg-amber-500" />
+                            {b}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
-                <StatusBadge
-                  variant={report.runtimeAcceptance.finalAcceptanceReady ? 'ready' : 'warning'}
-                  label={report.runtimeAcceptance.finalAcceptanceReady ? 'Ready for Beta' : 'Action Required'}
-                />
               </div>
 
-              <div className="mt-10 grid gap-6 md:grid-cols-2">
-                <RuntimeRequirementCard
-                  icon={<RiFileTextLine className="text-xl text-blue-600 dark:text-blue-300" />}
-                  title="Live Text Runtime (LLM)"
-                  ready={report.runtimeAcceptance.textRuntimeReady}
-                  readyText="Active & Producing Text"
-                  waitingText="Not Producing Text"
-                  note="Requirements: aillame-core-v7.node + Nano v1 checkpoint."
-                />
-                <RuntimeRequirementCard
-                  icon={<RiImageLine className="text-xl text-purple-600 dark:text-purple-300" />}
-                  title="Live Image Runtime (IGM)"
-                  ready={report.runtimeAcceptance.imageRuntimeReady}
-                  readyText="Active & Producing Images"
-                  waitingText="Not Configured"
-                  note="Requirements: Diffusion model + AILLAME_IGM_* env variables."
-                />
+              {/* Server Boot Plan */}
+              <div className="theme-surface rounded-[28px] p-8">
+                <div className="flex items-center gap-3 mb-8">
+                  <div className="p-2 rounded-lg bg-blue-500/10 text-blue-500">
+                    <RiServerLine size={20} />
+                  </div>
+                  <h3 className="text-[11px] font-black uppercase tracking-[0.3em] theme-secondary">
+                    Yerel Sunucu Başlatma Stratejisi
+                  </h3>
+                </div>
+                <div className="grid gap-5">
+                  <KeyValue label="Host" value={data?.desktop?.bootPlan?.defaultHost} />
+                  <KeyValue label="Hedef Port" value={data?.desktop?.bootPlan?.defaultPort} />
+                  <div className="space-y-2">
+                    <p className="text-[9px] theme-muted uppercase font-black tracking-widest">Başlatma Komutu</p>
+                    <div className="p-4 rounded-xl theme-elevated font-mono text-[11px] theme-secondary break-all border border-transparent hover:border-indigo-500/20 transition-all">
+                      {data?.desktop?.bootPlan?.startupCommandPreview}
+                    </div>
+                  </div>
+                </div>
               </div>
+            </div>
 
-              {!report.runtimeAcceptance.finalAcceptanceReady && (
-                <div className="mt-8 space-y-2">
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-amber-800 dark:text-amber-200">Beta Blockers:</p>
-                  {report.runtimeAcceptance.blockers.map((b: string, i: number) => (
-                    <div key={i} className="flex items-center gap-2 text-xs text-amber-900 dark:text-amber-100">
-                      <div className="h-1 w-1 rounded-full bg-amber-500" />
-                      {b}
+            <aside className="space-y-8">
+              {/* Shell Diagnostics */}
+              <div className="theme-surface rounded-[28px] p-8 shadow-xl">
+                <h3 className="mb-8 text-[11px] font-black uppercase tracking-[0.3em] theme-muted">Dahili Shell Denetimi</h3>
+                <div className="space-y-5">
+                  {[
+                    ['Shell Arayüzü', report.shellAvailable],
+                    ['Boot Denetleyici', report.localServerBootPlanned],
+                    ['Sağlık Monitörü', report.healthCheckReady],
+                    ['Depolama Sürücüsü', report.storageReady],
+                    ['Güvenlik Kapsamı', report.securityReady],
+                    ['Paketleme Hazır', report.packagingReady],
+                  ].map(([label, ok]) => (
+                    <div key={label as string} className="flex items-center justify-between">
+                      <span className="text-[11px] font-bold theme-secondary">{label}</span>
+                      <div className="flex items-center gap-2">
+                        <span className={`text-[9px] font-black uppercase ${ok ? 'text-emerald-500' : 'text-slate-400'}`}>{ok ? 'OK' : 'BEKLE'}</span>
+                        <div className={`h-2.5 w-2.5 rounded-full ${ok ? 'bg-emerald-500 shadow-lg shadow-emerald-500/20' : 'bg-slate-300 dark:bg-slate-700'}`} />
+                      </div>
                     </div>
                   ))}
                 </div>
-              )}
-            </div>
+              </div>
 
-            <div className="theme-surface rounded-3xl p-8">
-              <h3 className="flex items-center text-sm font-bold uppercase tracking-widest theme-secondary">
-                <RiServerLine className="mr-3 text-blue-600 dark:text-blue-300" /> Local Server Boot Strategy
-              </h3>
-              <div className="mt-6 grid gap-4 text-xs">
-                <KeyValue label="Default Host" value={data?.desktop?.bootPlan?.defaultHost} />
-                <KeyValue label="Default Port" value={data?.desktop?.bootPlan?.defaultPort} />
-                <KeyValue label="Startup Command" value={data?.desktop?.bootPlan?.startupCommandPreview} />
+              {/* Info Card */}
+              <div className="theme-soft-panel rounded-[28px] p-8 border-transparent">
+                <RiShieldCheckLine className="mb-4 text-3xl text-blue-500" />
+                <h3 className="mb-3 text-xs font-black uppercase tracking-widest theme-title">Yerel Bağımsızlık</h3>
+                <p className="text-[11px] leading-relaxed theme-muted font-medium">
+                  Aillame mutlak yerel bağımsızlığı hedefler. Masaüstü hazırlık kontrolü, sistemin kendi orkestrasyon sunucusunu 
+                  başlatarak ve dış bulut bağımlılığı olmadan yerel çıkarım çalışma zamanlarını yöneterek tamamen çevrimdışı 
+                  çalışabilmesini sağlar.
+                </p>
               </div>
-              <div className="mt-6">
-                <p className="mb-2 text-[10px] font-bold uppercase tracking-widest theme-muted">Production Notes:</p>
-                <div className="space-y-2">
-                  {data?.desktop?.bootPlan?.productionNotes.map((n: string, i: number) => (
-                    <p key={i} className="text-[10px] leading-relaxed theme-muted">- {n}</p>
-                  ))}
-                </div>
-              </div>
-            </div>
+            </aside>
+
           </div>
-
-          <div className="space-y-8">
-            <div className="theme-surface rounded-3xl p-6">
-              <h3 className="mb-6 text-xs font-bold uppercase tracking-widest theme-secondary">Shell Diagnostics</h3>
-              <div className="space-y-4">
-                {[
-                  ['Shell Prototype', report.shellAvailable],
-                  ['Boot Planned', report.localServerBootPlanned],
-                  ['Health Check', report.healthCheckReady],
-                  ['Storage Engine', report.storageReady],
-                  ['Security Layer', report.securityReady],
-                  ['Packaging', report.packagingReady],
-                ].map(([label, ok]) => (
-                  <div key={label as string} className="flex items-center justify-between">
-                    <span className="text-[11px] theme-muted">{label}</span>
-                    <div className={`h-2 w-2 rounded-full ${ok ? 'bg-emerald-500' : 'bg-slate-400 dark:bg-slate-600'}`} />
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="theme-surface rounded-3xl p-6">
-              <RiShieldCheckLine className="mb-4 text-2xl text-blue-600 dark:text-blue-300" />
-              <h3 className="mb-2 text-xs font-bold uppercase tracking-widest theme-title">Aillame Local Hub</h3>
-              <p className="text-[10px] leading-relaxed theme-muted">
-                Aillame Desktop, harici runtime wrapper zorunluluğu olmadan çalışacak şekilde tasarlanmıştır.
-                Final kabul için yerel LLM ve IGM çalışma zamanlarının doğrulanması şarttır.
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
+        )}
+      </main>
     </div>
   );
 }
