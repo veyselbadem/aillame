@@ -77,7 +77,7 @@ const ADMIN_SETTINGS_GROUPS = [
     label: 'Lab ve Değerlendirme',
     icon: FiStar,
     items: [
-      { href: '/admin/ai-lab',            label: 'Aillame Lab',        icon: FiCpu },
+      { href: '/admin/ai-lab',            label: 'Compatibility Lab',     icon: FiCpu },
       { href: '/admin/intelligence',      label: 'Nano Eval',          icon: FiStar },
       { href: '/admin/research-results',  label: 'Araştırma Sonuçları', icon: FiBook },
     ],
@@ -336,7 +336,7 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
           <div className="px-5 py-4 border-t border-slate-200 dark:border-white/5">
             <div className="flex items-center gap-2">
               <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse flex-shrink-0" />
-              <span className="text-[9px] text-slate-600 dark:text-slate-400 font-black uppercase tracking-widest">Local AI Hub Active</span>
+              <span className="text-[9px] text-slate-600 dark:text-slate-400 font-black uppercase tracking-widest">Local Mode Active</span>
             </div>
             <p className="text-[8px] font-black tracking-[0.3em] text-slate-500 dark:text-slate-500 uppercase mt-1">AILLAME PROJECT v1.3</p>
           </div>

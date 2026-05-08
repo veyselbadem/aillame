@@ -4,7 +4,7 @@ import { AgentFileReadRequest, AgentFileSummary } from "./types";
 import { FileReadPolicy } from "./file-read-policy";
 import { SecretRedactor } from "./secret-redactor";
 import { CodeStructureExtractor } from "./code-structure-extractor";
-import { resolveExistingPathInWorkspace } from "../workspace-scanner/path-policy";
+import { resolveContainedExistingPath } from "../workspace-scanner/path-policy";
 
 export class AgentFileReader {
   private policy = new FileReadPolicy();
@@ -17,7 +17,7 @@ export class AgentFileReader {
 
   async readFile(workspacePath: string, relativePath: string, maxBytes = AgentFileReader.DEFAULT_MAX_BYTES): Promise<AgentFileSummary | null> {
     // 1. Path Safety
-    const resolvedPath = resolveExistingPathInWorkspace(workspacePath, relativePath);
+    const resolvedPath = resolveContainedExistingPath(workspacePath, relativePath);
     if (!resolvedPath) return null;
 
     // 2. Read Policy

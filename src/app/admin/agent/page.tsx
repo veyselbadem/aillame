@@ -9,6 +9,83 @@ import {
 } from 'react-icons/fi';
 import StatusBadge from '@/components/ui/StatusBadge';
 
+type ApiBody = Record<string, unknown>;
+type WorkflowStep = 'idle' | 'scanning' | 'planning' | 'reading' | 'proposing' | 'verifying' | 'auditing';
+
+interface ScanResult {
+  safeRootName: string;
+  projectType: string;
+  detectedFrameworks: string[];
+  detectedLanguages: string[];
+  ignoredCounts: { total: number };
+}
+
+interface ScanResponse {
+  summary?: ScanResult;
+}
+
+interface AgentPlanStep {
+  title: string;
+}
+
+interface PlanResult {
+  task: { intent: { riskLevel: 'low' | 'medium' | 'high'; confidence: number } };
+  plan: { summary: string; steps: AgentPlanStep[] };
+}
+
+interface SelectedFileSummary {
+  relativePath: string;
+  language: string;
+}
+
+interface DeepContextResult {
+  selectedFiles: SelectedFileSummary[];
+}
+
+interface PatchChangeView {
+  relativePath: string;
+  changeType: string;
+  unifiedDiff: string;
+}
+
+interface PatchProposalResult {
+  changes: PatchChangeView[];
+}
+
+interface PatchApplyView {
+  dryRunToken?: string;
+}
+
+interface SuggestedCommandView {
+  command: string;
+  risk: 'low' | 'medium' | 'high';
+  reason: string;
+}
+
+interface BackupView {
+  relativePath: string;
+  backupId: string;
+}
+
+interface AuditResult {
+  status: 'verified' | 'partially-verified' | string;
+  verificationPlan: { suggestedCommands: SuggestedCommandView[] };
+  backups: BackupView[];
+}
+
+interface MemorySummary {
+  totalCards?: number;
+}
+
+interface MemoryCardView {
+  id: string;
+  outcome: 'success' | 'partial' | 'failed' | string;
+  taskCategory: string;
+  createdAt: string;
+  taskSummary: string;
+  changedAreas: string[];
+}
+
 export default function AgentCommandCenter() {
   const router = useRouter();
   const [authorized, setAuthorized] = useState(false);
@@ -17,24 +94,24 @@ export default function AgentCommandCenter() {
   // Workflow State
   const [workspacePath, setWorkspacePath] = useState('');
   const [userTask, setUserTask] = useState('');
-  const [currentStep, setCurrentStep] = useState<'idle' | 'scanning' | 'planning' | 'reading' | 'proposing' | 'verifying' | 'auditing'>('idle');
+  const [currentStep, setCurrentStep] = useState<WorkflowStep>('idle');
   
   // Results
-  const [scanResult, setScanResult] = useState<any>(null);
-  const [planResult, setPlanResult] = useState<any>(null);
-  const [deepContextResult, setDeepContextResult] = useState<any>(null);
-  const [patchProposalResult, setPatchProposalResult] = useState<any>(null);
-  const [dryRunResult, setDryRunResult] = useState<any>(null);
-  const [applyResult, setApplyResult] = useState<any>(null);
-  const [auditResult, setAuditResult] = useState<any>(null);
+  const [scanResult, setScanResult] = useState<ScanResult | null>(null);
+  const [planResult, setPlanResult] = useState<PlanResult | null>(null);
+  const [deepContextResult, setDeepContextResult] = useState<DeepContextResult | null>(null);
+  const [patchProposalResult, setPatchProposalResult] = useState<PatchProposalResult | null>(null);
+  const [dryRunResult, setDryRunResult] = useState<PatchApplyView | null>(null);
+  const [applyResult, setApplyResult] = useState<PatchApplyView | null>(null);
+  const [auditResult, setAuditResult] = useState<AuditResult | null>(null);
 
   // UI Control
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [approvalText, setApprovalText] = useState('');
   const [isDryRunDone, setIsDryRunDone] = useState(false);
-  const [memorySummary, setMemorySummary] = useState<any>(null);
-  const [memoryCards, setMemoryCards] = useState<any[]>([]);
+  const [memorySummary, setMemorySummary] = useState<MemorySummary | null>(null);
+  const [memoryCards, setMemoryCards] = useState<MemoryCardView[]>([]);
 
   useEffect(() => {
     const auth = localStorage.getItem('admin_auth');
@@ -64,7 +141,7 @@ export default function AgentCommandCenter() {
     } catch {}
   };
 
-  const apiCall = async (endpoint: string, body: any) => {
+  const apiCall = async <T,>(endpoint: string, body: ApiBody): Promise<T | null> => {
     setError(null);
     try {
       const response = await fetch(endpoint, {
@@ -77,11 +154,14 @@ export default function AgentCommandCenter() {
       });
       const data = await response.json();
       if (!response.ok || !data.success) {
+        if (data.error?.problem) {
+          throw new Error(`${data.error.problem} Solution: ${data.error.solution} Validation: ${data.error.validation}`);
+        }
         throw new Error(data.error?.message || data.message || 'İşlem başarısız oldu.');
       }
       return data;
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'İşlem başarısız oldu.');
       return null;
     }
   };
@@ -90,15 +170,15 @@ export default function AgentCommandCenter() {
     if (!workspacePath) { setError('Lütfen bir workspace yolu girin.'); return; }
     setLoading(true);
     setCurrentStep('scanning');
-    const result = await apiCall('/api/admin/agent/workspace/scan', { workspacePath });
-    if (result) setScanResult(result);
+    const result = await apiCall<ScanResponse & Partial<ScanResult>>('/api/admin/agent/workspace/scan', { workspacePath });
+    if (result) setScanResult(result.summary ?? (result as ScanResult));
     setLoading(false);
   };
 
   const handlePlan = async () => {
     setLoading(true);
     setCurrentStep('planning');
-    const result = await apiCall('/api/admin/agent/plan', { workspacePath, userTask, workspaceContext: scanResult });
+    const result = await apiCall<PlanResult>('/api/admin/agent/plan', { workspacePath, userTask, workspaceContext: scanResult });
     if (result) setPlanResult(result);
     setLoading(false);
   };
@@ -106,7 +186,7 @@ export default function AgentCommandCenter() {
   const handleDeepContext = async () => {
     setLoading(true);
     setCurrentStep('reading');
-    const result = await apiCall('/api/admin/agent/deep-context', { workspacePath, plan: planResult });
+    const result = await apiCall<DeepContextResult>('/api/admin/agent/deep-context', { workspacePath, plan: planResult });
     if (result) setDeepContextResult(result);
     setLoading(false);
   };
@@ -114,14 +194,14 @@ export default function AgentCommandCenter() {
   const handleProposal = async () => {
     setLoading(true);
     setCurrentStep('proposing');
-    const result = await apiCall('/api/admin/agent/patch-proposal', { workspacePath, userTask, deepContext: deepContextResult });
+    const result = await apiCall<PatchProposalResult>('/api/admin/agent/patch-proposal', { workspacePath, userTask, deepContext: deepContextResult });
     if (result) setPatchProposalResult(result);
     setLoading(false);
   };
 
   const handleDryRun = async () => {
     setLoading(true);
-    const result = await apiCall('/api/admin/agent/apply-patch', { 
+    const result = await apiCall<PatchApplyView>('/api/admin/agent/apply-patch', { 
       workspacePath, 
       proposal: patchProposalResult,
       options: { dryRun: true, backup: true },
@@ -140,7 +220,7 @@ export default function AgentCommandCenter() {
       return;
     }
     setLoading(true);
-    const result = await apiCall('/api/admin/agent/apply-patch', { 
+    const result = await apiCall<PatchApplyView>('/api/admin/agent/apply-patch', { 
       workspacePath, 
       proposal: patchProposalResult,
       options: { dryRun: false, backup: true },
@@ -153,7 +233,7 @@ export default function AgentCommandCenter() {
   const handleAudit = async () => {
     setLoading(true);
     setCurrentStep('auditing');
-    const result = await apiCall('/api/admin/agent/execution-audit', { 
+    const result = await apiCall<AuditResult>('/api/admin/agent/execution-audit', { 
       workspacePath, 
       applyResult: applyResult || dryRunResult,
       originalProposal: patchProposalResult,
@@ -163,7 +243,7 @@ export default function AgentCommandCenter() {
       setAuditResult(result);
       // Auto-learn if successful
       if (result.status === 'verified' || result.status === 'partially-verified') {
-        await apiCall('/api/admin/agent/memory/learn', {
+        await apiCall<{ success: boolean }>('/api/admin/agent/memory/learn', {
           audit: result,
           userTask,
           safeRootName: scanResult?.safeRootName || 'unknown'
@@ -292,7 +372,7 @@ export default function AgentCommandCenter() {
                   <p className="text-indigo-200 text-sm leading-relaxed">{planResult.plan.summary}</p>
                 </div>
                 <div className="space-y-2">
-                  {planResult.plan.steps.map((step: any, idx: number) => (
+                  {planResult.plan.steps.map((step: AgentPlanStep, idx: number) => (
                     <div key={idx} className="flex items-center gap-3 text-xs text-slate-400">
                       <span className="w-5 h-5 rounded-full bg-white/5 flex items-center justify-center text-[10px] font-black">{idx + 1}</span>
                       {step.title}
@@ -319,7 +399,7 @@ export default function AgentCommandCenter() {
                 DEEP CONTEXT (ANALİZ EDİLEN DOSYALAR)
               </h3>
               <div className="space-y-3 mb-6">
-                {deepContextResult.selectedFiles.map((file: any, idx: number) => (
+                {deepContextResult.selectedFiles.map((file: SelectedFileSummary, idx: number) => (
                   <div key={idx} className="flex items-center justify-between p-3 bg-black/10 rounded-xl border border-white/5">
                     <div className="flex items-center gap-3 truncate">
                       <FiFileText className="text-slate-500" />
@@ -351,7 +431,7 @@ export default function AgentCommandCenter() {
                 <StatusBadge variant="failed" label="Human Approval Gated" />
               </div>
               <div className="space-y-6">
-                {patchProposalResult.changes.map((change: any, idx: number) => (
+                {patchProposalResult.changes.map((change: PatchChangeView, idx: number) => (
                   <div key={idx} className="bg-black/40 rounded-2xl border border-white/5 overflow-hidden shadow-inner">
                     <div className="px-4 py-3 bg-white/5 border-b border-white/5 flex items-center justify-between">
                       <span className="text-xs font-black text-indigo-300 font-mono tracking-tighter">{change.relativePath}</span>
@@ -429,7 +509,7 @@ export default function AgentCommandCenter() {
                 <div className="space-y-4">
                   <h4 className="text-xs font-black text-slate-500 uppercase tracking-widest px-1">Önerilen Doğrulama Komutları</h4>
                   <div className="space-y-3">
-                    {auditResult.verificationPlan.suggestedCommands.map((cmd: any, idx: number) => (
+                    {auditResult.verificationPlan.suggestedCommands.map((cmd: SuggestedCommandView, idx: number) => (
                       <div key={idx} className="group bg-black/30 border border-white/5 rounded-2xl p-4 hover:border-indigo-500/30 transition-all">
                         <div className="flex items-center justify-between mb-2">
                           <code className="text-indigo-300 font-mono text-sm">{cmd.command}</code>
@@ -446,7 +526,7 @@ export default function AgentCommandCenter() {
                     <FiShield /> Rollback Rehberi
                   </h4>
                   <div className="space-y-2">
-                    {auditResult.backups.map((bk: any, idx: number) => (
+                    {auditResult.backups.map((bk: BackupView, idx: number) => (
                       <div key={idx} className="text-[10px] text-amber-200/60 font-mono">
                         {bk.relativePath} {'->'} {bk.backupId}
                       </div>

@@ -31,9 +31,9 @@ export default function HomePage() {
 
           <h1 className="text-4xl sm:text-5xl font-black tracking-tighter">
             <span className="text-gradient">Aillame</span>
-            <span className="text-gray-600 font-normal text-2xl ml-3 tracking-normal">Workspace</span>
+            <span className="text-muted font-normal text-2xl ml-3 tracking-normal">Workspace</span>
           </h1>
-          <p className="text-gray-500 text-sm mt-2 max-w-lg leading-relaxed">
+          <p className="text-muted text-sm mt-2 max-w-lg leading-relaxed">
             Rust + TypeScript tabanlı yerel AI provider. Nano motoru · Güvenli fallback · Provider API.
           </p>
         </header>
@@ -53,7 +53,7 @@ export default function HomePage() {
         </section>
 
         <footer className="text-center pt-6">
-          <p className="text-gray-700 text-[9px] font-black tracking-[0.5em] uppercase opacity-50">
+          <p className="text-muted text-[9px] font-black tracking-[0.5em] uppercase opacity-70">
             Aillame AI Project · Local Edge · Privacy First · 2026
           </p>
         </footer>

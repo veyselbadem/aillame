@@ -16,9 +16,41 @@ const RANDOM_TOPICS = [
   'Metaverse ve Sosyal Etkileşimin Dönüşümü'
 ];
 
+type LabSessionStatus = 'draft' | 'running' | 'completed' | 'degraded' | 'failed' | 'paused' | 'stopped' | string;
+
+interface LabMessage {
+  model: string;
+  content: string;
+  createdAt: string;
+  outputType?: 'planning' | 'degraded' | 'skipped' | 'error' | string;
+  candidateForTraining?: boolean;
+  generationMetadata?: {
+    deviceDetails?: string;
+    performanceWarning?: boolean;
+  };
+  safetyFlags?: string[];
+  imageUrl?: string;
+  prompt?: string;
+  citations?: string[];
+}
+
+interface LabSession {
+  id: string;
+  topic: string;
+  goal?: string;
+  status: LabSessionStatus;
+  currentTurn: number;
+  maxTurns: number;
+  messages: LabMessage[];
+}
+
+interface LabReadiness {
+  overallFinalAcceptanceReady?: boolean;
+}
+
 export default function AiLabPage() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-  const [sessions, setSessions] = useState<any[]>([]);
+  const [sessions, setSessions] = useState<LabSession[]>([]);
   const [loading, setLoading] = useState(true);
   const [token, setToken] = useState<string | null>(null);
 
@@ -26,13 +58,13 @@ export default function AiLabPage() {
   const [sessionGoal, setSessionGoal] = useState('research');
   const [maxTurns, setMaxTurns] = useState<number>(5);
   const [selectedParticipants, setSelectedParticipants] = useState<string[]>(['nano']);
-  const [selectedSession, setSelectedSession] = useState<any | null>(null);
-  const [qwenStatus, setQwenStatus] = useState<any>(null);
-  const [sdxlStatus, setSdxlStatus] = useState<any>(null);
-  const [gemmaStatus, setGemmaStatus] = useState<any>(null);
-  const [ollamaStatus, setOllamaStatus] = useState<any>(null);
+  const [selectedSession, setSelectedSession] = useState<LabSession | null>(null);
+  const [qwenStatus, setQwenStatus] = useState<unknown>(null);
+  const [sdxlStatus, setSdxlStatus] = useState<unknown>(null);
+  const [gemmaStatus, setGemmaStatus] = useState<unknown>(null);
+  const [ollamaStatus, setOllamaStatus] = useState<unknown>(null);
   const [runInFlightSessionId, setRunInFlightSessionId] = useState<string | null>(null);
-  const [readiness, setReadiness] = useState<any>(null);
+  const [readiness, setReadiness] = useState<LabReadiness | null>(null);
 
   useEffect(() => {
     const savedToken = localStorage.getItem('aillame_admin_token');
@@ -271,7 +303,7 @@ export default function AiLabPage() {
   if (loading) return <div className="p-8 text-[var(--text-main)] bg-[var(--bg-main)] min-h-screen flex items-center justify-center">
     <div className="flex flex-col items-center gap-4">
       <FiActivity className="w-12 h-12 text-indigo-500 animate-pulse" />
-      <span className="text-sm font-bold uppercase tracking-widest opacity-50">AI Lab Yükleniyor...</span>
+      <span className="text-sm font-bold uppercase tracking-widest opacity-50">Compatibility Lab yükleniyor...</span>
     </div>
   </div>;
 
@@ -285,7 +317,7 @@ export default function AiLabPage() {
       <main className="flex-1 overflow-y-auto p-4 md:p-8 custom-scrollbar">
         <header className="mb-8 flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-black tracking-tight text-gradient">Aillame Lab Plus</h1>
+            <h1 className="text-3xl font-black tracking-tight text-gradient">Compatibility Lab</h1>
             <p className="text-[var(--text-muted)] mt-1 font-medium">
               Model, prompt, Nano, RAG ve provider çıktıları için güvenli deney ve değerlendirme alanı.
             </p>
@@ -294,6 +326,13 @@ export default function AiLabPage() {
             <StatusBadge variant="info" label="Experiment / Evaluation" />
           </div>
         </header>
+
+        <section className="mb-6 rounded-2xl border border-amber-500/25 bg-amber-500/10 px-5 py-4 text-sm text-amber-800 dark:text-amber-200">
+          <p className="font-black uppercase tracking-[0.18em] text-[10px]">Experimental Area</p>
+          <p className="mt-1 font-medium">
+            This lab is for testing model compatibility and performance. Features here may not reflect final production stability.
+          </p>
+        </section>
 
         <section className="mb-6 grid gap-3 md:grid-cols-3">
           <div className="theme-surface rounded-2xl p-4 border border-transparent hover:border-slate-200 dark:hover:border-slate-800 transition-all">
@@ -475,7 +514,7 @@ export default function AiLabPage() {
                   Henüz bir laboratuvar oturumu bulunmuyor.
                 </div>
               ) : (
-                sessions.map((s: any) => (
+                sessions.map((s: LabSession) => (
                   <div
                     key={s.id}
                     onClick={() => setSelectedSession(s)}
@@ -557,7 +596,7 @@ export default function AiLabPage() {
                     <p className="text-xs font-bold uppercase tracking-widest">Henüz mesaj yok. Deneyi başlatın.</p>
                   </div>
                 ) : (
-                  selectedSession.messages.map((m: any, idx: number) => {
+                  selectedSession.messages.map((m: LabMessage, idx: number) => {
                     const isSystem = m.model === 'system';
                     const isUserLike = m.model === 'nano' || m.model === 'qwen';
 

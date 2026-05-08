@@ -12,7 +12,7 @@ import {
   SECRET_PATTERNS 
 } from "./ignore-policy";
 import { detectProject } from "./project-detector";
-import { isSafePath, maskPath, resolveExistingPathInWorkspace, resolveWorkspaceRoot } from "./path-policy";
+import { maskPath, resolveContainedExistingPath, resolveContainedWorkspaceRoot } from "./path-policy";
 
 const MAX_FILE_SIZE_FOR_METADATA = 1024 * 1024; // 1 MB
 
@@ -27,8 +27,8 @@ export class WorkspaceScanner {
   async scan(request: WorkspaceScanRequest): Promise<WorkspaceScanSummary> {
     const { workspacePath, maxDepth = 4, maxFiles = 1000 } = request;
 
-    const resolvedRoot = resolveWorkspaceRoot(workspacePath);
-    if (!resolvedRoot || !isSafePath(resolvedRoot)) {
+    const resolvedRoot = resolveContainedWorkspaceRoot(workspacePath);
+    if (!resolvedRoot) {
       throw new Error(`UNSAFE_PATH: Requested workspace path is outside of safe boundaries or contains traversal markers (..): ${workspacePath}`);
     }
 
@@ -174,7 +174,7 @@ export class WorkspaceScanner {
   }
 
   async readSafeMetadata(workspacePath: string, relativePath: string): Promise<string | null> {
-    const normalized = resolveExistingPathInWorkspace(workspacePath, relativePath);
+    const normalized = resolveContainedExistingPath(workspacePath, relativePath);
     if (!normalized) return null;
     
     const fileName = path.basename(normalized).toLowerCase();
@@ -188,7 +188,7 @@ export class WorkspaceScanner {
 
       const content = await fs.readFile(normalized, "utf8");
       return content;
-    } catch (err: any) {
+    } catch {
       return null;
     }
   }

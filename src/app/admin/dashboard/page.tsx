@@ -23,7 +23,7 @@ import {
   FiImage,
   FiStar,
 } from 'react-icons/fi';
-import StatusBadge from '@components/ui/StatusBadge';
+import StatusBadge, { type StatusBadgeVariant } from '@components/ui/StatusBadge';
 
 const memory = new LocalMemoryStore();
 
@@ -35,11 +35,34 @@ interface BrainStats {
   memoryEntries: number;
 }
 
+interface ComponentHealthView {
+  status?: string;
+  details?: {
+    runtime?: string;
+    nanoAvailable?: boolean;
+  };
+}
+
+interface SystemHealthView {
+  llm?: ComponentHealthView;
+  igm?: ComponentHealthView;
+  memory?: ComponentHealthView;
+  providerApi?: ComponentHealthView;
+  agent?: ComponentHealthView;
+  storage?: ComponentHealthView;
+}
+
+interface LiveStatus {
+  status: string;
+  variant: StatusBadgeVariant;
+  isLive: boolean;
+}
+
 const QUICK_LINKS = [
   { href: '/admin/model-library',       label: 'Modeller',           icon: FiPackage,   color: 'text-violet-400 bg-violet-500/10 border-violet-500/15' },
   { href: '/admin/image-assets',        label: 'Görseller',          icon: FiImage,     color: 'text-pink-400 bg-pink-500/10 border-pink-500/15' },
   { href: '/admin/agent-tasks',         label: 'Code Agent',         icon: FiClipboard, color: 'text-blue-400 bg-blue-500/10 border-blue-500/15' },
-  { href: '/admin/ai-lab',              label: 'Aillame Lab',        icon: FiCpu,       color: 'text-indigo-400 bg-indigo-500/10 border-indigo-500/15' },
+  { href: '/admin/ai-lab',              label: 'Compatibility Lab',     icon: FiCpu,       color: 'text-indigo-400 bg-indigo-500/10 border-indigo-500/15' },
   { href: '/admin/documents',           label: 'Belgeler / RAG',     icon: FiBook,      color: 'text-cyan-400 bg-cyan-500/10 border-cyan-500/15' },
   { href: '/admin/api-clients',         label: 'Provider API',       icon: FiKey,       color: 'text-indigo-400 bg-indigo-500/10 border-indigo-500/15' },
   { href: '/admin/memory-cards',        label: 'Hafıza Kartları',    icon: FiDatabase,  color: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/15' },
@@ -56,12 +79,13 @@ const FOUNDATION_STATUS = [
   { label: 'Vector Memory / RAG', desc: 'Document ingestion ve bellek entegrasyonu.', variant: 'active' as const, status: 'ready' },
   { label: 'Nano Diagnostics', desc: 'Advisory decisions ve hooks (otonom kapalı).', variant: 'protected' as const, status: 'ready' },
   { label: 'Security / Permissions', desc: 'API key, permission scopes.', variant: 'active' as const, status: 'ready' },
+  { label: 'Legacy Services', desc: 'Eski sağlayıcılar devre dışı (AILLAME_ENABLE_LEGACY_PROVIDERS).', variant: 'disabled' as const, status: 'disabled' },
 ];
 
 export default function AdminDashboard() {
   const [stats, setStats] = useState({ conversations: 0, messages: 0 });
   const [brainStats, setBrainStats] = useState<BrainStats | null>(null);
-  const [systemHealth, setSystemHealth] = useState<any>(null);
+  const [systemHealth, setSystemHealth] = useState<SystemHealthView | null>(null);
   const [authorized, setAuthorized] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const router = useRouter();
@@ -121,7 +145,7 @@ export default function AdminDashboard() {
 
   const formatBytes = (b: number) => b < 1024 ? `${b}B` : b < 1048576 ? `${(b / 1024).toFixed(1)}KB` : `${(b / 1048576).toFixed(1)}MB`;
 
-  const getLiveStatus = (label: string, defaultStatus: string, defaultVariant: any): { status: string; variant: any; isLive: boolean } => {
+  const getLiveStatus = (label: string, defaultStatus: string, defaultVariant: StatusBadgeVariant): LiveStatus => {
     if (!systemHealth) return { status: defaultStatus, variant: defaultVariant, isLive: false };
     
     let liveStatus: string | undefined;
@@ -136,11 +160,12 @@ export default function AdminDashboard() {
       case 'Nano Diagnostics': liveStatus = systemHealth.llm?.details?.nanoAvailable ? 'ready' : 'failed'; break;
       case 'Security / Permissions': liveStatus = 'ready'; break;
       case 'Desktop Readiness': liveStatus = systemHealth.storage?.status; break;
+      case 'Legacy Services': liveStatus = 'disabled'; break;
     }
 
     if (!liveStatus) return { status: defaultStatus, variant: defaultVariant, isLive: false };
     
-    let variant = defaultVariant;
+    let variant: StatusBadgeVariant = defaultVariant;
     let finalLabel = liveStatus;
     
     if (liveStatus === 'ready') {
@@ -155,6 +180,9 @@ export default function AdminDashboard() {
     } else if (liveStatus === 'not-configured') {
       variant = 'disabled';
       finalLabel = 'Yapılandırılmadı';
+    } else if (liveStatus === 'disabled') {
+      variant = 'disabled';
+      finalLabel = 'Devre Dışı';
     } else if (liveStatus === 'pending') {
       finalLabel = 'Bekliyor';
     }
@@ -165,7 +193,7 @@ export default function AdminDashboard() {
   if (!authorized) return null;
 
   return (
-    <div className="min-h-screen theme-shell theme-admin-page relative flex flex-col overflow-hidden">
+    <div className="min-h-screen bg-surface text-ink theme-admin-page relative flex flex-col overflow-hidden">
       <main className="relative z-10 flex-1 p-5 md:p-10 max-w-7xl mx-auto w-full animate-fade-in">
         <header className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 mb-12">
           <div className="space-y-1.5">
@@ -303,7 +331,7 @@ export default function AdminDashboard() {
               </h2>
               <div className="grid gap-2">
                 <StatusRow label="Metin Motoru (Text)" value="verified" ok />
-                <StatusRow label="IGM Worker" value={getLiveStatus('Image Workflow', 'pending', 'pending').status} ok={getLiveStatus('Image Workflow', '', '').status === 'ready'} />
+                <StatusRow label="IGM Worker" value={getLiveStatus('Image Workflow', 'pending', 'pending').status} ok={getLiveStatus('Image Workflow', 'pending', 'pending').status === 'ready'} />
                 <StatusRow label="Agent Planı" value="hazır" ok />
                 <StatusRow label="RAG Pipeline" value="aktif" ok />
               </div>
@@ -319,7 +347,7 @@ export default function AdminDashboard() {
   );
 }
 
-function RuntimeStatusCard({ title, status, icon, desc }: { title: string; status: any; icon: React.ReactNode; desc: string }) {
+function RuntimeStatusCard({ title, status, icon, desc }: { title: string; status: LiveStatus; icon: React.ReactNode; desc: string }) {
   return (
     <div className="theme-surface p-6 rounded-[28px] relative overflow-hidden group">
       <div className={`absolute top-0 right-0 w-24 h-24 -mr-8 -mt-8 rounded-full blur-3xl opacity-10 transition-opacity group-hover:opacity-20 ${status.variant === 'active' ? 'bg-emerald-500' : 'bg-indigo-500'}`} />

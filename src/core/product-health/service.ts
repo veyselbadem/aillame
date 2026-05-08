@@ -2,6 +2,7 @@ import { RuntimeAcceptanceService } from "../runtime/acceptance/acceptance-servi
 import { IGMRuntimeReadiness } from "../runtime/image/igm-runtime-readiness";
 import { AgentMemoryService } from "../agent/memory/service";
 import { ProductHealth, HealthStatus, ComponentHealth } from "./types";
+import { isLegacyProvidersEnabled } from "../feature-flags/legacy-providers";
 import * as fs from "fs";
 import * as path from "path";
 
@@ -14,6 +15,7 @@ export class ProductHealthService {
   static async getHealth(): Promise<ProductHealth> {
     const runtimeReport = RuntimeAcceptanceService.getReport();
     const memorySummary = await AgentMemoryService.getSummary();
+    const legacyProvidersEnabled = isLegacyProvidersEnabled();
 
     const llm: ComponentHealth = {
       status: this.mapStatus(runtimeReport.text.status),
@@ -48,7 +50,9 @@ export class ProductHealthService {
       warnings: runtimeReport.overall.finalAcceptanceReady ? [] : runtimeReport.overall.blockers,
       details: {
         textEnabled: llm.available,
-        imageEnabled: igm.available
+        imageEnabled: igm.available,
+        cloudProviders: legacyProvidersEnabled ? "Legacy Enabled" : "Disabled",
+        cloudConfiguration: legacyProvidersEnabled ? "Legacy policy enabled" : "N/A"
       }
     };
 

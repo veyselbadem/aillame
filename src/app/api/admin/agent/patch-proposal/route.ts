@@ -5,6 +5,7 @@ import { TaskIntentDetector } from "@/core/agent/planner/task-intent-detector";
 import { AgentPlanBuilder } from "@/core/agent/planner/agent-plan-builder";
 import { DeepContextBuilder } from "@/core/agent/file-reader/deep-context-builder";
 import { PatchProposalBuilder } from "@/core/agent/patch-proposal/patch-proposal-builder";
+import { errorMessage, professionalErrorResponse } from "@/core/error/formatter";
 
 export async function POST(req: NextRequest) {
   // 1. Admin Auth Check
@@ -60,15 +61,11 @@ export async function POST(req: NextRequest) {
     const proposal = proposalBuilder.build(deepContext);
 
     return NextResponse.json(proposal);
-  } catch (error: any) {
+  } catch (error) {
+    const message = errorMessage(error, "Patch proposal generation failed.");
+    const code = message.startsWith("UNSAFE_PATH") ? "UNSAFE_PATH" : "FILE_OPERATION_FAILED";
     return NextResponse.json(
-      { 
-        success: false, 
-        error: { 
-          code: error.message.startsWith("UNSAFE_PATH") ? "UNSAFE_PATH" : "PATCH_PROPOSAL_FAILED", 
-          message: error.message 
-        } 
-      },
+      professionalErrorResponse(code, message),
       { status: 400 }
     );
   }

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { PatchApplyEngine } from "@/core/agent/safe-write/patch-apply-engine";
+import { errorMessage, professionalErrorResponse } from "@/core/error/formatter";
 
 export async function POST(req: NextRequest) {
   // 1. Admin Auth Check
@@ -44,16 +45,15 @@ export async function POST(req: NextRequest) {
     });
 
     return NextResponse.json(result);
-  } catch (error: any) {
-    const code = error.message.includes("APPROVAL_REQUIRED") ? "APPROVAL_REQUIRED" : "PATCH_APPLY_FAILED";
+  } catch (error) {
+    const message = errorMessage(error, "Patch apply failed.");
+    const code = message.includes("DRY_RUN_REQUIRED")
+      ? "DRY_RUN_REQUIRED"
+      : message.includes("APPROVAL_REQUIRED")
+      ? "INVALID_PARAMS"
+      : "FILE_OPERATION_FAILED";
     return NextResponse.json(
-      { 
-        success: false, 
-        error: { 
-          code, 
-          message: error.message 
-        } 
-      },
+      professionalErrorResponse(code, message),
       { status: 400 }
     );
   }

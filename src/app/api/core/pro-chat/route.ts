@@ -4,6 +4,7 @@ import { getAllModelInstallStatuses, getGeminiReadiness } from '@core/model-mana
 import { checkGeminiConfig, generateGeminiResponse } from '@core/inference/gemini';
 import { generateProMultimodalResponse } from '@core/inference/pro-multimodal';
 import { enrichPromptForConversation, normalizeAssistantAnswer } from '@core/conversation/conversation-quality';
+import { LOCAL_FIRST_DISABLED_MESSAGE, isLegacyProvidersEnabled } from '@core/feature-flags/legacy-providers';
 
 type ProProvider = 'gemini' | 'qwen';
 
@@ -26,14 +27,17 @@ function chooseProProvider(): {
   const requestedProvider = getRequestedProvider();
   const gemini = checkGeminiConfig();
   const qwenEnabled = isQwenEnabled();
+  const legacyProvidersEnabled = isLegacyProvidersEnabled();
 
   if (requestedProvider === 'gemini') {
-    return { provider: 'gemini', requestedProvider };
+    return legacyProvidersEnabled
+      ? { provider: 'gemini', requestedProvider }
+      : { requestedProvider, reason: 'legacy_provider_disabled' };
   }
 
   if (requestedProvider === 'qwen') {
     if (qwenEnabled) return { provider: 'qwen', requestedProvider };
-    if (gemini.enabled && gemini.apiKeyConfigured) {
+    if (legacyProvidersEnabled && gemini.enabled && gemini.apiKeyConfigured) {
       return {
         provider: 'gemini',
         requestedProvider,
@@ -44,7 +48,7 @@ function chooseProProvider(): {
     return { provider: 'qwen', requestedProvider, reason: 'qwen_disabled' };
   }
 
-  if (gemini.enabled && gemini.apiKeyConfigured) {
+  if (legacyProvidersEnabled && gemini.enabled && gemini.apiKeyConfigured) {
     return { provider: 'gemini' };
   }
 
@@ -138,6 +142,18 @@ export async function POST(req: NextRequest) {
     }
 
     if (!providerChoice.provider) {
+      if (providerChoice.reason === 'legacy_provider_disabled') {
+        return NextResponse.json(
+          {
+            success: false,
+            provider: 'pro',
+            code: 'disabled_by_policy',
+            error: LOCAL_FIRST_DISABLED_MESSAGE,
+          },
+          { status: 410 }
+        );
+      }
+
       return NextResponse.json(
         {
           success: false,

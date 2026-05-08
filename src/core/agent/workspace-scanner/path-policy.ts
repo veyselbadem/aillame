@@ -1,24 +1,7 @@
 import path from "path";
 import fs from "fs";
 
-export function isSafePath(targetPath: string): boolean {
-  if (!targetPath) return false;
-  
-  // Explicitly block path traversal symbols
-  if (targetPath.includes("..")) return false;
-
-  const normalized = path.normalize(targetPath);
-  
-  // Basic Windows path safety (Drive letter check)
-  if (/^[a-zA-Z]:\\/.test(normalized) || /^[a-zA-Z]:\//.test(normalized)) {
-    return true;
-  }
-  
-  // Fallback to absolute check
-  return path.isAbsolute(normalized);
-}
-
-export function resolveWorkspaceRoot(workspacePath: string): string | null {
+export function resolveContainedWorkspaceRoot(workspacePath: string): string | null {
   if (!workspacePath || !path.isAbsolute(workspacePath)) return null;
   if (workspacePath.includes("\0")) return null;
 
@@ -31,11 +14,11 @@ export function resolveWorkspaceRoot(workspacePath: string): string | null {
   }
 }
 
-export function resolveExistingPathInWorkspace(workspacePath: string, relativePath: string): string | null {
+export function resolveContainedExistingPath(workspacePath: string, relativePath: string): string | null {
   if (!relativePath || relativePath.includes("\0")) return null;
   if (path.isAbsolute(relativePath) || /^[a-zA-Z]:[\\/]/.test(relativePath)) return null;
 
-  const workspaceRoot = resolveWorkspaceRoot(workspacePath);
+  const workspaceRoot = resolveContainedWorkspaceRoot(workspacePath);
   if (!workspaceRoot) return null;
 
   const normalizedRelative = path.normalize(relativePath);

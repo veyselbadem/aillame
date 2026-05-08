@@ -6,7 +6,8 @@ import { WritePolicy } from "./write-policy";
 import { BackupStore } from "./backup-store";
 import { PatchChange } from "../patch-proposal/types";
 import { DryRunProofStore } from "./dry-run-proof";
-import { resolveExistingPathInWorkspace } from "../workspace-scanner/path-policy";
+import { resolveContainedExistingPath } from "../workspace-scanner/path-policy";
+import { errorMessage } from "../../error/formatter";
 
 export class PatchApplyEngine {
   private approvalGate = new ApprovalGate();
@@ -50,7 +51,7 @@ export class PatchApplyEngine {
       if (approvedChanges.length === 0) continue;
 
       try {
-        const fullPath = resolveExistingPathInWorkspace(request.workspacePath, relPath);
+        const fullPath = resolveContainedExistingPath(request.workspacePath, relPath);
         if (!fullPath) {
           result.skippedChanges.push({ relativePath: relPath, reason: "UNSAFE_PATH: target is outside workspace, missing, or a symlink." });
           result.safety.blockedSensitiveFiles.push(relPath);
@@ -92,8 +93,8 @@ export class PatchApplyEngine {
           result.changedFiles.push({ relativePath: relPath, changeCount: approvedChanges.length });
         }
 
-      } catch (error: any) {
-        result.skippedChanges.push({ relativePath: relPath, reason: error.message });
+      } catch (error) {
+        result.skippedChanges.push({ relativePath: relPath, reason: errorMessage(error) });
       }
     }
 

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { ResultVerifier } from "@/core/agent/execution-audit/result-verifier";
+import { errorMessage, professionalErrorResponse } from "@/core/error/formatter";
 
 export async function POST(req: NextRequest) {
   // 1. Admin Auth Check
@@ -44,15 +45,9 @@ export async function POST(req: NextRequest) {
     });
 
     return NextResponse.json(auditResult);
-  } catch (error: any) {
+  } catch (error) {
     return NextResponse.json(
-      { 
-        success: false, 
-        error: { 
-          code: "AUDIT_FAILED", 
-          message: error.message 
-        } 
-      },
+      professionalErrorResponse("FILE_OPERATION_FAILED", errorMessage(error, "Execution audit failed.")),
       { status: 400 }
     );
   }

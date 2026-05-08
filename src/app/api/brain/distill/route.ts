@@ -1,14 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server';
 import fs from 'fs';
 import path from 'path';
+import { LOCAL_FIRST_DISABLED_MESSAGE, isLegacyProvidersEnabled } from '@core/feature-flags/legacy-providers';
+import { errorMessage, professionalErrorResponse } from '@core/error/formatter';
 
 export async function POST(req: NextRequest) {
     try {
+        if (!isLegacyProvidersEnabled()) {
+            return NextResponse.json(
+                professionalErrorResponse('LOCAL_FIRST_DISABLED', LOCAL_FIRST_DISABLED_MESSAGE),
+                { status: 410 }
+            );
+        }
+
         const { topic, depth = 'detailed' } = await req.json();
         const apiKey = process.env.GEMINI_API_KEY;
 
         if (!apiKey) {
-            return NextResponse.json({ error: 'Gemini API key not found in .env' }, { status: 500 });
+            return NextResponse.json(
+                professionalErrorResponse('LOCAL_FIRST_DISABLED', 'Gemini distillation is unavailable in Local-First mode.'),
+                { status: 410 }
+            );
         }
 
         // 1. Gemini'ye konu hakkında derinlemesine soru sor
@@ -36,7 +48,10 @@ export async function POST(req: NextRequest) {
         const distilledContent = data.candidates?.[0]?.content?.parts?.[0]?.text;
 
         if (!distilledContent) {
-            return NextResponse.json({ error: 'Gemini response empty' }, { status: 500 });
+            return NextResponse.json(
+                professionalErrorResponse('FILE_OPERATION_FAILED', 'The distillation provider returned an empty response.'),
+                { status: 502 }
+            );
         }
 
         // 2. Gelen bilgiyi input.txt'ye ekle
@@ -51,7 +66,10 @@ export async function POST(req: NextRequest) {
             contentPreview: distilledContent.substring(0, 100) + '...'
         });
 
-    } catch (error: any) {
-        return NextResponse.json({ error: error.message }, { status: 500 });
+    } catch (error) {
+        return NextResponse.json(
+            professionalErrorResponse('FILE_OPERATION_FAILED', errorMessage(error, 'Brain distillation failed.')),
+            { status: 500 }
+        );
     }
 }

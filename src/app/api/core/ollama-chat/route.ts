@@ -4,9 +4,17 @@ import { generateWithTextRuntimeRouter } from '@/core/inference/text-runtime-rou
 import { ensureSafeModelId, getRequestedModelIdFromPayload } from '@/core/inference/model-selection';
 import { checkOllamaModelAvailability } from '@/core/inference/ollama-availability';
 import { appendRuntimeModelEvent } from '@/core/ai-lab/runtime-event-log';
+import { LOCAL_FIRST_DISABLED_MESSAGE, isLegacyProvidersEnabled } from '@/core/feature-flags/legacy-providers';
 
 export async function POST(req: NextRequest) {
   try {
+    if (!isLegacyProvidersEnabled()) {
+      return NextResponse.json(
+        { success: false, provider: 'ollama', error: LOCAL_FIRST_DISABLED_MESSAGE, code: 'disabled_by_policy' },
+        { status: 410 }
+      );
+    }
+
     const body = await req.json();
     const prompt = typeof body?.prompt === 'string' ? body.prompt : '';
     const messages = Array.isArray(body?.messages) ? body.messages : [];

@@ -4,12 +4,21 @@ import { useEffect, useState } from 'react';
 import { FiCheckCircle, FiDownloadCloud, FiLoader, FiSettings } from 'react-icons/fi';
 import { useSettings } from '@hooks/useSettings';
 import type { AillameTier, LLMMode } from '@apptypes/settings';
+import { isLegacyProvidersEnabled } from '@core/feature-flags/legacy-providers';
 
 const MODES: Array<{ value: LLMMode; label: string; description: string }> = [
   { value: 'local', label: 'Local', description: 'Nano için yerel Rust çekirdeği.' },
   { value: 'hybrid', label: 'Hybrid (Experimental)', description: 'Beta RC ana akışı dışında, deneysel uyumluluk modu.' },
   { value: 'cloud', label: 'Cloud (Legacy)', description: 'Beta RC ana akışı dışında, eski uzak sağlayıcı modu.' },
 ];
+
+const LEGACY_PROVIDERS_ENABLED = isLegacyProvidersEnabled();
+
+function modeBadge(mode: LLMMode): string | undefined {
+  if (mode === 'hybrid') return 'ADVANCED ONLY';
+  if (mode === 'cloud') return 'DEPRECATED';
+  return undefined;
+}
 
 const TIERS: Array<{ value: AillameTier; label: string; description: string }> = [
   { value: 'nano', label: 'Nano', description: 'Aillame Nano text-only yerel çekirdek.' },
@@ -39,6 +48,7 @@ function purposeLabel(purpose: ModelStatus['purpose']) {
 
 export default function SettingsPage() {
   const { llmMode, setLlmMode, tier, setTier } = useSettings();
+  const [legacyProvidersEnabled, setLegacyProvidersEnabled] = useState(LEGACY_PROVIDERS_ENABLED);
   const [models, setModels] = useState<ModelStatus[]>([]);
   const [loadingModels, setLoadingModels] = useState(true);
   const [installing, setInstalling] = useState<string | null>(null);
@@ -62,6 +72,33 @@ export default function SettingsPage() {
   useEffect(() => {
     loadModels();
   }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    fetch('/api/settings/legacy-providers')
+      .then((response) => response.json())
+      .then((payload) => {
+        if (!cancelled) {
+          setLegacyProvidersEnabled(payload?.enabled === true);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setLegacyProvidersEnabled(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!legacyProvidersEnabled && llmMode !== 'local') {
+      setLlmMode('local');
+    }
+  }, [legacyProvidersEnabled, llmMode, setLlmMode]);
 
   const installModel = async (modelId: string) => {
     setInstalling(modelId);
@@ -119,7 +156,7 @@ export default function SettingsPage() {
             <div>
               <h2 className="text-sm font-black uppercase tracking-[0.2em] text-gray-300 mb-3">LLM Modu</h2>
               <div className="space-y-2">
-                {MODES.map((mode) => (
+                {MODES.filter((mode) => legacyProvidersEnabled || mode.value === 'local').map((mode) => (
                   <button
                     key={mode.value}
                     type="button"
@@ -130,7 +167,14 @@ export default function SettingsPage() {
                         : 'border-white/10 bg-black/20 text-gray-400 hover:text-gray-200'
                     }`}
                   >
-                    <span className="block text-xs font-black uppercase tracking-widest">{mode.label}</span>
+                    <span className="flex items-center justify-between gap-2 text-xs font-black uppercase tracking-widest">
+                      <span>{mode.label}</span>
+                      {modeBadge(mode.value) && (
+                        <span className="rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-[8px] text-amber-300">
+                          {modeBadge(mode.value)}
+                        </span>
+                      )}
+                    </span>
                     <span className="mt-1 block text-[11px] opacity-70">{mode.description}</span>
                   </button>
                 ))}
