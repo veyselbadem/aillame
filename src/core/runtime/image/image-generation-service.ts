@@ -95,7 +95,10 @@ export class ImageGenerationService {
         await imageJobStore.updateJob(jobId, { 
           status: 'completed', 
           progress: 100,
-          outputAssetIds: [assetId] 
+          outputAssetIds: [assetId],
+          device: response.device,
+          deviceDetails: response.deviceDetails,
+          deviceReason: response.deviceReason
         });
       } else {
         await imageJobStore.updateJob(jobId, { 

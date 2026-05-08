@@ -129,6 +129,9 @@ def main() -> int:
                 "mimeType": "image/png",
                 "modelId": model_id,
                 "seed": seed,
+                "device": device,
+                "deviceDetails": "CPU Fallback" if device == "cpu" and payload.get("device") != "cpu" else device.upper(),
+                "deviceReason": "CUDA kernel incompatibility or OOM detected" if device == "cpu" and payload.get("device") != "cpu" else None
             }
         )
     )

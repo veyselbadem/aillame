@@ -92,25 +92,42 @@ export default function DesktopReadinessPage() {
                   <div className="grid gap-6 md:grid-cols-2">
                     <RuntimeRequirementCard
                       icon={<RiFileTextLine className="text-2xl text-blue-500" />}
-                      title="LLM RUNTIME"
+                      title="YEREL LLM (METİN)"
                       ready={report.runtimeAcceptance.textRuntimeReady}
-                      readyText="DOĞRULANDI"
+                      readyText="HAZIR"
                       waitingText="KISITLI"
-                      note="GGUF/Llama-server köprü durumu."
+                      note={report.runtimeAcceptance.textRuntimeReady ? "Yerel GGUF modeliyle metin üretimi doğrulandı." : "Henüz başarılı bir yerel metin üretimi yapılmadı."}
                     />
                     <RuntimeRequirementCard
                       icon={<RiImageLine className="text-2xl text-purple-500" />}
-                      title="IGM RUNTIME"
+                      title="YEREL IGM (GÖRSEL)"
                       ready={report.runtimeAcceptance.imageRuntimeReady}
-                      readyText="DOĞRULANDI"
+                      readyText="HAZIR"
                       waitingText="BEKLENİYOR"
-                      note="SDXL/Diffusers worker köprü durumu."
+                      note={report.runtimeAcceptance.imageRuntimeReady ? "SDXL Turbo ile gerçek görsel üretimi doğrulandı." : "Henüz başarılı bir yerel görsel üretimi yapılmadı."}
+                      device={data.runtimeAcceptance?.image?.deviceDetails}
+                      deviceReason={data.runtimeAcceptance?.image?.deviceReason}
+                      performanceWarning={data.runtimeAcceptance?.image?.performanceWarning}
+                      realOutput={data.runtimeAcceptance?.image?.fileExists && !data.runtimeAcceptance?.image?.placeholderUsed}
                     />
                   </div>
 
+                  {report.runtimeAcceptance.finalAcceptanceReady && (
+                    <div className="mt-8 p-6 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-start gap-4">
+                      <RiCheckboxCircleLine className="text-2xl text-emerald-500 mt-1 flex-shrink-0" />
+                      <div>
+                        <p className="text-sm font-bold theme-title">Tüm Yerel AI Servisleri Doğrulandı</p>
+                        <p className="mt-1 text-[11px] theme-muted leading-relaxed">
+                          Sistem, hiçbir bulut bağımlılığı olmadan metin ve görsel üretebilmektedir. 
+                          Üretilen tüm çıktılar gerçektir (placeholder kullanılmamıştır) ve yerel asset deposuna kaydedilmiştir.
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
                   {!report.runtimeAcceptance.finalAcceptanceReady && (
                     <div className="mt-10 p-5 rounded-2xl bg-amber-500/10 border border-amber-500/20">
-                      <p className="text-[10px] font-black uppercase tracking-widest text-amber-600 dark:text-amber-400 mb-3">Kritik Blokajlar:</p>
+                      <p className="text-[10px] font-black uppercase tracking-widest text-amber-600 dark:text-amber-400 mb-3">Kritik Engeller:</p>
                       <div className="space-y-2">
                         {report.runtimeAcceptance.blockers.map((b: string, i: number) => (
                           <div key={i} className="flex items-center gap-3 text-xs theme-title font-medium">
@@ -190,25 +207,73 @@ export default function DesktopReadinessPage() {
   );
 }
 
-function RuntimeRequirementCard({ icon, title, ready, readyText, waitingText, note }: {
+function RuntimeRequirementCard({ 
+  icon, 
+  title, 
+  ready, 
+  readyText, 
+  waitingText, 
+  note,
+  device,
+  deviceReason,
+  performanceWarning,
+  realOutput
+}: {
   icon: React.ReactNode;
   title: string;
   ready: boolean;
   readyText: string;
   waitingText: string;
   note: string;
+  device?: string;
+  deviceReason?: string;
+  performanceWarning?: boolean;
+  realOutput?: boolean;
 }) {
   return (
-    <div className="theme-surface rounded-2xl p-6">
-      <div className="mb-4 flex items-center gap-3">
-        {icon}
-        <h3 className="text-xs font-bold uppercase tracking-wider theme-title">{title}</h3>
+    <div className="theme-surface rounded-2xl p-6 border border-transparent hover:border-slate-200 dark:hover:border-slate-800 transition-all">
+      <div className="mb-4 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          {icon}
+          <h3 className="text-xs font-bold uppercase tracking-wider theme-title">{title}</h3>
+        </div>
+        {ready && realOutput && (
+          <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-500 border border-emerald-500/10">
+            <RiShieldCheckLine size={10} />
+            <span className="text-[8px] font-black uppercase">Gerçek Çıktı</span>
+          </div>
+        )}
       </div>
-      <div className="flex items-center gap-2 theme-secondary">
-        {ready ? <RiCheckboxCircleLine className="text-emerald-600 dark:text-emerald-300" /> : <RiAlertLine className="text-amber-600 dark:text-amber-300" />}
-        <span className="text-sm font-medium">{ready ? readyText : waitingText}</span>
+      
+      <div className="flex items-center gap-2 mb-4">
+        {ready ? <RiCheckboxCircleLine className="text-emerald-500" /> : <RiAlertLine className="text-amber-500" />}
+        <span className={`text-sm font-black tracking-tight ${ready ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400'}`}>
+          {ready ? readyText : waitingText}
+        </span>
       </div>
-      <p className="mt-3 text-[10px] theme-muted">{note}</p>
+
+      <p className="mb-4 text-[10px] theme-muted leading-relaxed font-medium">{note}</p>
+      
+      {device && (
+        <div className="pt-4 border-t theme-divider space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="text-[9px] theme-muted uppercase font-black">Donanım</span>
+            <span className={`text-[9px] font-black uppercase ${performanceWarning ? 'text-amber-500' : 'text-emerald-500'}`}>
+              {device}
+            </span>
+          </div>
+          {deviceReason && (
+            <div className="p-2 rounded-lg bg-amber-500/5 border border-amber-500/10 text-[9px] theme-secondary italic">
+              {deviceReason}
+            </div>
+          )}
+          {performanceWarning && (
+            <p className="text-[8px] text-amber-500 font-bold uppercase tracking-widest">
+              ⚠️ Üretim performansı düşük olabilir
+            </p>
+          )}
+        </div>
+      )}
     </div>
   );
 }

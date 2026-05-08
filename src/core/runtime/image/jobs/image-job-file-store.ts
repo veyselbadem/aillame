@@ -16,6 +16,9 @@ export interface ImageJobRecord {
   runtimeId?: string;
   workflowId?: string;
   outputAssetIds: string[];
+  device?: string;
+  deviceDetails?: string;
+  deviceReason?: string;
   errorSummary?: string;
   createdAt: number;
   updatedAt: number;

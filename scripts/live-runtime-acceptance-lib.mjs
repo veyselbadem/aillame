@@ -210,6 +210,22 @@ async function runGgufGeneration({ enabled, runtimeBinary, modelPath }) {
         if (content && content.length > 0) {
           output = content.trim();
           succeeded = true;
+          
+          const report = {
+            attempted: true,
+            succeeded: succeeded,
+            responseLength: output.length,
+            outputPreview: output.slice(0, 160),
+            reason: succeeded ? 'REAL_LLM_GENERATION_SUCCEEDED' : 'FAILED',
+            timestamp: new Date().toISOString()
+          };
+
+          if (succeeded) {
+            const dataDir = path.join(process.cwd(), '.aillame-data');
+            if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
+            fs.writeFileSync(path.join(dataDir, 'text-runtime-acceptance.json'), JSON.stringify({ ...report, success: true }, null, 2));
+          }
+
           return {
             attempted: true,
             succeeded: true,

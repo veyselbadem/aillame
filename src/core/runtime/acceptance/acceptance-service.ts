@@ -1,3 +1,5 @@
+import * as fs from "fs";
+import * as path from "path";
 import { IGMRuntimeReadiness } from "../image/igm-runtime-readiness";
 import { probeAillameTextRuntime } from "../../engine/rust-core";
 import { checkGgufWorkerReadiness } from "../text/worker/gguf/gguf-worker-readiness";
@@ -29,6 +31,7 @@ export interface RuntimeAcceptanceReport {
     selectedRuntime: string;
     selectedModelId?: string;
     responseLength: number;
+    outputPreview?: string;
     fallbackUsed: boolean;
     degraded: boolean;
     missingConfig: string[];
@@ -65,6 +68,9 @@ export interface RuntimeAcceptanceReport {
     nextActions: string[];
     status: RuntimeAcceptanceStatus;
     reason?: string;
+    deviceDetails?: string;
+    deviceReason?: string;
+    performanceWarning?: boolean;
   };
   overall: {
     finalAcceptanceReady: boolean;
@@ -117,8 +123,24 @@ export class RuntimeAcceptanceService {
       && modelConfigured
       && ggufReadiness.modelPathExists
       && ggufReadiness.allowedByPathPolicy;
-    const textAttempted = false;
-    const textSucceeded = false;
+    
+    // Check for success marker or live probe
+    const textDataFile = path.join(process.cwd(), '.aillame-data', 'text-runtime-acceptance.json');
+    let textSucceeded = false;
+    let textAttempted = false;
+    let responseLength = 0;
+    let outputPreview = "";
+
+    if (fs.existsSync(textDataFile)) {
+      try {
+        const marker = JSON.parse(fs.readFileSync(textDataFile, 'utf8'));
+        textAttempted = true;
+        textSucceeded = marker.success;
+        responseLength = marker.responseLength || 0;
+        outputPreview = marker.outputPreview || "";
+      } catch {}
+    }
+
     const textReady = textConfigured && ggufReadiness.canGenerate && textAttempted && textSucceeded;
 
     const imageReady = imageDiag.finalAcceptanceReady;
@@ -141,7 +163,8 @@ export class RuntimeAcceptanceService {
         succeeded: textSucceeded,
         selectedRuntime: "gguf-text-runtime",
         selectedModelId: ggufActiveModel ?? ggufModelPath ?? "unconfigured",
-        responseLength: 0,
+        responseLength,
+        outputPreview,
         fallbackUsed: !textReady,
         degraded: !textReady,
         missingConfig: textMissingConfig,
@@ -173,7 +196,10 @@ export class RuntimeAcceptanceService {
         warnings: imageDiag.warnings,
         nextActions: imageDiag.nextActions,
         status: imageReady ? 'ready' : (imageDiag.configured ? 'degraded' : 'not-configured'),
-        reason: imageDiag.reason
+        reason: imageDiag.reason,
+        deviceDetails: imageDiag.deviceDetails,
+        deviceReason: imageDiag.deviceReason,
+        performanceWarning: imageDiag.performanceWarning
       },
       overall: {
         finalAcceptanceReady: textReady && imageReady,

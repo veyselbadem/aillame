@@ -17,6 +17,9 @@ export interface IGMWorkerResponse {
   mimeType?: string;
   status: 'completed' | 'failed' | 'not-configured';
   modelId?: string;
+  device?: string;
+  deviceDetails?: string;
+  deviceReason?: string;
   error?: string;
   diagnostics?: Record<string, any>;
 }

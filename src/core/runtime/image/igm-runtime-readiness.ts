@@ -20,6 +20,9 @@ export interface IGMRuntimeDiagnostics {
   warnings: string[];
   nextActions: string[];
   reason: string;
+  deviceDetails?: string;
+  deviceReason?: string;
+  performanceWarning?: boolean;
 }
 
 export class IGMRuntimeReadiness {
@@ -29,6 +32,8 @@ export class IGMRuntimeReadiness {
     const missingWorker: string[] = [];
     const warnings: string[] = [];
     const nextActions: string[] = [];
+    let lastDeviceDetails: string | undefined = undefined;
+    let lastDeviceReason: string | undefined = undefined;
     
     const enabled = process.env.AILLAME_IGM_RUNTIME_ENABLED === 'true';
     const modelDir = process.env.AILLAME_IGM_MODEL_DIR;
@@ -102,14 +107,23 @@ export class IGMRuntimeReadiness {
         const lines = content.split('\n').filter(l => l.trim());
         if (lines.length > 0) {
           attempted = true;
-          succeeded = lines.some(line => {
+          // Find the latest successful real job to extract device info
+          for (let i = lines.length - 1; i >= 0; i--) {
             try {
-              const job = JSON.parse(line);
-              return job.status === 'completed' && !job.isPlaceholder && !job.isMock;
+              const job = JSON.parse(lines[i]);
+              const isSuccess = job.status === 'completed' && !job.isPlaceholder && !job.isMock;
+              if (isSuccess) {
+                succeeded = true;
+                if (job.deviceDetails) {
+                  lastDeviceDetails = job.deviceDetails;
+                  lastDeviceReason = job.deviceReason;
+                  break; // Found the latest one
+                }
+              }
             } catch {
-              return false;
+              continue;
             }
-          });
+          }
         }
       } catch (e) {
         warnings.push(`Error reading job history: ${e instanceof Error ? e.message : String(e)}`);
@@ -155,7 +169,10 @@ export class IGMRuntimeReadiness {
       missingWorker,
       warnings,
       nextActions,
-      reason
+      reason,
+      deviceDetails: lastDeviceDetails,
+      deviceReason: lastDeviceReason,
+      performanceWarning: lastDeviceDetails?.toLowerCase().includes('fallback')
     };
   }
 }
