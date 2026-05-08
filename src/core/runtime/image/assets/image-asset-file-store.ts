@@ -55,6 +55,35 @@ export class ImageAssetFileStore {
   getAssetsDirectory(): string {
     return this.assetsDir;
   }
+  
+  async registerLocalFile(params: {
+    jobId: string;
+    projectId: string;
+    filePath: string;
+    mimeType: string;
+    modelId: string;
+    promptPreview: string;
+  }): Promise<ImageAssetRecord> {
+    const fileName = path.basename(params.filePath);
+    const assetId = `ast_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+    
+    const record: ImageAssetRecord = {
+      assetId,
+      jobId: params.jobId,
+      projectId: params.projectId,
+      prompt: params.promptPreview,
+      fileName,
+      relativePath: fileName, 
+      mimeType: params.mimeType,
+      status: 'available',
+      modelId: params.modelId,
+      metadata: {},
+      createdAt: Date.now()
+    };
+    
+    await this.addAsset(record);
+    return record;
+  }
 }
 
 export const imageAssetStore = new ImageAssetFileStore();

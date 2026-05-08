@@ -75,7 +75,7 @@ check("Admin UI has Image Asset Manager visibility", () => {
   const uiPath = path.join(process.cwd(), 'src/app/admin/image-assets/page.tsx');
   if (!fs.existsSync(uiPath)) return "Image Asset Manager UI page missing";
   const content = fs.readFileSync(uiPath, 'utf8');
-  if (!content.includes('Image Asset Manager')) return "Missing title";
+  if (!content.includes('Görsel') || !content.includes('Varlıkları')) return "Missing title";
   return true;
 });
 

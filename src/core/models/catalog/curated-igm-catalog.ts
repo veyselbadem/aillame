@@ -44,8 +44,8 @@ export const CURATED_IGM_STARTER_CATALOG: readonly ModelCatalogEntry[] = [
     compatibility: {
       score: 0.95,
       summary: "Excellent fit for RTX 5060 8GB VRAM. Fast generation in 1-4 steps.",
-      hardwareFit: "ideal",
-      runtimeCompatibility: "ready",
+      hardwareFit: "likely",
+      runtimeCompatibility: "supported",
       warnings: [],
       nextAction: "Already configured in .env. Verify with smoke tests.",
     },

@@ -16,6 +16,7 @@ export interface IGMWorkerResponse {
   imagePath?: string;
   mimeType?: string;
   status: 'completed' | 'failed' | 'not-configured';
+  modelId?: string;
   error?: string;
   diagnostics?: Record<string, any>;
 }

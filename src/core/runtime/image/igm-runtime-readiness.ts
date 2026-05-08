@@ -112,7 +112,7 @@ export class IGMRuntimeReadiness {
           });
         }
       } catch (e) {
-        warnings.push(`Error reading job history: ${e.message}`);
+        warnings.push(`Error reading job history: ${e instanceof Error ? e.message : String(e)}`);
       }
     }
 
