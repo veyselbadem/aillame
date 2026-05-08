@@ -288,7 +288,7 @@ export default function AdminAgentTasksPage() {
             </div>
             <p className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-500">Plan-only · Approval-gated</p>
           </div>
-          <h1 className="text-4xl font-black tracking-tight text-white">Code Agent Workspace</h1>
+          <h1 className="text-4xl font-black tracking-tight text-white">Code Agent Çalışma Alanı</h1>
           <p className="text-sm text-slate-400 mt-2 max-w-3xl font-medium">
             Code Agent şu an plan-only ve güvenlik kontrollü çalışır; dosya yazma veya komut çalıştırma kullanıcı onayı olmadan yapılmaz.
           </p>

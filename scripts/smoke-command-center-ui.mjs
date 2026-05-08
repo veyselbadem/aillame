@@ -7,11 +7,14 @@ const filesToCheck = [
   {
     path: 'src/components/Sidebar.tsx',
     patterns: [
-      'Overview',
-      'Operations',
-      'Intelligence',
-      'Knowledge',
-      'Stability / Verification'
+      'Yönetim',
+      'Ayarlar',
+      'Kontrol Merkezi',
+      'Modeller',
+      'Görseller',
+      'Code Agent',
+      'Hafıza / RAG',
+      'Provider API'
     ]
   },
   {

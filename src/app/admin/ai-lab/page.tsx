@@ -262,7 +262,7 @@ export default function AiLabPage() {
   </div>;
 
   if (!token) return <div className="p-8 text-rose-500 bg-[var(--bg-main)] min-h-screen flex items-center justify-center font-bold italic underline decoration-rose-500/30">
-    Access Denied. Admin token required.
+    Erişim Engellendi. Yönetici token'ı gereklidir.
   </div>;
 
   return (
@@ -283,15 +283,15 @@ export default function AiLabPage() {
 
         <section className="mb-6 grid gap-3 md:grid-cols-3">
           <div className="theme-surface rounded-2xl p-4">
-            <p className="text-[9px] font-black uppercase tracking-[0.2em] theme-muted">Overview</p>
+            <p className="text-[9px] font-black uppercase tracking-[0.2em] theme-muted">Genel Bakış</p>
             <p className="mt-2 text-sm font-semibold theme-secondary">Aillame Lab ana ürün merkezi değil; kontrollü deney ve evaluation yüzeyidir.</p>
           </div>
           <div className="theme-surface rounded-2xl p-4">
-            <p className="text-[9px] font-black uppercase tracking-[0.2em] theme-muted">Playground</p>
+            <p className="text-[9px] font-black uppercase tracking-[0.2em] theme-muted">Oyun Alanı</p>
             <p className="mt-2 text-sm font-semibold theme-secondary">Prompt, structured JSON, provider output ve RAG context testleri burada denenir.</p>
           </div>
           <div className="theme-surface rounded-2xl p-4">
-            <p className="text-[9px] font-black uppercase tracking-[0.2em] theme-muted">Diagnostics</p>
+            <p className="text-[9px] font-black uppercase tracking-[0.2em] theme-muted">Tanılama</p>
             <p className="mt-2 text-sm font-semibold theme-secondary">LLM / IGM runtime durumları yalnızca diagnostic preview olarak gösterilir.</p>
           </div>
         </section>
@@ -410,9 +410,9 @@ export default function AiLabPage() {
             <div className="flex items-center justify-between mb-5">
               <h2 className="text-lg font-bold flex items-center gap-2">
                 <FiActivity className="text-indigo-400" />
-                Lab Runtime & Evaluation
+                Lab Runtime & Değerlendirme
               </h2>
-              <StatusBadge variant="info" label="Diagnostic preview" />
+              <StatusBadge variant="info" label="Tanılama Önizleme" />
             </div>
             <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
               {[

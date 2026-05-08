@@ -74,7 +74,7 @@ check('Memory and queue pages keep expected product labels', () => {
 
 check('Provider, feedback, research and agent surfaces keep core headings', () => {
   const expected = [
-    ['api-clients', 'API Keys & Security'],
+    ['api-clients', 'API Anahtarları ve Güvenlik'],
     ['feedback', 'Feedback Dataset Yönetimi'],
     ['research-results', 'Araştırma Sonuçları'],
     ['agent-tasks', 'Code Agent'],
@@ -91,7 +91,7 @@ check('Critical page titles avoid common mojibake markers', () => {
     'Hafıza Kartları',
     'Hafıza Yazım Kuyruğu',
     'Code Agent',
-    'API Keys & Security',
+    'API Anahtarları ve Güvenlik',
     'Feedback Dataset Yönetimi',
     'Öğrenme Adayları',
     'Damıtma Önizlemeleri',

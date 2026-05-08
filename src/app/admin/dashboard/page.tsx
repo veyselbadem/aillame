@@ -36,13 +36,13 @@ interface BrainStats {
 }
 
 const QUICK_LINKS = [
-  { href: '/admin/model-library',       label: 'Model Library',      icon: FiPackage,   color: 'text-violet-400 bg-violet-500/10 border-violet-500/15' },
-  { href: '/admin/image-assets',        label: 'Image Assets',       icon: FiImage,     color: 'text-pink-400 bg-pink-500/10 border-pink-500/15' },
+  { href: '/admin/model-library',       label: 'Modeller',           icon: FiPackage,   color: 'text-violet-400 bg-violet-500/10 border-violet-500/15' },
+  { href: '/admin/image-assets',        label: 'Görseller',          icon: FiImage,     color: 'text-pink-400 bg-pink-500/10 border-pink-500/15' },
   { href: '/admin/agent-tasks',         label: 'Code Agent',         icon: FiClipboard, color: 'text-blue-400 bg-blue-500/10 border-blue-500/15' },
   { href: '/admin/ai-lab',              label: 'Aillame Lab',        icon: FiCpu,       color: 'text-indigo-400 bg-indigo-500/10 border-indigo-500/15' },
-  { href: '/admin/documents',           label: 'Documents',          icon: FiBook,      color: 'text-cyan-400 bg-cyan-500/10 border-cyan-500/15' },
+  { href: '/admin/documents',           label: 'Belgeler / RAG',     icon: FiBook,      color: 'text-cyan-400 bg-cyan-500/10 border-cyan-500/15' },
   { href: '/admin/api-clients',         label: 'Provider API',       icon: FiKey,       color: 'text-indigo-400 bg-indigo-500/10 border-indigo-500/15' },
-  { href: '/admin/memory-cards',        label: 'Memory Cards',       icon: FiDatabase,  color: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/15' },
+  { href: '/admin/memory-cards',        label: 'Hafıza Kartları',    icon: FiDatabase,  color: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/15' },
 ] as const;
 
 const FOUNDATION_STATUS = [
@@ -136,12 +136,25 @@ export default function AdminDashboard() {
     if (!liveStatus) return { status: defaultStatus, variant: defaultVariant, isLive: false };
     
     let variant = defaultVariant;
-    if (liveStatus === 'ready') variant = 'active';
-    else if (liveStatus === 'failed') variant = 'failed';
-    else if (liveStatus === 'degraded') variant = 'warning';
-    else if (liveStatus === 'not-configured') variant = 'disabled';
+    let finalLabel = liveStatus;
     
-    return { status: liveStatus, variant, isLive: true };
+    if (liveStatus === 'ready') {
+      variant = 'active';
+      finalLabel = 'Hazır';
+    } else if (liveStatus === 'failed') {
+      variant = 'failed';
+      finalLabel = 'Hata';
+    } else if (liveStatus === 'degraded') {
+      variant = 'warning';
+      finalLabel = 'Kısıtlı';
+    } else if (liveStatus === 'not-configured') {
+      variant = 'disabled';
+      finalLabel = 'Yapılandırılmadı';
+    } else if (liveStatus === 'pending') {
+      finalLabel = 'Bekliyor';
+    }
+    
+    return { status: finalLabel, variant, isLive: true };
   };
 
   if (!authorized) return null;
@@ -182,26 +195,26 @@ export default function AdminDashboard() {
 
         <section className="mb-10 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <RuntimeStatusCard 
-            title="Text Runtime" 
-            status={getLiveStatus('Local Text Runtime', 'ready', 'active')} 
+            title="Metin Üretimi (Text)" 
+            status={getLiveStatus('Local Text Runtime', 'Hazır', 'active')} 
             icon={<FiMessageCircle />}
             desc="GGUF / Llama-server altyapısı"
           />
           <RuntimeStatusCard 
-            title="Image Runtime" 
-            status={getLiveStatus('Image Workflow', 'not-configured', 'disabled')} 
+            title="Görsel Üretimi (Image)" 
+            status={getLiveStatus('Image Workflow', 'Yapılandırılmadı', 'disabled')} 
             icon={<FiImage />}
             desc="SDXL / Diffusers iş akışı"
           />
           <RuntimeStatusCard 
             title="Code Agent" 
-            status={getLiveStatus('Code Agent', 'ready', 'active')} 
+            status={getLiveStatus('Code Agent', 'Hazır', 'active')} 
             icon={<FiClipboard />}
             desc="Plan-only foundation"
           />
           <RuntimeStatusCard 
-            title="Knowledge / RAG" 
-            status={getLiveStatus('Vector Memory / RAG', 'ready', 'active')} 
+            title="Bilgi / RAG" 
+            status={getLiveStatus('Vector Memory / RAG', 'Hazır', 'active')} 
             icon={<FiDatabase />}
             desc="Yerel bellek izolasyonu"
           />
@@ -253,14 +266,14 @@ export default function AdminDashboard() {
               <h2 className="text-[10px] font-black uppercase tracking-[0.3em] theme-muted mb-6">Beta Checklist</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-4">
-                  <ChecklistItem label="Local GGUF Runtime Verified" checked />
-                  <ChecklistItem label="Model Registry Integrity" checked />
-                  <ChecklistItem label="IGM Worker Protocol Bridge" checked />
+                  <ChecklistItem label="Yerel GGUF Runtime Doğrulandı" checked />
+                  <ChecklistItem label="Model Kaydı (Registry) Bütünlüğü" checked />
+                  <ChecklistItem label="IGM Worker Protokol Köprüsü" checked />
                 </div>
                 <div className="space-y-4">
-                  <ChecklistItem label="Project Memory Isolation" checked />
-                  <ChecklistItem label="Provider API Security" checked />
-                  <ChecklistItem label="CLI Diagnostic Tooling" checked />
+                  <ChecklistItem label="Proje Bellek İzolasyonu" checked />
+                  <ChecklistItem label="Provider API Güvenliği" checked />
+                  <ChecklistItem label="CLI Tanılama Araçları" checked />
                 </div>
               </div>
               <div className="hidden">CLI Usage</div>
@@ -284,10 +297,10 @@ export default function AdminDashboard() {
                 Sağlık Monitörü
               </h2>
               <div className="grid gap-2">
-                <StatusRow label="Text Engine" value="verified" ok />
+                <StatusRow label="Metin Motoru (Text)" value="verified" ok />
                 <StatusRow label="IGM Worker" value={getLiveStatus('Image Workflow', 'pending', 'pending').status} ok={getLiveStatus('Image Workflow', '', '').status === 'ready'} />
-                <StatusRow label="Agent Plan" value="available" ok />
-                <StatusRow label="RAG Pipeline" value="active" ok />
+                <StatusRow label="Agent Planı" value="hazır" ok />
+                <StatusRow label="RAG Pipeline" value="aktif" ok />
               </div>
               <Link href="/admin/desktop-readiness" className="mt-5 flex items-center justify-center gap-2 w-full py-2.5 rounded-xl bg-slate-100 dark:bg-white/5 text-[9px] font-black uppercase tracking-widest hover:bg-slate-200 dark:hover:bg-white/10 transition-colors">
                 Tam Tanılama <FiArrowRight size={10} />

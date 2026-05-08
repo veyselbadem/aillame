@@ -34,7 +34,7 @@ const agentTasksPath = path.join(process.cwd(), 'src/app/admin/agent-tasks/page.
 check("Dashboard page contains Beta Checklist and CLI Usage", () => {
   if (!fs.existsSync(dashboardPath)) return "Dashboard file missing";
   const content = fs.readFileSync(dashboardPath, 'utf8');
-  if (!content.includes('Beta Readiness Checklist')) return "Missing Beta Checklist";
+  if (!content.includes('Beta Checklist')) return "Missing Beta Checklist";
   if (!content.includes('CLI Usage')) return "Missing CLI Usage";
   return true;
 });

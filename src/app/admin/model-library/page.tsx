@@ -21,12 +21,12 @@ export default function ModelLibraryPage() {
       <Sidebar isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen} />
       <main className={`flex-1 overflow-y-auto transition-all duration-200 ${isSidebarOpen ? 'ml-64' : 'ml-0'}`}>
         {authorized === null ? (
-          <div className="flex h-full items-center justify-center text-sm theme-muted">Checking authorization...</div>
+          <div className="flex h-full items-center justify-center text-sm theme-muted">Yetkilendirme kontrol ediliyor...</div>
         ) : !authorized ? (
           <div className="flex h-full flex-col items-center justify-center gap-3 theme-muted">
             <FiPackage size={32} className="text-indigo-500" />
-            <p className="text-sm">Admin access required for model management.</p>
-            <a href="/admin/login" className="text-xs text-indigo-500 hover:underline">Go to login</a>
+            <p className="text-sm">Model yönetimi için yönetici erişimi gereklidir.</p>
+            <a href="/admin/login" className="text-xs text-indigo-500 hover:underline">Giriş sayfasına git</a>
           </div>
         ) : (
           <div className="mx-auto max-w-6xl px-6 py-10 animate-fade-in">

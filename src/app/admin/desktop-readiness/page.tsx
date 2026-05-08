@@ -84,7 +84,7 @@ export default function DesktopReadinessPage() {
                     </div>
                     <StatusBadge
                       variant={report.runtimeAcceptance.finalAcceptanceReady ? 'ready' : 'warning'}
-                      label={report.runtimeAcceptance.finalAcceptanceReady ? 'BETA İÇİN HAZIR' : 'BLOKAJLAR TESPİT EDİLDİ'}
+                      label={report.runtimeAcceptance.finalAcceptanceReady ? 'BETA İÇİN HAZIR' : 'ENGELLEYİCİLER VAR'}
                       className="!px-4 !py-1.5 !text-[10px] !font-black"
                     />
                   </div>
@@ -163,7 +163,7 @@ export default function DesktopReadinessPage() {
                     <div key={label as string} className="flex items-center justify-between">
                       <span className="text-[11px] font-bold theme-secondary">{label}</span>
                       <div className="flex items-center gap-2">
-                        <span className={`text-[9px] font-black uppercase ${ok ? 'text-emerald-500' : 'text-slate-400'}`}>{ok ? 'OK' : 'BEKLE'}</span>
+                        <span className={`text-[9px] font-black uppercase ${ok ? 'text-emerald-500' : 'text-slate-400'}`}>{ok ? 'TAMAM' : 'BEKLE'}</span>
                         <div className={`h-2.5 w-2.5 rounded-full ${ok ? 'bg-emerald-500 shadow-lg shadow-emerald-500/20' : 'bg-slate-300 dark:bg-slate-700'}`} />
                       </div>
                     </div>

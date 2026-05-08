@@ -157,7 +157,7 @@ export default function AdminApiClientsPage() {
             </div>
             <p className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-500">Security · API Management</p>
           </div>
-          <h1 className="text-4xl font-black tracking-tight text-white">API Keys & Security</h1>
+          <h1 className="text-4xl font-black tracking-tight text-white">API Anahtarları ve Güvenlik</h1>
           <p className="text-sm text-slate-400 mt-2 max-w-2xl font-medium">
             External uygulamalar için API anahtarı yönetimi ve güvenlik denetimi.
           </p>
@@ -297,7 +297,7 @@ export default function AdminApiClientsPage() {
 
         <section className="glass-card border border-white/10 p-6 rounded-[24px]">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-black">Active API Keys</h2>
+            <h2 className="text-xl font-black">Aktif API Anahtarları</h2>
             <span className="rounded-2xl bg-white/5 px-4 py-2 text-xs text-gray-400">{keys.length} keys</span>
           </div>
 

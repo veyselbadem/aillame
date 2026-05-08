@@ -45,7 +45,7 @@ check('Aillame Lab is positioned as evaluation playground', () => {
 });
 
 check('Sidebar uses Local AI Hub information architecture', () => {
-  for (const label of ['Overview', 'Runtime', 'Memory', 'Agent / Provider', 'Release', 'Developer / Lab']) {
+  for (const label of ['Yönetim', 'Ayarlar', 'Kontrol Merkezi', 'Modeller', 'Görseller', 'Code Agent', 'Hafıza / RAG', 'Provider API']) {
     if (!sidebar.includes(label)) return `Missing sidebar group: ${label}`;
   }
   if (!sidebar.includes('Aillame Lab')) return 'Aillame Lab nav label missing.';
@@ -68,8 +68,8 @@ check('StatusBadge supports shared status vocabulary', () => {
 });
 
 check('Release page preserves runtime acceptance transparency', () => {
-  if (!release.includes('Beta Foundation RC ayrı')) return 'Foundation vs acceptance copy missing.';
-  if (!release.includes('Live Runtime Acceptance')) return 'Live Runtime Acceptance copy missing.';
+  if (!release.includes('Beta Foundation RC ve Live Runtime Acceptance ayrı izlenir')) return 'Foundation vs acceptance copy missing.';
+  if (!release.includes('Live Runtime Kabulü')) return 'Live Runtime Kabulü copy missing.';
   if (!release.includes('NOT_CONFIGURED')) return 'NOT_CONFIGURED transparency missing.';
   return true;
 });

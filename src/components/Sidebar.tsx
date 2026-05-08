@@ -26,6 +26,8 @@ import {
   FiLogOut,
   FiThumbsUp,
   FiPackage,
+  FiChevronDown,
+  FiChevronRight,
 } from 'react-icons/fi';
 
 const WORKSPACE_NAV = [
@@ -40,48 +42,43 @@ const TOOLS_NAV = [
   { href: '/feedback', label: 'Feedback', icon: FiThumbsUp },
 ];
 
-const ADMIN_NAV_GROUPS = [
+const ADMIN_NAV_MAIN = [
+  { href: '/admin/dashboard',       label: 'Kontrol Merkezi',   icon: FiShield },
+  { href: '/admin/model-library',   label: 'Modeller',          icon: FiPackage },
+  { href: '/admin/image-assets',    label: 'Görseller',         icon: FiImage },
+  { href: '/admin/agent-tasks',     label: 'Code Agent',        icon: FiClipboard },
+  { href: '/admin/documents',       label: 'Hafıza / RAG',      icon: FiBook },
+  { href: '/admin/api-clients',     label: 'Provider API',      icon: FiKey },
+];
+
+const ADMIN_SETTINGS_GROUPS = [
   {
-    label: 'Overview',
+    id: 'runtime',
+    label: 'Runtime ve Hazırlık',
+    icon: FiCpu,
     items: [
-      { href: '/admin/dashboard', label: 'Dashboard', icon: FiShield },
+      { href: '/admin/desktop-readiness', label: 'Masaüstü Hazırlığı', icon: FiCpu },
+      { href: '/admin/release-candidate', label: 'Yayın Adayı', icon: FiShield },
     ],
   },
   {
-    label: 'Operations',
+    id: 'memory',
+    label: 'Hafıza ve Geri Bildirim',
+    icon: FiDatabase,
     items: [
-      { href: '/admin/model-library', label: 'Model Library / Runtime', icon: FiPackage },
-      { href: '/admin/image-assets', label: 'Image Assets', icon: FiImage },
+      { href: '/admin/memory-cards',        label: 'Hafıza Kartları',   icon: FiLayers },
+      { href: '/admin/memory-write-queue',  label: 'Hafıza Kuyruğu',    icon: FiDatabase },
+      { href: '/admin/feedback',            label: 'Geri Bildirim',     icon: FiMessageSquare },
     ],
   },
   {
-    label: 'Intelligence / Agent / Provider / Developer / Lab',
+    id: 'intelligence',
+    label: 'Lab ve Değerlendirme',
+    icon: FiStar,
     items: [
-      { href: '/admin/agent-tasks', label: 'Code Agent', icon: FiClipboard },
-      { href: '/admin/ai-lab', label: 'Aillame Lab', icon: FiCpu },
-      { href: '/admin/intelligence', label: 'Nano Eval', icon: FiStar },
-    ],
-  },
-  {
-    label: 'Knowledge',
-    items: [
-      { href: '/admin/documents', label: 'Documents / RAG', icon: FiBook },
-      { href: '/admin/memory-cards', label: 'Memory Cards', icon: FiLayers },
-      { href: '/admin/memory-write-queue', label: 'Write Queue', icon: FiDatabase },
-    ],
-  },
-  {
-    label: 'Stability / Verification',
-    items: [
-      { href: '/admin/desktop-readiness', label: 'Desktop Readiness', icon: FiCpu },
-      { href: '/admin/release-candidate', label: 'Release Candidate', icon: FiShield },
-      { href: '/admin/feedback', label: 'User Feedback', icon: FiMessageSquare },
-    ],
-  },
-  {
-    label: 'Infrastructure',
-    items: [
-      { href: '/admin/api-clients', label: 'Provider API', icon: FiKey },
+      { href: '/admin/ai-lab',            label: 'Aillame Lab',        icon: FiCpu },
+      { href: '/admin/intelligence',      label: 'Nano Eval',          icon: FiStar },
+      { href: '/admin/research-results',  label: 'Araştırma Sonuçları', icon: FiBook },
     ],
   },
 ];
@@ -124,9 +121,20 @@ function NavLink({ href, label, icon: Icon, active }: { href: string; label: str
 export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
   const [history, setHistory] = useState<{ id: string; title: string }[]>([]);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
   const pathname = usePathname();
   const router = useRouter();
   const { conversationId, setConversationId, startNewChat } = useChatState();
+
+  useEffect(() => {
+    // Auto-open group if active page is inside it
+    const activeGroup = ADMIN_SETTINGS_GROUPS.find(g => 
+      g.items.some(item => pathname === item.href)
+    );
+    if (activeGroup) {
+      setOpenGroups(prev => ({ ...prev, [activeGroup.id]: true }));
+    }
+  }, [pathname]);
 
   useEffect(() => {
     if (pathname === '/') loadHistory();
@@ -213,17 +221,42 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
 
             {isAdmin ? (
               <>
-                {ADMIN_NAV_GROUPS.map((group) => (
-                  <div key={group.label}>
-                    <SectionLabel label={group.label} />
-                    <div className="space-y-0.5">
-                      {group.items.map((item) => (
-                        <NavLink key={item.href} {...item} active={pathname === item.href} />
-                      ))}
+                <SectionLabel label="Yönetim" />
+                <div className="space-y-0.5">
+                  {ADMIN_NAV_MAIN.map((item) => (
+                    <NavLink key={item.href} {...item} active={pathname === item.href} />
+                  ))}
+                </div>
+
+                <SectionLabel label="Ayarlar" />
+                <div className="space-y-1">
+                  {ADMIN_SETTINGS_GROUPS.map((group) => (
+                    <div key={group.id} className="space-y-0.5">
+                      <button
+                        onClick={() => setOpenGroups(prev => ({ ...prev, [group.id]: !prev[group.id] }))}
+                        className={`flex w-full items-center justify-between px-4 py-2.5 rounded-xl transition-all duration-200 ${
+                          openGroups[group.id] ? 'text-slate-900 dark:text-white bg-slate-100/50 dark:bg-white/5' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5'
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <group.icon size={16} className="text-slate-400" />
+                          <span className="text-sm font-semibold tracking-wide">{group.label}</span>
+                        </div>
+                        {openGroups[group.id] ? <FiChevronDown size={14} /> : <FiChevronRight size={14} />}
+                      </button>
+                      
+                      {openGroups[group.id] && (
+                        <div className="ml-4 pl-2 border-l border-slate-200 dark:border-white/10 space-y-0.5 mt-1 animate-fade-in">
+                          {group.items.map((item) => (
+                            <NavLink key={item.href} {...item} active={pathname === item.href} />
+                          ))}
+                        </div>
+                      )}
                     </div>
-                  </div>
-                ))}
-                <div className="mt-4 px-2">
+                  ))}
+                </div>
+
+                <div className="mt-6 px-2">
                   <button
                     type="button"
                     onClick={handleLogout}

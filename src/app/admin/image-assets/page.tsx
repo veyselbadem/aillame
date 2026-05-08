@@ -108,7 +108,7 @@ export default function ImageAssetManagerPage() {
                     </td>
                     <td className="py-6 px-4">
                       <div className="flex items-center justify-center">
-                        <StatusBadge variant={job.status === 'completed' ? 'completed' : 'running'} label={job.status} className="!text-[8px] !px-2 !py-0.5" />
+                        <StatusBadge variant={job.status === 'completed' ? 'completed' : 'running'} label={job.status === 'completed' ? 'tamamlandı' : 'çalışıyor'} className="!text-[8px] !px-2 !py-0.5" />
                       </div>
                     </td>
                     <td className="py-6 px-8 text-right">

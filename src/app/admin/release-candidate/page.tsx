@@ -40,14 +40,14 @@ export default function ReleaseCandidatePage() {
         <div>
           <h1 className="flex items-center text-3xl font-bold tracking-tight theme-title">
             <RiFlagLine className="mr-4 text-emerald-600 dark:text-emerald-300" />
-            Beta Release Candidate
+            Beta Yayın Adayı (RC)
           </h1>
           <p className="mt-2 text-sm theme-muted">
-            Beta Foundation RC ayrı, Live Runtime Acceptance ayrı izlenir. LLM ve IGM gerçek üretim yapmadan final-ready sayılmaz.
+            Beta Foundation RC ve Live Runtime Acceptance ayrı izlenir. LLM ve IGM gerçek üretim yapmadan final-ready sayılmaz.
           </p>
         </div>
         <button onClick={loadReport} className="rounded-lg theme-elevated px-4 py-2 text-xs font-semibold transition-colors hover:border-indigo-500/35">
-          Run QA Orchestrator
+          QA Orkestrasyonunu Çalıştır
         </button>
       </div>
 
@@ -58,16 +58,16 @@ export default function ReleaseCandidatePage() {
               <StatusOverviewCard
                 icon={<RiCheckDoubleLine className={report.betaFoundationReady ? 'text-emerald-600 dark:text-emerald-300' : 'text-rose-600 dark:text-rose-300'} />}
                 label="Beta Foundation RC"
-                title={report.betaFoundationReady ? 'READY' : 'INCOMPLETE'}
+                title={report.betaFoundationReady ? 'HAZIR' : 'EKSİK'}
                 variant={report.betaFoundationReady ? 'ready' : 'failed'}
-                body="Security, storage, memory and workflow foundation layers are verified."
+                body="Güvenlik, depolama, bellek ve iş akışı temel katmanları doğrulandı."
               />
               <StatusOverviewCard
                 icon={<RiPulseLine className={`${report.liveRuntimeAcceptanceReady ? 'text-emerald-600 dark:text-emerald-300' : 'text-amber-600 dark:text-amber-300'} animate-pulse`} />}
-                label="Live Runtime Acceptance"
-                title={report.liveRuntimeAcceptanceReady ? 'VERIFIED' : 'NOT READY'}
+                label="Live Runtime Kabulü"
+                title={report.liveRuntimeAcceptanceReady ? 'DOĞRULANDI' : 'HAZIR DEĞİL'}
                 variant={report.liveRuntimeAcceptanceReady ? 'ready' : 'warning'}
-                body="Final acceptance requires one local LLM text output and one local IGM image output through Aillame-controlled workers."
+                body="Final kabulü için Aillame kontrollü worker'lar üzerinden bir yerel LLM metin çıktısı ve bir yerel IGM görsel çıktısı gereklidir."
               />
             </div>
 
@@ -76,7 +76,7 @@ export default function ReleaseCandidatePage() {
                 <div key={section.id} className="theme-surface rounded-2xl p-6">
                   <h3 className="mb-4 flex items-center justify-between text-xs font-bold uppercase tracking-widest theme-secondary">
                     <span>{section.label}</span>
-                    <StatusBadge variant={section.status === 'passed' ? 'completed' : 'warning'} label={section.status} />
+                    <StatusBadge variant={section.status === 'passed' ? 'completed' : 'warning'} label={section.status === 'passed' ? 'geçti' : 'uyarı'} />
                   </h3>
                   <div className="space-y-3">
                     {section.checks.map((check: any) => (
