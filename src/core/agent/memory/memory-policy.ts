@@ -9,11 +9,11 @@ export class MemoryPolicy {
   static redact(text: string): string {
     let redacted = text;
     for (const keyword of this.SENSITIVE_KEYWORDS) {
-      const regex = new RegExp(`${keyword}[:=].*`, "gi");
-      redacted = redacted.replace(regex, `${keyword}: [REDACTED]`);
+      const regex = new RegExp(`\\b(${keyword})\\s*[:=]\\s*[^\\s,;]+`, "gi");
+      redacted = redacted.replace(regex, (_match, key) => `${key}: [REDACTED]`);
     }
     // Mask absolute paths (heuristic)
-    redacted = redacted.replace(/[a-zA-Z]:\\[\\\w\s.-]+/g, "[LOCAL_PATH]");
+    redacted = redacted.replace(/[a-zA-Z]:\\[^\s,;]+/g, "[LOCAL_PATH]");
     return redacted;
   }
 

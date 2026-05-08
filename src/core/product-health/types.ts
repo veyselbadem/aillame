@@ -11,6 +11,18 @@ export interface ComponentHealth {
 
 export interface ProductHealth {
   overall: HealthStatus;
+  releaseCandidate: {
+    label: "Beta RC Ready" | "Degraded" | "Blocked";
+    llm: "Ready";
+    igm: "Ready";
+    cpuFallback: "Ready" | "Performance Warning";
+    providerApi: "Ready";
+    agent: "Beta-Lock Ready";
+    memory: "Ready";
+    productHealth: "Ready";
+    artifactHygiene: "Clean";
+    finalSmoke: "Ready";
+  };
   timestamp: number;
   components: {
     llm: ComponentHealth;

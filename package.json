@@ -44,6 +44,7 @@
     "smoke:agent-memory": "npx tsx scripts/smoke-agent-memory.ts",
     "smoke:product-health": "npx tsx scripts/smoke-product-health.ts",
     "smoke:phase6-hardening": "npx tsx scripts/smoke-phase6-hardening.ts",
+    "smoke:final-rc": "npx tsx scripts/smoke-final-rc.ts",
     "smoke:live-runtime-acceptance": "node scripts/smoke-live-runtime-acceptance.mjs",
                     "smoke:desktop-readiness": "node scripts/smoke-desktop-readiness.mjs",
                     "smoke:beta-rc": "node scripts/smoke-beta-rc.mjs",
