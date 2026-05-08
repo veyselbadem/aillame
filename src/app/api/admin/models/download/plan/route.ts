@@ -1,7 +1,9 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { modelDownloadService } from "@/core/models/download/model-download-service";
+import { createAdminAuthErrorResponse, validateAdminRequest } from "@core/admin-auth/auth";
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
+  if (!validateAdminRequest(request)) return createAdminAuthErrorResponse();
   try {
     const body = await request.json().catch(() => ({}));
     const modelId = typeof body.modelId === "string" ? body.modelId : "";

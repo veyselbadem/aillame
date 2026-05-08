@@ -43,9 +43,12 @@ Content-Type: application/json
 ```json
 {
   "projectId": "boss-ai",
-  "type": "text",
-  "input": {
-    "prompt": "Summarize the current project status for a beta user."
+  "mode": "text",
+  "taskType": "analysis",
+  "prompt": "Summarize the current project status for a beta user.",
+  "options": {
+    "temperature": 0.7,
+    "maxTokens": 512
   }
 }
 ```
@@ -61,9 +64,13 @@ Content-Type: application/json
 ```json
 {
   "projectId": "doomsgame-engine",
-  "type": "image",
-  "input": {
-    "prompt": "Low-poly fantasy arena concept, local beta preview"
+  "mode": "image",
+  "prompt": "Low-poly fantasy arena concept, local beta preview",
+  "options": {
+    "width": 512,
+    "height": 512,
+    "steps": 1,
+    "seed": 1234
   }
 }
 ```

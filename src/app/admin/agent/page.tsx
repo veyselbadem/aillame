@@ -144,7 +144,7 @@ export default function AgentCommandCenter() {
       workspacePath, 
       proposal: patchProposalResult,
       options: { dryRun: false, backup: true },
-      approval: { approved: true, approvalText }
+      approval: { approved: true, approvalText, dryRunToken: dryRunResult?.dryRunToken }
     });
     if (result) setApplyResult(result);
     setLoading(false);

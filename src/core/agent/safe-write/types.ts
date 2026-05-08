@@ -8,6 +8,7 @@ export type PatchApplyRequest = {
     approvedBy?: "user" | "admin";
     approvalText?: string;
     approvedChangeIds?: string[];
+    dryRunToken?: string;
   };
   options?: {
     dryRun?: boolean;
@@ -42,4 +43,6 @@ export type PatchApplyResult = {
     warnings: string[];
   };
   testSuggestions: string[];
+  dryRunToken?: string;
+  dryRunFingerprint?: string;
 };

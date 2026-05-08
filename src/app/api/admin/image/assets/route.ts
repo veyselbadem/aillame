@@ -1,7 +1,9 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { imageAssetStore } from '@/core/runtime/image/assets/image-asset-file-store';
+import { createAdminAuthErrorResponse, validateAdminRequest } from '@core/admin-auth/auth';
 
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
+  if (!validateAdminRequest(request)) return createAdminAuthErrorResponse();
   const { searchParams } = new URL(request.url);
   const projectId = searchParams.get('projectId') || undefined;
 

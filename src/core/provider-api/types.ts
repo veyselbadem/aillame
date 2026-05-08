@@ -43,7 +43,6 @@ export type ProviderApiResponse = {
     text?: string;
     imageUrl?: string;
     assetId?: string;
-    path?: string;
   };
   diagnostics: {
     finalAcceptanceReady: boolean;

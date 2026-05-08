@@ -642,10 +642,10 @@ export default function AiLabPage() {
                               )}
 
                               {/* SDXL Image Rendering */}
-                              {(m.imageUrl || m.imagePath) && (
+                              {m.imageUrl && (
                                 <div className="mt-4 rounded-2xl overflow-hidden border border-[var(--glass-border)] bg-black/5 group-hover:shadow-2xl transition-all">
                                   <img
-                                    src={m.imageUrl || `/api/image-generation/view?path=${encodeURIComponent(m.imagePath || '')}`}
+                                    src={m.imageUrl}
                                     alt="Generated"
                                     className="w-full h-auto max-h-[400px] object-contain hover:scale-[1.02] transition-transform duration-700"
                                   />

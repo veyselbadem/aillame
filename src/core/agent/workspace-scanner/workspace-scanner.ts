@@ -12,7 +12,7 @@ import {
   SECRET_PATTERNS 
 } from "./ignore-policy";
 import { detectProject } from "./project-detector";
-import { isSafePath, maskPath } from "./path-policy";
+import { isSafePath, maskPath, resolveExistingPathInWorkspace, resolveWorkspaceRoot } from "./path-policy";
 
 const MAX_FILE_SIZE_FOR_METADATA = 1024 * 1024; // 1 MB
 
@@ -27,19 +27,20 @@ export class WorkspaceScanner {
   async scan(request: WorkspaceScanRequest): Promise<WorkspaceScanSummary> {
     const { workspacePath, maxDepth = 4, maxFiles = 1000 } = request;
 
-    if (!isSafePath(workspacePath)) {
+    const resolvedRoot = resolveWorkspaceRoot(workspacePath);
+    if (!resolvedRoot || !isSafePath(resolvedRoot)) {
       throw new Error(`UNSAFE_PATH: Requested workspace path is outside of safe boundaries or contains traversal markers (..): ${workspacePath}`);
     }
 
     this.resetStats();
-    const tree = await this.scanDirectory(workspacePath, workspacePath, 0, maxDepth, maxFiles);
+    const tree = await this.scanDirectory(resolvedRoot, resolvedRoot, 0, maxDepth, maxFiles);
     
     const flatNodes = this.flattenTree(tree);
     const projectInfo = detectProject(flatNodes);
 
     return {
-      workspaceRoot: workspacePath,
-      safeRootName: maskPath(workspacePath),
+      workspaceRoot: resolvedRoot,
+      safeRootName: maskPath(resolvedRoot),
       projectType: projectInfo.type,
       detectedFrameworks: projectInfo.frameworks,
       detectedLanguages: projectInfo.languages,
@@ -173,10 +174,8 @@ export class WorkspaceScanner {
   }
 
   async readSafeMetadata(workspacePath: string, relativePath: string): Promise<string | null> {
-    const fullPath = path.join(workspacePath, relativePath);
-    const normalized = path.normalize(fullPath);
-    
-    if (!isSafePath(normalized)) return null;
+    const normalized = resolveExistingPathInWorkspace(workspacePath, relativePath);
+    if (!normalized) return null;
     
     const fileName = path.basename(normalized).toLowerCase();
     const isImportant = this.isImportantFile(fileName);

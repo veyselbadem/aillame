@@ -120,12 +120,20 @@ training_log.txt
 # Bu dosyalar Git LFS veya dış model klasörüne (örn. C:\AillameModels\) taşınmalıdır.
 *.exe
 *.safetensors
+*.safetensors.old
 *.ckpt
+*.ckpt.old
 *.gguf
+*.gguf.old
 *.pt
+*.pt.old
 *.pth
+*.pth.old
 *.bin
+*.bin.old
 *.onnx
+*.onnx.old
+src/core/engine/checkpoints/*.old
 
 # ---- Eğitim veri setleri ----------------------------------
 # Büyük jsonl veri setleri repoda tutulmamalı.

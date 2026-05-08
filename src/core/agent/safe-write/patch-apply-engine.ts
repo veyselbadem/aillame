@@ -5,6 +5,8 @@ import { ApprovalGate } from "./approval-gate";
 import { WritePolicy } from "./write-policy";
 import { BackupStore } from "./backup-store";
 import { PatchChange } from "../patch-proposal/types";
+import { DryRunProofStore } from "./dry-run-proof";
+import { resolveExistingPathInWorkspace } from "../workspace-scanner/path-policy";
 
 export class PatchApplyEngine {
   private approvalGate = new ApprovalGate();
@@ -30,6 +32,10 @@ export class PatchApplyEngine {
       testSuggestions: request.proposal.testSuggestions
     };
 
+    if (!result.dryRun && !DryRunProofStore.validate(request)) {
+      throw new Error("DRY_RUN_REQUIRED: A matching server-side dry-run token is required before applying changes.");
+    }
+
     const backupStore = new BackupStore(request.workspacePath);
     const filesToModify = Array.from(new Set(request.proposal.changes.map(c => c.relativePath)));
 
@@ -44,7 +50,12 @@ export class PatchApplyEngine {
       if (approvedChanges.length === 0) continue;
 
       try {
-        const fullPath = path.join(request.workspacePath, relPath);
+        const fullPath = resolveExistingPathInWorkspace(request.workspacePath, relPath);
+        if (!fullPath) {
+          result.skippedChanges.push({ relativePath: relPath, reason: "UNSAFE_PATH: target is outside workspace, missing, or a symlink." });
+          result.safety.blockedSensitiveFiles.push(relPath);
+          continue;
+        }
         const stats = await fs.stat(fullPath);
         
         const policy = this.writePolicy.isAllowed(relPath, stats.size);
@@ -84,6 +95,12 @@ export class PatchApplyEngine {
       } catch (error: any) {
         result.skippedChanges.push({ relativePath: relPath, reason: error.message });
       }
+    }
+
+    if (result.dryRun) {
+      const proof = DryRunProofStore.issue(request);
+      result.dryRunToken = proof.token;
+      result.dryRunFingerprint = proof.fingerprint;
     }
 
     result.applied = result.safety.wroteFiles;

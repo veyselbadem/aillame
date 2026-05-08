@@ -1,7 +1,9 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { documentIngestionService } from '@/core/memory/documents/document-ingestion-service';
+import { createAdminAuthErrorResponse, validateAdminRequest } from '@core/admin-auth/auth';
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
+  if (!validateAdminRequest(request)) return createAdminAuthErrorResponse();
   try {
     const body = await request.json();
     const result = await documentIngestionService.ingest(body);

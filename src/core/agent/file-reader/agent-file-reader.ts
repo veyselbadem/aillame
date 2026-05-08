@@ -4,7 +4,7 @@ import { AgentFileReadRequest, AgentFileSummary } from "./types";
 import { FileReadPolicy } from "./file-read-policy";
 import { SecretRedactor } from "./secret-redactor";
 import { CodeStructureExtractor } from "./code-structure-extractor";
-import { isSafePath } from "../workspace-scanner/path-policy";
+import { resolveExistingPathInWorkspace } from "../workspace-scanner/path-policy";
 
 export class AgentFileReader {
   private policy = new FileReadPolicy();
@@ -16,19 +16,17 @@ export class AgentFileReader {
   private static HARD_MAX_BYTES = 98304;    // 96 KB
 
   async readFile(workspacePath: string, relativePath: string, maxBytes = AgentFileReader.DEFAULT_MAX_BYTES): Promise<AgentFileSummary | null> {
-    const fullPath = path.join(workspacePath, relativePath);
-    const normalized = path.normalize(fullPath);
-
     // 1. Path Safety
-    if (!isSafePath(normalized)) return null;
+    const resolvedPath = resolveExistingPathInWorkspace(workspacePath, relativePath);
+    if (!resolvedPath) return null;
 
     // 2. Read Policy
     const policyResult = this.policy.isAllowed(relativePath);
     if (!policyResult.allowed) return null;
 
     try {
-      const stats = await fs.stat(normalized);
-      const ext = path.extname(normalized).toLowerCase();
+      const stats = await fs.stat(resolvedPath);
+      const ext = path.extname(resolvedPath).toLowerCase();
       
       // Limit bytes
       const limit = Math.min(maxBytes, AgentFileReader.HARD_MAX_BYTES);
@@ -36,7 +34,7 @@ export class AgentFileReader {
       const truncated = stats.size > limit;
 
       const buffer = Buffer.alloc(bytesToRead);
-      const fd = await fs.open(normalized, "r");
+      const fd = await fs.open(resolvedPath, "r");
       await fd.read(buffer, 0, bytesToRead, 0);
       await fd.close();
 

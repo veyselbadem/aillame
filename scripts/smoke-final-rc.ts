@@ -92,6 +92,7 @@ function run() {
     /Bearer\s+(?!YOUR_AILLAME_API_KEY)[A-Za-z0-9._-]{12,}/i
   ];
   addCheck("Final docs: no real API key pattern", !secretPatterns.some((pattern) => pattern.test(finalDocs)), "Potential real secret pattern found.");
+  addCheck("Final docs: no absolute Windows path", !/[A-Za-z]:\\/.test(finalDocs), "Absolute Windows path found.");
   addCheck("Final docs: no persisted memory or backup data filenames", !/learning-cards\.jsonl|agent-backups|backup data/i.test(finalDocs), "Persisted memory or backup data filename found.");
 
   const agentUi = read("src/app/admin/agent/page.tsx");
@@ -104,6 +105,8 @@ function run() {
 
   const healthSource = read("src/core/product-health/service.ts");
   addCheck("Product health: RC status present", includesAll(healthSource, ["Beta RC Ready", "artifactHygiene", "finalSmoke"]), "RC status markers are missing.");
+  addCheck("Artifact hygiene: .safetensors.old ignored", read(".gitignore").includes("*.safetensors.old"), ".safetensors.old ignore guard is missing.");
+  addCheck("Image preview: no absolute path query", !read("src/app/admin/image-assets/page.tsx").includes("view?path=") && !read("src/app/admin/ai-lab/page.tsx").includes("view?path="), "Unsafe image preview path query remains.");
 
   console.log("\nFinal RC Smoke Results:");
   console.log(JSON.stringify({ success: checks.every((check) => check.ok), checks }, null, 2));

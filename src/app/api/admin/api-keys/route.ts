@@ -1,16 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { ApiKeyService } from "@core/security/api-key-service";
+import { createAdminAuthErrorResponse, validateAdminRequest } from "@core/admin-auth/auth";
 
 const apiKeyService = new ApiKeyService();
 
-export async function GET() {
-  // TODO: Add admin auth check
+export async function GET(request: NextRequest) {
+  if (!validateAdminRequest(request)) return createAdminAuthErrorResponse();
   const keys = apiKeyService.listApiKeys();
   return NextResponse.json({ success: true, keys });
 }
 
 export async function POST(request: NextRequest) {
-  // TODO: Add admin auth check
+  if (!validateAdminRequest(request)) return createAdminAuthErrorResponse();
   const body = await request.json().catch(() => ({}));
   
   const result = apiKeyService.createApiKey({

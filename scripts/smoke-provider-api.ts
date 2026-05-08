@@ -64,6 +64,14 @@ async function main() {
   };
   results.push({ name: 'Validate invalid request (missing projectId)', ok: validateProviderApiRequest(invalidBody).success === false });
 
+  const quickstart = fs.readFileSync(path.join(process.cwd(), 'docs/provider-integration-quickstart.md'), 'utf-8');
+  const providerDoc = fs.readFileSync(path.join(process.cwd(), 'docs/aillame-provider-api.md'), 'utf-8');
+  const providerTypes = fs.readFileSync(path.join(process.cwd(), 'src/core/provider-api/types.ts'), 'utf-8');
+  results.push({ name: 'Docs: Quickstart uses mode field', ok: quickstart.includes('"mode": "text"') && quickstart.includes('"mode": "image"') });
+  results.push({ name: 'Docs: Quickstart avoids legacy type/input schema', ok: !quickstart.includes('"type": "text"') && !quickstart.includes('"input"') });
+  results.push({ name: 'Docs: Provider response avoids absolute Windows path', ok: !/C:\\\\/.test(providerDoc) });
+  results.push({ name: 'API: Provider response type avoids path field', ok: !providerTypes.includes('path?: string') });
+
   // 4. Summary
   const allOk = results.every(r => r.ok);
   console.log(JSON.stringify({ success: allOk, results }, null, 2));

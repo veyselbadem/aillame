@@ -131,8 +131,7 @@ export class ProviderApiService {
         },
         output: {
           imageUrl: `data:${result.mimeType};base64,${result.image}`,
-          assetId: `asset_${Date.now()}`,
-          path: result.imagePath
+          assetId: `asset_${Date.now()}`
         },
         diagnostics: {
           finalAcceptanceReady: true,

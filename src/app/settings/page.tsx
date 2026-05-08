@@ -7,8 +7,8 @@ import type { AillameTier, LLMMode } from '@apptypes/settings';
 
 const MODES: Array<{ value: LLMMode; label: string; description: string }> = [
   { value: 'local', label: 'Local', description: 'Nano için yerel Rust çekirdeği.' },
-  { value: 'hybrid', label: 'Hybrid', description: 'Yerel uygun değilse API katmanına düşer.' },
-  { value: 'cloud', label: 'Cloud', description: 'Uzak API sağlayıcısı.' },
+  { value: 'hybrid', label: 'Hybrid (Experimental)', description: 'Beta RC ana akışı dışında, deneysel uyumluluk modu.' },
+  { value: 'cloud', label: 'Cloud (Legacy)', description: 'Beta RC ana akışı dışında, eski uzak sağlayıcı modu.' },
 ];
 
 const TIERS: Array<{ value: AillameTier; label: string; description: string }> = [

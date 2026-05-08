@@ -1,7 +1,9 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { ReleaseService } from '@/core/release/release-service';
+import { createAdminAuthErrorResponse, validateAdminRequest } from '@core/admin-auth/auth';
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  if (!validateAdminRequest(request)) return createAdminAuthErrorResponse();
   try {
     const report = ReleaseService.getBetaReleaseReport();
     return NextResponse.json({ success: true, report });

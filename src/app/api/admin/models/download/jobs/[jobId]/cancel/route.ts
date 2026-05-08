@@ -1,7 +1,9 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { modelDownloadService } from "@/core/models/download/model-download-service";
+import { createAdminAuthErrorResponse, validateAdminRequest } from "@core/admin-auth/auth";
 
-export async function POST(_request: Request, context: { params: Promise<{ jobId: string }> }) {
+export async function POST(request: NextRequest, context: { params: Promise<{ jobId: string }> }) {
+  if (!validateAdminRequest(request)) return createAdminAuthErrorResponse();
   try {
     const { jobId } = await context.params;
     return NextResponse.json(modelDownloadService.cancelDownloadJob(jobId));

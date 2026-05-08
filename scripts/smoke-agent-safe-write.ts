@@ -58,13 +58,26 @@ async function runSmokeTest() {
     });
     addCheck("Dry run success", dryResult.success === true, "Dry run failed");
     addCheck("Dry run didn't write", (await fs.readFile(path.join(tempDir, testFilePath), 'utf-8')) === initialContent, "Dry run modified file!");
+    addCheck("Dry run token issued", typeof dryResult.dryRunToken === "string" && dryResult.dryRunToken.length > 10, "Dry run token missing");
 
     // 3. Safe Write Test
     console.log("- Testing actual safe write...");
+    try {
+      await engine.apply({
+        workspacePath: tempDir,
+        proposal,
+        approval: { approved: true, approvalText: "Safe actual write test" },
+        options: { dryRun: false, createBackup: true }
+      });
+      addCheck("Block write without dry-run token", false, "Allowed write without dry-run token");
+    } catch (e: any) {
+      addCheck("Block write without dry-run token", e.message.includes("DRY_RUN_REQUIRED"), "Missing dry-run token should be blocked");
+    }
+
     const writeResult = await engine.apply({
       workspacePath: tempDir,
       proposal,
-      approval: { approved: true, approvalText: "Safe actual write test" },
+      approval: { approved: true, approvalText: "Safe actual write test", dryRunToken: dryResult.dryRunToken },
       options: { dryRun: false, createBackup: true }
     });
     addCheck("Write success", writeResult.success === true, "Actual write failed");
@@ -75,10 +88,16 @@ async function runSmokeTest() {
     // 4. Content Mismatch Test
     console.log("- Testing content mismatch protection...");
     const badProposal = { ...proposal, changes: [{ ...proposal.changes[0], beforeSnippet: "non-existent" }] };
+    const badDryResult = await engine.apply({
+      workspacePath: tempDir,
+      proposal: badProposal,
+      approval: { approved: true, approvalText: "Mismatch dry run" },
+      options: { dryRun: true }
+    });
     const mismatchResult = await engine.apply({
       workspacePath: tempDir,
       proposal: badProposal,
-      approval: { approved: true, approvalText: "Mismatch test" }
+      approval: { approved: true, approvalText: "Mismatch test", dryRunToken: badDryResult.dryRunToken }
     });
     addCheck("Mismatch handled", mismatchResult.skippedChanges.some(s => s.reason.includes("CONTENT_MISMATCH")), "Failed to detect content mismatch");
 
@@ -89,9 +108,19 @@ async function runSmokeTest() {
     const envResult = await engine.apply({
       workspacePath: tempDir,
       proposal: envProposal,
-      approval: { approved: true, approvalText: "Security test" }
+      approval: { approved: true, approvalText: "Security test" },
+      options: { dryRun: true }
     });
     addCheck("Block .env write", envResult.skippedChanges.some(s => s.reason.includes("Policy block") || s.reason.includes("blocked")), "Failed to block .env write");
+
+    const traversalProposal = { ...proposal, changes: [{ ...proposal.changes[0], relativePath: "../escape.ts" }] };
+    const traversalResult = await engine.apply({
+      workspacePath: tempDir,
+      proposal: traversalProposal,
+      approval: { approved: true, approvalText: "Traversal test" },
+      options: { dryRun: true }
+    });
+    addCheck("Block traversal write", traversalResult.skippedChanges.some(s => s.reason.includes("UNSAFE_PATH") || s.reason.includes("Policy block")), "Failed to block traversal path");
 
   } catch (error: any) {
     console.error("Smoke test failed:", error.message);

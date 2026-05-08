@@ -116,10 +116,10 @@ export default function ImageAssetManagerPage() {
                   <tr key={job.jobId} className="hover:bg-indigo-500/5 transition-colors group">
                     <td className="py-6 px-8">
                       <div className="flex items-center gap-4">
-                        {job.imagePath && (
+                        {job.outputAssetIds?.[0] && (
                           <div className="w-12 h-12 rounded-lg overflow-hidden border theme-divider shrink-0 bg-black/5">
                             <img 
-                              src={`/api/image-generation/view?path=${encodeURIComponent(job.imagePath)}`} 
+                              src={`/api/image-generation/view?assetId=${encodeURIComponent(job.outputAssetIds[0])}`} 
                               alt="Varlık" 
                               className="w-full h-full object-cover"
                             />

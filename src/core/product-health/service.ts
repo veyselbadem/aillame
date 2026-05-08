@@ -42,10 +42,10 @@ export class ProductHealthService {
     };
 
     const providerApi: ComponentHealth = {
-      status: (llm.available || igm.available) ? "ready" : "blocked",
+      status: runtimeReport.overall.finalAcceptanceReady ? "ready" : "blocked",
       available: llm.available || igm.available,
       configured: true,
-      warnings: [],
+      warnings: runtimeReport.overall.finalAcceptanceReady ? [] : runtimeReport.overall.blockers,
       details: {
         textEnabled: llm.available,
         imageEnabled: igm.available
@@ -80,33 +80,46 @@ export class ProductHealthService {
     const warnings = [
       ...llm.warnings,
       ...igm.warnings,
+      ...providerApi.warnings,
       ...memory.warnings,
       ...storage.warnings
     ];
 
-    let overall: HealthStatus = "ready";
-    if (llm.status === "blocked" || igm.status === "blocked") overall = "blocked";
-    else if (llm.status === "degraded" || igm.status === "degraded" || storage.status === "degraded") overall = "degraded";
+    let overall: HealthStatus = runtimeReport.overall.finalAcceptanceReady ? "ready" : "blocked";
+    if (runtimeReport.overall.finalAcceptanceReady && storage.status === "degraded") overall = "degraded";
 
     return {
       overall,
       releaseCandidate: {
         label: overall === "ready" ? "Beta RC Ready" : overall === "degraded" ? "Degraded" : "Blocked",
-        llm: "Ready",
-        igm: "Ready",
+        llm: this.toRcStatus(llm.status),
+        igm: this.toRcStatus(igm.status),
         cpuFallback: runtimeReport.image.performanceWarning ? "Performance Warning" : "Ready",
-        providerApi: "Ready",
+        providerApi: this.toProviderRcStatus(providerApi.status),
         agent: "Beta-Lock Ready",
-        memory: "Ready",
+        memory: this.toProviderRcStatus(memory.status),
         productHealth: "Ready",
         artifactHygiene: "Clean",
-        finalSmoke: "Ready"
+        finalSmoke: runtimeReport.overall.finalAcceptanceReady ? "Ready" : "Pending"
       },
       timestamp: Date.now(),
       components,
       warnings: Array.from(new Set(warnings)),
       nextRecommendedChecks: runtimeReport.overall.nextActions
     };
+  }
+
+  private static toRcStatus(status: HealthStatus): "Ready" | "Degraded" | "Not Configured" | "Blocked" {
+    if (status === "ready") return "Ready";
+    if (status === "degraded") return "Degraded";
+    if (status === "not-configured") return "Not Configured";
+    return "Blocked";
+  }
+
+  private static toProviderRcStatus(status: HealthStatus): "Ready" | "Degraded" | "Blocked" {
+    if (status === "ready") return "Ready";
+    if (status === "degraded" || status === "not-configured") return "Degraded";
+    return "Blocked";
   }
 
   private static checkStorage(): ComponentHealth {

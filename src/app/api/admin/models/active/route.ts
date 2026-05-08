@@ -1,11 +1,14 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { activeGgufModelService } from "@/core/models/download/active-gguf-model-service";
+import { createAdminAuthErrorResponse, validateAdminRequest } from "@core/admin-auth/auth";
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  if (!validateAdminRequest(request)) return createAdminAuthErrorResponse();
   return NextResponse.json({ success: true, activeModel: activeGgufModelService.getActiveGgufModel() });
 }
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
+  if (!validateAdminRequest(request)) return createAdminAuthErrorResponse();
   try {
     const body = await request.json().catch(() => ({}));
     const modelId = typeof body.modelId === "string" ? body.modelId : "";

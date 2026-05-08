@@ -13,15 +13,15 @@ export interface ProductHealth {
   overall: HealthStatus;
   releaseCandidate: {
     label: "Beta RC Ready" | "Degraded" | "Blocked";
-    llm: "Ready";
-    igm: "Ready";
+    llm: "Ready" | "Degraded" | "Not Configured" | "Blocked";
+    igm: "Ready" | "Degraded" | "Not Configured" | "Blocked";
     cpuFallback: "Ready" | "Performance Warning";
-    providerApi: "Ready";
-    agent: "Beta-Lock Ready";
-    memory: "Ready";
+    providerApi: "Ready" | "Degraded" | "Blocked";
+    agent: "Beta-Lock Ready" | "Blocked";
+    memory: "Ready" | "Degraded" | "Blocked";
     productHealth: "Ready";
     artifactHygiene: "Clean";
-    finalSmoke: "Ready";
+    finalSmoke: "Ready" | "Pending";
   };
   timestamp: number;
   components: {

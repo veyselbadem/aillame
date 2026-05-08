@@ -41,7 +41,7 @@ async function runSmokeTest() {
     const sidebarPath = path.join(process.cwd(), 'src/components/Sidebar.tsx');
     if (fs.existsSync(sidebarPath)) {
       const sidebarContent = fs.readFileSync(sidebarPath, 'utf8');
-      addCheck("Sidebar has Agent link", sidebarContent.includes("/admin/agent") && sidebarContent.includes("Kod Asistanı"), "Sidebar link missing");
+      addCheck("Sidebar has Agent link", sidebarContent.includes("/admin/agent") && sidebarContent.includes("Code Agent"), "Sidebar link missing");
     }
 
   } catch (error: any) {

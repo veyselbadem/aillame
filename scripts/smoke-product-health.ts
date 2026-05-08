@@ -19,6 +19,17 @@ async function runHealthSmoke() {
     addCheck("Health: Agent Component", !!health.components.agent, "Agent component missing");
     addCheck("Health: Memory Component", !!health.components.memory, "Memory component missing");
     addCheck("Health: Storage Component", !!health.components.storage, "Storage component missing");
+    addCheck("Health: Release Candidate Component", !!health.releaseCandidate, "Release candidate summary missing");
+    addCheck(
+      "Health: RC not hardcoded ready",
+      health.releaseCandidate.label !== "Beta RC Ready" || (health.components.llm.status === "ready" && health.components.igm.status === "ready" && health.components.providerApi.status === "ready"),
+      "RC label reports ready while LLM/IGM/provider are not all ready"
+    );
+    addCheck(
+      "Health: Overall follows runtime readiness",
+      health.overall !== "ready" || (health.components.llm.status === "ready" && health.components.igm.status === "ready"),
+      "Overall ready while runtime components are not ready"
+    );
 
     // Security check
     const raw = JSON.stringify(health);
@@ -30,6 +41,7 @@ async function runHealthSmoke() {
     console.log(`LLM: ${health.components.llm.status}`);
     console.log(`IGM: ${health.components.igm.status}`);
     console.log(`Memory: ${health.components.memory.status} (${health.components.memory.details?.cardCount} cards)`);
+    console.log(`RC: ${health.releaseCandidate.label}`);
 
   } catch (error: any) {
     console.error("Health smoke failed:", error.message);

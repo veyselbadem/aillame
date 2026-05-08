@@ -86,8 +86,7 @@ Metin veya görsel üretimi için ana endpoint.
   },
   "output": {
     "imageUrl": "data:image/png;base64,...",
-    "assetId": "asset_1778241956552",
-    "path": "C:\\aillame-assets\\..."
+    "assetId": "asset_1778241956552"
   },
   "diagnostics": {
     "finalAcceptanceReady": true,

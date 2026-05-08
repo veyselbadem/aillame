@@ -34,6 +34,14 @@ async function runBetaLockTest() {
       addCheck("Uses WritePolicy", content.includes("this.writePolicy.isAllowed"), "WritePolicy not called in engine");
       addCheck("Uses BackupStore", content.includes("backupStore.createBackup"), "BackupStore not called in engine");
       addCheck("Respects dryRun", content.includes("if (!result.dryRun)"), "DryRun logic not found in write path");
+      addCheck("Requires dry-run proof", content.includes("DryRunProofStore.validate"), "Server-side dry-run proof validation missing");
+      addCheck("Issues dry-run token", content.includes("DryRunProofStore.issue"), "Server-side dry-run token issuance missing");
+    }
+
+    const applyRoutePath = path.join(process.cwd(), 'src/app/api/admin/agent/apply-patch/route.ts');
+    if (fs.existsSync(applyRoutePath)) {
+      const routeContent = fs.readFileSync(applyRoutePath, 'utf8');
+      addCheck("Apply route: no command execution", !routeContent.includes("exec(") && !routeContent.includes("spawn("), "Apply route should not execute commands");
     }
 
     // 3. UI Safety Audit

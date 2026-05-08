@@ -1,8 +1,10 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { imageJobStore } from '@/core/runtime/image/jobs/image-job-file-store';
 import { imageGenerationService } from '@/core/runtime/image/image-generation-service';
+import { createAdminAuthErrorResponse, validateAdminRequest } from '@core/admin-auth/auth';
 
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
+  if (!validateAdminRequest(request)) return createAdminAuthErrorResponse();
   const { searchParams } = new URL(request.url);
   const projectId = searchParams.get('projectId') || undefined;
 
@@ -14,7 +16,8 @@ export async function GET(request: Request) {
   }
 }
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
+  if (!validateAdminRequest(request)) return createAdminAuthErrorResponse();
   try {
     const body = await request.json();
     const result = await imageGenerationService.createJob(body);

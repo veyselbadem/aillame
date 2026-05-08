@@ -44,6 +44,7 @@ Product Health birleşik raporda LLM, IGM, Provider API, Agent, Memory, Storage 
 ## Bilinen sınırlamalar
 
 - Beta RC yerel kurulum varsayar; cloud fallback yoktur.
+- Ollama, Gemini, OpenAI-compatible, mock, hybrid ve benzeri legacy/experimental yüzeyler ana Beta RC yolu değildir; varsa yalnızca uyumluluk, migrasyon veya değerlendirme bağlamında yorumlanır.
 - Agent doğrulama komutlarını önerir ama otomatik çalıştırmaz.
 - Provider API canlı üretim için yerel runtime readiness durumuna bağlıdır.
 - CPU fallback kullanılabilir, ancak üretim hızı donanıma göre sınırlıdır.

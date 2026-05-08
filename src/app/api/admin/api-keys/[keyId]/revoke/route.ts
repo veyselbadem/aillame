@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { ApiKeyService } from "@core/security/api-key-service";
+import { createAdminAuthErrorResponse, validateAdminRequest } from "@core/admin-auth/auth";
 
 const apiKeyService = new ApiKeyService();
 
@@ -7,7 +8,7 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ keyId: string }> }
 ) {
-  // TODO: Add admin auth check
+  if (!validateAdminRequest(request)) return createAdminAuthErrorResponse();
   const { keyId } = await params;
   const success = apiKeyService.revokeApiKey(keyId);
   
