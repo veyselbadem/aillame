@@ -418,7 +418,7 @@ export default function AgentCommandCenter() {
                   <div className="space-y-2">
                     {auditResult.backups.map((bk: any, idx: number) => (
                       <div key={idx} className="text-[10px] text-amber-200/60 font-mono">
-                        {bk.relativePath} -> {bk.backupId}
+                        {bk.relativePath} {'->'} {bk.backupId}
                       </div>
                     ))}
                   </div>

@@ -40,6 +40,7 @@
     "smoke:agent-safe-write": "npx tsx scripts/smoke-agent-safe-write.ts",
     "smoke:agent-execution-audit": "npx tsx scripts/smoke-agent-execution-audit.ts",
     "smoke:agent-ui": "npx tsx scripts/smoke-agent-ui.ts",
+    "smoke:agent-beta-lock": "npx tsx scripts/smoke-agent-beta-lock.ts",
     "smoke:live-runtime-acceptance": "node scripts/smoke-live-runtime-acceptance.mjs",
                     "smoke:desktop-readiness": "node scripts/smoke-desktop-readiness.mjs",
                     "smoke:beta-rc": "node scripts/smoke-beta-rc.mjs",
