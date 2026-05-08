@@ -69,6 +69,7 @@ export type AillameTextGenerateResult = {
     | "unknown";
   usedLocalRuntime: boolean;
   degraded: boolean;
+  placeholderUsed?: boolean;
   warnings: string[];
   diagnostics?: {
     reasonCode?: string;

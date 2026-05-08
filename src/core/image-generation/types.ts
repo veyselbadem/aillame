@@ -18,6 +18,7 @@ export type ImageGenerationResult = {
   device?: string;
   deviceDetails?: string;
   deviceReason?: string;
+  imagePath?: string;
 };
 
 export const IMAGE_SIZE_PRESETS: Record<ImageSizePreset, { width: number; height: number; label: string }> = {

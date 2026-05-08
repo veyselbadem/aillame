@@ -32,6 +32,7 @@
                     "smoke:live-image-runtime": "node scripts/smoke-live-image-runtime.mjs",
                     "smoke:live-text-runtime": "node scripts/smoke-live-text-runtime.mjs",
                     "smoke:live-igm-model-manager": "node scripts/smoke-live-igm-model-manager.mjs",
+    "smoke:provider-api": "npx tsx scripts/smoke-provider-api.ts",
     "smoke:live-runtime-acceptance": "node scripts/smoke-live-runtime-acceptance.mjs",
                     "smoke:desktop-readiness": "node scripts/smoke-desktop-readiness.mjs",
                     "smoke:beta-rc": "node scripts/smoke-beta-rc.mjs",
