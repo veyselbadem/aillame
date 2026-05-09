@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { FiCheckCircle, FiDownloadCloud, FiLoader, FiSettings } from 'react-icons/fi';
+import { FiCheckCircle, FiDownloadCloud, FiLoader, FiSettings, FiTrash2 } from 'react-icons/fi';
 import { useSettings } from '@hooks/useSettings';
 import type { AillameTier, LLMMode } from '@apptypes/settings';
 import { isLegacyProvidersEnabled } from '@core/feature-flags/legacy-providers';
@@ -52,6 +52,7 @@ export default function SettingsPage() {
   const [models, setModels] = useState<ModelStatus[]>([]);
   const [loadingModels, setLoadingModels] = useState(true);
   const [installing, setInstalling] = useState<string | null>(null);
+  const [removing, setRemoving] = useState<string | null>(null);
   const [modelError, setModelError] = useState<string | null>(null);
 
   const loadModels = async () => {
@@ -102,6 +103,7 @@ export default function SettingsPage() {
 
   const installModel = async (modelId: string) => {
     setInstalling(modelId);
+    setRemoving(null);
     setModelError(null);
     try {
       const response = await fetch('/api/models', {
@@ -116,6 +118,29 @@ export default function SettingsPage() {
       setModelError(error instanceof Error ? error.message : 'Model kurulamadı.');
     } finally {
       setInstalling(null);
+    }
+  };
+
+  const removeModel = async (modelId: string, label: string) => {
+    if (!window.confirm(`'${label}' modelini tamamen kaldırmak istediğinize emin misiniz?\n\nBu işlem geri alınamaz ve model dosyaları silinecektir.`)) {
+      return;
+    }
+    setRemoving(modelId);
+    setInstalling(null);
+    setModelError(null);
+    try {
+      const response = await fetch('/api/models', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'remove', modelId }),
+      });
+      const payload = await response.json();
+      if (!response.ok || !payload.success) throw new Error(payload.error || payload.message || 'Model kaldırılamadı.');
+      await loadModels();
+    } catch (error) {
+      setModelError(error instanceof Error ? error.message : 'Model kaldırılamadı.');
+    } finally {
+      setRemoving(null);
     }
   };
 
@@ -245,18 +270,32 @@ export default function SettingsPage() {
                     </div>
 
                     <div className="mt-4 flex items-center justify-between gap-3">
-                      <div className="text-[10px] text-gray-600 font-mono truncate">
+                      <div className="text-[10px] text-gray-600 font-mono truncate max-w-[120px]">
                         {model.cachePath || (model.builtIn ? 'bundled' : 'not downloaded')}
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => installModel(model.id)}
-                        disabled={model.builtIn || installing === model.id}
-                        className="h-10 px-4 rounded-xl bg-white/5 hover:bg-white/10 text-gray-200 text-xs font-bold uppercase tracking-widest flex items-center gap-2 disabled:opacity-40"
-                      >
-                        {model.installed ? <FiCheckCircle size={14} /> : installing === model.id ? <FiLoader className="animate-spin" size={14} /> : <FiDownloadCloud size={14} />}
-                        {model.installed ? 'Hazır' : 'Kur'}
-                      </button>
+                      <div className="flex gap-2">
+                        {model.installed && !model.builtIn && (
+                          <button
+                            type="button"
+                            onClick={() => removeModel(model.id, model.label)}
+                            disabled={removing === model.id || installing === model.id}
+                            className="h-10 px-3 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 text-xs font-bold uppercase tracking-widest flex items-center gap-2 disabled:opacity-40 transition-all"
+                            title="Modeli Kaldır"
+                          >
+                            {removing === model.id ? <FiLoader className="animate-spin" size={14} /> : <FiTrash2 size={14} />}
+                            <span className="hidden sm:inline">Kaldır</span>
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => installModel(model.id)}
+                          disabled={model.builtIn || installing === model.id || (model.installed && !model.builtIn)}
+                          className="h-10 px-4 rounded-xl bg-white/5 hover:bg-white/10 text-gray-200 text-xs font-bold uppercase tracking-widest flex items-center gap-2 disabled:opacity-40 transition-all"
+                        >
+                          {model.installed ? <FiCheckCircle size={14} /> : installing === model.id ? <FiLoader className="animate-spin" size={14} /> : <FiDownloadCloud size={14} />}
+                          {model.installed ? 'Hazır' : 'Kur'}
+                        </button>
+                      </div>
                     </div>
                   </article>
                 ))}

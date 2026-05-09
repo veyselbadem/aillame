@@ -40,6 +40,7 @@ export function getModelFileRuntimeKind(fileName: string): ModelRuntimeKind {
 }
 
 export function getAllowedModelRoots(): string[] {
+  const homeDir = process.env.USERPROFILE || process.env.HOME || '';
   const roots = [
     process.env.AILLAME_MODEL_LIBRARY_DIR,
     process.env.AILLAME_MODEL_LIBRARY_ROOT,
@@ -49,6 +50,7 @@ export function getAllowedModelRoots(): string[] {
     normalizeLocalModelPath(path.join(process.cwd(), 'runtime', 'models')),
     normalizeLocalModelPath(path.join(process.cwd(), 'runtime', 'checkpoints')),
     normalizeLocalModelPath(path.join(process.cwd(), 'local-models')),
+    normalizeLocalModelPath(path.join(homeDir, '.cache', 'huggingface', 'hub')),
   ]
     .map((value) => normalizeLocalModelPath(value || ''))
     .filter(Boolean)

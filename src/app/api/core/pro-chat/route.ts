@@ -89,7 +89,7 @@ export async function POST(req: NextRequest) {
           enabled: isQwenEnabled(),
           modelId: qwenModel.id,
           repoId: qwenModel.repoId,
-          install: getAllModelInstallStatuses().find((s: any) => s.modelId === qwenModel.id),
+          install: (await getAllModelInstallStatuses()).find((s: any) => s.modelId === qwenModel.id),
         },
       });
     }

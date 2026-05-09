@@ -123,12 +123,14 @@ export function discoverModelsInDirectory(
 }
 
 import { listOllamaModels } from '../inference/ollama-availability';
+import { MODEL_REGISTRY } from '../models/registry';
 
 export function getDefaultDiscoveryDirectories(): string[] {
   return getAllowedModelRoots();
 }
 
 export async function discoverLocalModels(options: LocalModelDiscoveryOptions = {}): Promise<LocalModelMetadata[]> {
+  const homeDir = process.env.USERPROFILE || process.env.HOME || '';
   const directories = options.directories && options.directories.length > 0
     ? options.directories.map(normalizeLocalModelPath).filter(Boolean)
     : getDefaultDiscoveryDirectories();
@@ -148,8 +150,6 @@ export async function discoverLocalModels(options: LocalModelDiscoveryOptions = 
     const ollama = await listOllamaModels({ timeoutMs: 2000 });
     if (ollama.ok && Array.isArray(ollama.models)) {
       for (const name of ollama.models) {
-        // Use a prefixed ID to avoid collisions with local files if necessary, 
-        // but Ollama names are usually distinct (e.g., gemma:2b)
         const id = sanitizeModelId(`ollama-${name}`);
         const now = new Date().toISOString();
         merged.set(id, normalizeModelMetadata({
@@ -157,7 +157,7 @@ export async function discoverLocalModels(options: LocalModelDiscoveryOptions = 
           name,
           provider: 'ollama',
           runtime: 'ollama',
-          capabilities: ['text', 'chat'], // Ollama models are primarily text/chat
+          capabilities: ['text', 'chat'],
           status: 'available',
           source: 'ollama-api',
           lastCheckedAt: now,
@@ -168,6 +168,32 @@ export async function discoverLocalModels(options: LocalModelDiscoveryOptions = 
     }
   } catch (err) {
     console.error('[discovery] Ollama discovery failed:', err);
+  }
+
+  // 3. Managed Registry discovery (HF Cache)
+  for (const model of Object.values(MODEL_REGISTRY)) {
+    if (model.builtIn) continue;
+    if (!model.repoId) continue;
+
+    const folderName = `models--${model.repoId.replace('/', '--')}`;
+    const fullPath = path.join(homeDir, '.cache', 'huggingface', 'hub', folderName);
+    
+    if (fs.existsSync(fullPath)) {
+      const now = new Date().toISOString();
+      merged.set(model.id, normalizeModelMetadata({
+        id: model.id,
+        name: model.label,
+        provider: model.family as any || 'custom',
+        runtime: model.runtime as any || 'unknown',
+        capabilities: model.capabilities as any[],
+        status: 'available',
+        source: 'registry',
+        localPath: normalizeLocalModelPath(fullPath),
+        lastCheckedAt: now,
+        updatedAt: now,
+        description: model.description,
+      }));
+    }
   }
 
   return Array.from(merged.values());

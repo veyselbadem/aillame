@@ -5,6 +5,7 @@ import path from 'path';
 import { MODEL_REGISTRY } from '../models/registry';
 import { checkGeminiConfig } from '../inference/gemini';
 import { getTextRuntimeRouterStatus } from '../inference/text-runtime-router';
+import { listLocalModels } from '../model-library/model-library-service';
 
 const execAsync = promisify(exec);
 const homeDir = process.env.USERPROFILE || process.env.HOME || '';
@@ -374,8 +375,15 @@ export async function getGemmaReadiness(): Promise<ModelStatusReport> {
   return report;
 }
 
-export function getAllModelInstallStatuses() {
-  return Object.values(MODEL_REGISTRY).map(model => {
+function formatBytes(bytes?: number): string {
+  if (!bytes) return '—';
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
+}
+
+export async function getAllModelInstallStatuses() {
+  const managed = Object.values(MODEL_REGISTRY).map(model => {
     let installed = false;
     let cachePath = '';
 
@@ -397,4 +405,31 @@ export function getAllModelInstallStatuses() {
       runtimeAvailable: !!process.env.AILLAME_PYTHON || model.runtime === 'rust-candle'
     };
   });
+
+  // Include discovered models
+  try {
+    const discovered = await listLocalModels();
+    const discoveredModels = discovered
+      .filter(m => !managed.some(man => man.id === m.id)) // avoid duplicates
+      .map(m => ({
+        id: m.id,
+        label: m.name,
+        purpose: (m.capabilities.includes('image') ? 'image-generation' : 'chat') as 'chat' | 'image-generation',
+        tier: 'nano' as const, // discovered models default to nano tier for UI
+        runtime: m.runtime,
+        sizeLabel: formatBytes(m.sizeBytes),
+        capabilities: m.capabilities,
+        description: m.description || `Discovered local model from ${m.provider}.`,
+        installHint: `Found at: ${m.localPath || 'ollama'}`,
+        installed: m.status === 'available',
+        builtIn: false,
+        cachePath: m.localPath,
+        runtimeAvailable: true
+      }));
+
+    return [...managed, ...discoveredModels];
+  } catch (err) {
+    console.error('[status] Failed to list discovered models:', err);
+    return managed;
+  }
 }

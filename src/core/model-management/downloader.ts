@@ -12,7 +12,7 @@ export type InstallModelResult = {
 
 export async function installManagedModel(modelId: string): Promise<InstallModelResult> {
   const model = getModel(modelId);
-  const current = getAllModelInstallStatuses().find((s: any) => s.modelId === modelId);
+  const current = (await getAllModelInstallStatuses()).find((s: any) => s.modelId === modelId);
 
   if (model.builtIn) {
     return {
