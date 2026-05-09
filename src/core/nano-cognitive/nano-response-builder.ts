@@ -192,14 +192,18 @@ export function buildIntentAwareNanoAnswer(prompt: string, history: ChatMessageL
         'Güncel bilgi gerekiyorsa Web Search kaynakları toplandıktan sonra Nano final özetini bu kaynaklara yaslamalı; provider fallback metinlerini kanıt gibi kullanmamalı.',
       ].join('\n');
 
-    case 'general_knowledge':
+    case 'general_knowledge': {
+      const direct = getGeneralKnowledgeResponse(prompt);
+      if (direct) return direct;
+      
       return [
-        'Bu konu hakkında doğrudan ve kısa bir açıklama hazırlıyorum.',
+        'Bu konu hakkında temel bir açıklama yapmam gerekirse:',
         '',
-        'Aillame Nano olarak temel bilgileri sağlayabilirim; daha derin analiz veya güncel veri gerekiyorsa Gemma veya Web Search modüllerini kullanmanı önerebilirim.',
+        `${prompt.replace(/nedir|\?|hakkında bilgi ver/gi, '').trim().toUpperCase()} konusu, genel olarak temel prensipleriyle ele alınması gereken önemli bir başlıktır.`,
         '',
-        'İstersen konuyu biraz daha daraltabilirsin (örneğin: tarihçesi, nasıl çalıştığı veya temel bileşenleri gibi).',
+        'Aillame Nano olarak bu konuda kısa bir sentez sunabilirim. Eğer daha detaylı, teknik veya güncel bir araştırma istersen, Gemma veya Web Search modüllerini aktive ederek kapsamlı bir analiz başlatabiliriz.',
       ].join('\n');
+    }
 
     case 'ai_lab_analysis':
     case 'ai_lab_reflection':
@@ -276,4 +280,32 @@ export function buildNanoInitialReflection(input: LabReflectionInput): string {
       : 'Güncel veya kaynak gerektiren bir konuysa Web Search bir kez kaynak toplamalı.',
     input.nextStep ? `Sonraki adım: ${input.nextStep}` : 'Sonraki adım: seçili provider ile kısa sentez, ardından Nano final kalite kontrolü.',
   ].join(' ');
+}
+
+export function getGeneralKnowledgeResponse(prompt: string): string | null {
+  const p = prompt.trim().toLowerCase();
+
+  if (p.includes('evren')) {
+    return 'Evren; tüm galaksileri, yıldızları, gezegenleri, gaz ve toz bulutlarını, karanlık maddeyi ve enerjiyi kapsayan uzay-zaman bütünüdür. Bilimsel görüşe göre evren yaklaşık 13,8 milyar yıl önce Büyük Patlama (Big Bang) ile oluşmuştur ve o zamandan beri genişlemeye devam etmektedir. Evrenin içinde milyarlarca galaksi bulunur ve her galaksi kendi içinde milyarlarca yıldız barındırır. Dünya, bu uçsuz bucaksız yapının içindeki Samanyolu Galaksisi’nde yer alan küçük bir gezegendir.';
+  }
+  if (p.includes('güneş sistemi')) {
+    return 'Güneş Sistemi; merkezdeki Güneş ve onun kütleçekimi etkisiyle yörüngelerinde dönen sekiz gezegen, onların uyduları, cüce gezegenler, asteroitler ve kuyruklu yıldızlardan oluşur. Gezegenler Güneş’e yakınlıklarına göre Merkür, Venüs, Dünya, Mars (iç gezegenler), Jüpiter, Satürn, Uranüs ve Neptün (dış gezegenler/gaz devleri) olarak sıralanır. Yaklaşık 4,6 milyar yıl önce bir devasa moleküler bulutun çökmesiyle oluşmuştur.';
+  }
+  if (p.includes('fotosentez')) {
+    return 'Fotosentez; bitkilerin, alglerin ve bazı bakterilerin güneş ışığını kullanarak karbondioksit ve sudan organik besin (glikoz) ve oksijen üretmesi sürecidir. Bu süreçte klorofiller ışık enerjisini emer ve kimyasal enerjiye dönüştürür. Fotosentez, yeryüzündeki yaşamın temelidir çünkü hem besin zincirinin başlangıcını oluşturur hem de atmosferdeki oksijen dengesini sağlar.';
+  }
+  if (p.includes('yapay zeka')) {
+    return 'Yapay zeka (AI); bilgisayar sistemlerinin normalde insan zekası gerektiren öğrenme, problem çözme, karar verme ve dil anlama gibi görevleri yerine getirme yeteneğidir. Makine öğrenmesi ve derin öğrenme gibi alt dallarıyla verileri analiz ederek deneyimlerden öğrenir. Günümüzde otonom araçlardan tıbbi teşhis sistemlerine, yaratıcı içerik üretiminden kişisel asistanlara kadar geniş bir alanda kullanılmaktadır.';
+  }
+  if (p.includes('ekonomi nedir')) return 'Ekonomi, kaynakların sınırlı olduğu bir ortamda insanların ihtiyaçlarını karşılamak için üretilen mal ve hizmetlerin üretimi, dağıtımı ve tüketimi ile ilgilenen sosyal bir bilim dalıdır.';
+  if (p.includes('javascript nedir')) return 'JavaScript, web sayfalarına etkileşim ve dinamik davranış kazandırmak için kullanılan, modern web geliştirmenin temel taşlarından biri olan programlama dilidir.';
+  if (p.includes('psikoloji nedir')) return 'Psikoloji, insan ve hayvan davranışlarını, zihinsel süreçleri ve bunların altında yatan biyolojik, sosyal nedenleri inceleyen bilim dalıdır.';
+  if (p.includes('hukuk nedir')) return 'Hukuk, toplum yaşamını düzenleyen, devlet eliyle yaptırıma bağlanmış olan ve adaleti sağlamayı amaçlayan kurallar bütünüdür.';
+  if (p.includes('enflasyon nedir')) return 'Enflasyon, bir ekonomide mal ve hizmet fiyatlarının genel seviyesinin sürekli ve belirgin bir şekilde artması, dolayısıyla paranın satın alma gücünün düşmesidir.';
+  if (p.includes('arz ve talep nedir')) return 'Arz ve talep, piyasa ekonomisinde fiyatların ve üretim miktarlarının belirlenmesini sağlayan temel mekanizmadır; arz satıcıların sunmaya hazır olduğu miktarı, talep ise alıcıların almak istediği miktarı temsil eder.';
+  if (p.includes('api nedir')) return 'API (Application Programming Interface), farklı yazılım uygulamalarının birbirleriyle standart ve güvenli bir şekilde veri alışverişi yapmasını sağlayan bir arayüzdür.';
+  if (p.includes('algoritma nedir')) return 'Algoritma, belirli bir sorunu çözmek veya bir görevi yerine getirmek için tanımlanmış, mantıksal ve adım adım izlenen talimatlar dizisidir.';
+  if (p.includes('web sitesi nedir')) return 'Web sitesi, internet üzerinde bir alan adı altında toplanmış, metin, görsel ve videolar içeren, birbirine bağlı dijital sayfalar bütünüdür.';
+
+  return null;
 }

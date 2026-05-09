@@ -8,18 +8,47 @@ async function main() {
   const results = [];
 
   const testCases = [
-    { prompt: "evren hakkında bilgi verir misin", expectedIntent: "general_knowledge", shouldClarify: false },
-    { prompt: "güneş sistemi nedir", expectedIntent: "general_knowledge", shouldClarify: false },
-    { prompt: "yapay zeka nedir", expectedIntent: "general_knowledge", shouldClarify: false },
-    { prompt: "fotosentez nedir", expectedIntent: "general_knowledge", shouldClarify: false },
-    { prompt: "bunu yapabilir misin", expectedIntent: "default", shouldClarify: true },
+    { 
+      prompt: "evren hakkında bilgi verir misin", 
+      expectedIntent: "general_knowledge", 
+      shouldClarify: false,
+      requiredKeywords: ["evren", "galaksi", "patlama"] 
+    },
+    { 
+      prompt: "güneş sistemi nedir", 
+      expectedIntent: "general_knowledge", 
+      shouldClarify: false,
+      requiredKeywords: ["güneş", "gezegen", "yörünge"]
+    },
+    { 
+      prompt: "yapay zeka nedir", 
+      expectedIntent: "general_knowledge", 
+      shouldClarify: false,
+      requiredKeywords: ["zek", "öğrenme", "bilgisayar"]
+    },
+    { 
+      prompt: "fotosentez nedir", 
+      expectedIntent: "general_knowledge", 
+      shouldClarify: false,
+      requiredKeywords: ["ışık", "oksijen", "bitki"]
+    },
+    { 
+      prompt: "bunu yapabilir misin", 
+      expectedIntent: "default", 
+      shouldClarify: true,
+      requiredKeywords: []
+    },
   ];
 
   const forbiddenPatterns = [
     "konuyu önce sadeleştireyim",
     "amacımız neyi anlamak",
     "hedefini tek cümleyle",
-    "Makul varsayımla devam"
+    "hazırlıyorum",
+    "sağlayabilirim",
+    "önerebilirim",
+    "daraltabilirsin",
+    "gerekiyorsa"
   ];
 
   for (const tc of testCases) {
@@ -28,28 +57,27 @@ async function main() {
     const cognitivePlan = classifyTask(tc.prompt);
     
     const response = buildIntentAwareNanoAnswer(tc.prompt);
-    const hasForbidden = forbiddenPatterns.some(p => response.toLowerCase().includes(p.toLowerCase()));
+    const responseLower = response.toLowerCase();
+    const hasForbidden = forbiddenPatterns.some(p => responseLower.includes(p.toLowerCase()));
+    const hasKeywords = tc.requiredKeywords.every(k => responseLower.includes(k.toLowerCase()));
 
     const intentOk = intent === tc.expectedIntent;
-    const nanoIntentOk = nanoIntent === tc.expectedIntent;
-    const cognitiveOk = cognitivePlan.taskType === tc.expectedIntent || (tc.expectedIntent === 'default' && cognitivePlan.taskType === 'unknown');
-    
-    // For general_knowledge, we should NOT have forbidden patterns (clarification templates)
-    // For default, we SHOULD (or at least it's allowed)
     const clarifyOk = tc.shouldClarify ? hasForbidden : !hasForbidden;
+    const substantiveOk = tc.shouldClarify ? true : (hasKeywords && response.length > 100);
 
     results.push({
       prompt: tc.prompt,
       intent,
-      cognitiveType: cognitivePlan.taskType,
-      hasForbidden,
-      ok: intentOk && clarifyOk
+      ok: intentOk && clarifyOk && substantiveOk
     });
 
     console.log(`Prompt: "${tc.prompt}"`);
     console.log(` - Intent: ${intent} (Expected: ${tc.expectedIntent}) -> ${intentOk ? 'OK' : 'FAIL'}`);
-    console.log(` - Cognitive Type: ${cognitivePlan.taskType}`);
     console.log(` - Has Forbidden Pattern: ${hasForbidden} (Expected: ${tc.shouldClarify}) -> ${clarifyOk ? 'OK' : 'FAIL'}`);
+    console.log(` - Substantive Check: ${substantiveOk ? 'OK' : 'FAIL'} (Keywords: ${tc.requiredKeywords.join(', ')})`);
+    if (!substantiveOk && !tc.shouldClarify) {
+        console.log(`   [FAIL] Response was: "${response.substring(0, 100)}..."`);
+    }
     console.log("");
   }
 

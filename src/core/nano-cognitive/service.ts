@@ -18,7 +18,10 @@ import {
   buildNanoWebSearchReflection,
   buildProviderFailureComment,
   enrichNanoAnswer,
+  getGeneralKnowledgeResponse,
 } from './nano-response-builder';
+
+export { getGeneralKnowledgeResponse };
 
 /**
  * Nano Cognitive Layer Service
@@ -277,23 +280,6 @@ export function getQuickResponse(prompt: string, history: { role: string, conten
   if (matchesPhrase(p, ['güle güle', 'hoşça kal', 'bay bay', 'görüşürüz'])) {
     return 'Görüşmek üzere! Kendinize iyi bakın.';
   }
-
-  return null;
-}
-
-export function getGeneralKnowledgeResponse(prompt: string): string | null {
-  const p = prompt.trim().toLowerCase();
-
-  if (p.includes('ekonomi nedir')) return 'Ekonomi, kaynakların sınırlı olduğu bir ortamda insanların ihtiyaçlarını karşılamak için üretilen mal ve hizmetlerin dağıtımı ile ilgilenen bir bilim dalıdır.';
-  if (p.includes('yapay zeka nedir')) return 'Yapay zeka, bilgisayarların insan benzeri düşünme, öğrenme ve problem çözme yetenekleri göstermesini sağlayan bir teknoloji alanıdır.';
-  if (p.includes('javascript nedir')) return 'JavaScript, web sayfalarına etkileşim ve dinamik davranış kazandırmak için kullanılan bir programlama dilidir.';
-  if (p.includes('psikoloji nedir')) return 'Psikoloji, insan davranışlarını ve zihinsel süreçleri inceleyen bir bilim dalıdır.';
-  if (p.includes('hukuk nedir')) return 'Hukuk, toplumda düzeni sağlamak için kurallar koyan ve bunları uygulayan sistemler bütünüdür.';
-  if (p.includes('enflasyon nedir')) return 'Enflasyon, fiyatların genel olarak yükselmesi ve paranın satın alma gücünün azalmasıdır.';
-  if (p.includes('arz ve talep nedir')) return 'Arz ve talep, bir pazarda satıcıların sunduğu miktar ile alıcıların talep ettiği miktar arasındaki ilişkiyi açıklar.';
-  if (p.includes('api nedir')) return 'API, farklı yazılımların birbirleriyle güvenli ve standart bir şekilde iletişim kurmasını sağlayan arayüzdür.';
-  if (p.includes('algoritma nedir')) return 'Algoritma, belirli bir problemi çözmek için izlenen adım adım talimatlar dizisidir.';
-  if (p.includes('web sitesi nedir')) return 'Web sitesi, internet üzerinde yayınlanan ve ziyaretçilere bilgi ve içerik sunan dijital sayfalar bütünüdür.';
 
   return null;
 }

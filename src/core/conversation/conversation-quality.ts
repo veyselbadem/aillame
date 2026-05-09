@@ -305,7 +305,13 @@ export function hasAnswerQualityIssue(answer: string, intent: ConversationIntent
         'konuyu önce sadeleştireyim', 
         'amacımız neyi anlamak', 
         'hedefini tek cümleyle',
-        'Makul varsayımla devam'
+        'Makul varsayımla devam',
+        'açıklama hazırlıyorum',
+        'bilgileri sağlayabilirim',
+        'modüllerini kullanmanı önerebilirim',
+        'konuyu biraz daha daraltabilirsin',
+        'analiz gerekiyorsa',
+        'güncel veri gerekiyorsa'
     ];
     if (genericForbidden.some(p => normalized.includes(p))) return true;
   }
