@@ -1,5 +1,6 @@
 import { readFile, writeFile } from 'fs/promises';
 import path from 'path';
+import { resolveProjectRelative } from '@/core/project-root';
 import type {
   AgentTask,
   AgentTaskStep,
@@ -9,9 +10,9 @@ import type {
   CreateAgentExecutionLogInput,
 } from './types';
 
-const AGENT_TASKS_STORE_PATH = path.join(process.cwd(), 'agent-tasks-store.json');
-const AGENT_TASK_STEPS_STORE_PATH = path.join(process.cwd(), 'agent-task-steps-store.json');
-const AGENT_EXECUTION_LOG_STORE_PATH = path.join(process.cwd(), 'agent-execution-log-store.json');
+const AGENT_TASKS_STORE_PATH = resolveProjectRelative('.aillame-data/stores/agent-tasks-store.json');
+const AGENT_TASK_STEPS_STORE_PATH = resolveProjectRelative('.aillame-data/stores/agent-task-steps-store.json');
+const AGENT_EXECUTION_LOG_STORE_PATH = resolveProjectRelative('.aillame-data/stores/agent-execution-log-store.json');
 
 async function readJsonFile<T>(filePath: string): Promise<T[]> {
   try {

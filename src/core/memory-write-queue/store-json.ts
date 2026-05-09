@@ -1,5 +1,6 @@
 import { readFile, writeFile } from 'fs/promises';
 import path from 'path';
+import { resolveProjectRelative } from '@/core/project-root';
 import type {
   MemoryWriteQueueRecord,
   CreateMemoryWriteQueueInput,
@@ -7,7 +8,7 @@ import type {
   MemoryWriteQueueSourceType,
 } from './types';
 
-const MEMORY_WRITE_QUEUE_STORE_PATH = path.join(process.cwd(), 'memory-write-queue-store.json');
+const MEMORY_WRITE_QUEUE_STORE_PATH = resolveProjectRelative('.aillame-data/stores/memory-write-queue-store.json');
 
 async function readQueueFile(): Promise<MemoryWriteQueueRecord[]> {
   try {

@@ -1,8 +1,9 @@
 import { readFile, writeFile } from 'fs/promises';
 import path from 'path';
+import { resolveProjectRelative } from '@/core/project-root';
 import type { ApiClient } from './types';
 
-const API_CLIENTS_STORE_PATH = path.join(process.cwd(), 'api-clients-store.json');
+const API_CLIENTS_STORE_PATH = resolveProjectRelative('.aillame-data/stores/api-clients-store.json');
 
 async function readJsonFile<T>(filePath: string): Promise<T[]> {
   try {

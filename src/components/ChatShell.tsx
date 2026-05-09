@@ -60,60 +60,24 @@ function ToolCallBar({ tools }: { tools: ActiveTool[] }) {
 }
 
 function ProjectContextSurface({ modelLabel }: { modelLabel: string }) {
-  const [showDetails, setShowDetails] = useState(false);
-
   return (
-    <div className="border-b px-5 py-3 theme-divider theme-soft-panel">
-      <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-          <div className="flex items-center gap-2 min-w-[120px]">
-            <span className="h-2 w-2 rounded-full bg-indigo-400" />
-            <span className="text-[10px] font-black uppercase tracking-[0.18em] theme-title">general</span>
-            <span className="text-[9px] font-bold uppercase tracking-[0.14em] theme-muted">project</span>
-          </div>
-          <div className="hidden h-4 w-px bg-slate-300 dark:bg-slate-700 sm:block" />
-          <div className="flex items-center gap-2">
-            <span className="text-[9px] font-bold uppercase tracking-[0.14em] theme-muted">Mode</span>
-            <span className="text-[10px] font-semibold theme-secondary">chat</span>
-          </div>
-          <div className="hidden h-4 w-px bg-slate-300 dark:bg-slate-700 sm:block" />
-          <div className="flex items-center gap-2">
-            <span className="text-[9px] font-bold uppercase tracking-[0.14em] theme-muted">Runtime</span>
-            <span className="text-[10px] font-semibold text-amber-300">{modelLabel} · diagnostic</span>
-          </div>
-        </div>
-
+    <div className="border-b px-5 py-2 theme-divider theme-soft-panel flex items-center justify-between">
+      <div className="flex items-center gap-4">
         <div className="flex items-center gap-2">
-          <span className="rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2 py-1 text-[9px] font-bold uppercase tracking-[0.12em] text-emerald-300">
-            Local only
-          </span>
-          <button
-            type="button"
-            onClick={() => setShowDetails((value) => !value)}
-            className="inline-flex items-center gap-1.5 rounded-full theme-elevated px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.16em] theme-secondary hover:border-indigo-500/35"
-          >
-            {showDetails ? <FiChevronUp size={11} /> : <FiChevronDown size={11} />}
-            Detaylar
-          </button>
+          <span className="h-1.5 w-1.5 rounded-full bg-indigo-400" />
+          <span className="text-[10px] font-black uppercase tracking-widest theme-title">Workspace</span>
+        </div>
+        <div className="h-3 w-px bg-slate-300 dark:bg-slate-700" />
+        <div className="flex items-center gap-2">
+          <span className="text-[9px] font-bold uppercase tracking-wider theme-muted">Model</span>
+          <span className="text-[10px] font-semibold theme-secondary">{modelLabel}</span>
         </div>
       </div>
-
-      {showDetails && (
-        <div className="mt-3 grid gap-3 border-t pt-3 theme-divider md:grid-cols-3">
-          <div className="theme-surface rounded-xl p-3">
-            <p className="text-[9px] font-black uppercase tracking-[0.18em] theme-muted">Memory</p>
-            <p className="mt-1 text-[11px] font-medium theme-secondary">project scope · kayıtlı kaynak yok</p>
-          </div>
-          <div className="theme-surface rounded-xl p-3">
-            <p className="text-[9px] font-black uppercase tracking-[0.18em] theme-muted">Nano</p>
-            <p className="mt-1 text-[11px] font-medium theme-secondary">advisory/eval · autonomous disabled</p>
-          </div>
-          <div className="theme-surface rounded-xl p-3">
-            <p className="text-[9px] font-black uppercase tracking-[0.18em] theme-muted">Attribution</p>
-            <p className="mt-1 text-[11px] font-medium theme-secondary">Bu cevap için kayıtlı hafıza/kaynak kullanılmadı.</p>
-          </div>
-        </div>
-      )}
+      <div className="flex items-center gap-2">
+        <span className="rounded-full border border-emerald-500/20 bg-emerald-500/5 px-2 py-0.5 text-[8px] font-black uppercase tracking-widest text-emerald-500/80">
+          Local
+        </span>
+      </div>
     </div>
   );
 }
@@ -179,27 +143,8 @@ export default function ChatShell({ conversationId }: ChatShellProps) {
               <span className="text-white font-black text-xs">A</span>
             </div>
             <div className="flex flex-col">
-              <span className="text-[10px] font-black uppercase tracking-[0.25em] leading-tight theme-title">Aillame Workspace</span>
-              <div className="flex items-center gap-1.5 mt-0.5">
-                <span className="relative flex h-1.5 w-1.5">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-60" />
-                  <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-amber-500" />
-                </span>
-                <span className="text-[8px] font-bold text-amber-400/80 uppercase tracking-widest">{chatModel.shortLabel} · diagnostic</span>
-              </div>
-            </div>
-          </div>
-
-          <div className="hidden h-4 w-px bg-slate-300 dark:bg-slate-700 sm:block" />
-
-          <div className="hidden sm:flex items-center gap-2">
-            <div className="flex items-center gap-1.5 rounded-lg border border-indigo-500/20 bg-indigo-500/10 px-2 py-1 text-[8px] font-bold uppercase tracking-[0.1em] text-indigo-700 transition-colors hover:bg-indigo-500/15 dark:text-indigo-300">
-              <FiCpu size={9} />
-              Nano Advisory
-            </div>
-            <div className="flex items-center gap-1.5 rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-2 py-1 text-[8px] font-bold uppercase tracking-[0.1em] text-emerald-700 transition-colors hover:bg-emerald-500/15 dark:text-emerald-300">
-              <FiShield size={9} />
-              Local Only
+              <span className="text-[10px] font-black uppercase tracking-[0.25em] leading-tight theme-title">Sohbet Asistanı</span>
+              <span className="text-[8px] font-bold text-indigo-400/80 uppercase tracking-widest mt-0.5">{chatModel.shortLabel}</span>
             </div>
           </div>
         </div>

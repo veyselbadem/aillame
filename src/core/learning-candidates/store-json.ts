@@ -1,8 +1,9 @@
 import { readFile, writeFile } from 'fs/promises';
 import path from 'path';
+import { resolveProjectRelative } from '@/core/project-root';
 import type { LearningCandidate, LearningCandidateStatus, CreateLearningCandidateInput } from './types';
 
-const LEARNING_CANDIDATES_STORE_PATH = path.join(process.cwd(), 'learning-candidates-store.json');
+const LEARNING_CANDIDATES_STORE_PATH = resolveProjectRelative('.aillame-data/stores/learning-candidates-store.json');
 
 async function readCandidatesFile(): Promise<LearningCandidate[]> {
   try {

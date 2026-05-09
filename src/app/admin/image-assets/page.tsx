@@ -123,7 +123,7 @@ export default function ImageAssetManagerPage() {
               <RiHistoryLine className="mr-3 text-indigo-500" size={16} /> Varlık Geçmişi
             </h3>
             <div className="flex items-center gap-4">
-              <span className="text-[9px] theme-muted uppercase font-bold tracking-wider">Depolama: Yerel SQLite</span>
+              <span className="text-[9px] theme-muted uppercase font-bold tracking-wider">Depolama: Yerel JSONL</span>
             </div>
           </div>
 

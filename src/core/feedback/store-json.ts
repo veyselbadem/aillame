@@ -1,9 +1,10 @@
 import { readFile, writeFile } from 'fs/promises';
 import path from 'path';
+import { resolveProjectRelative } from '@/core/project-root';
 import type { FeedbackListOptions, FeedbackRecord, FeedbackStore, FeedbackPayload } from './types';
 import { normalizeFeedbackPayload } from './mappers';
 
-const FEEDBACK_STORE_PATH = path.join(process.cwd(), 'feedback-store.json');
+const FEEDBACK_STORE_PATH = resolveProjectRelative('.aillame-data/stores/feedback-store.json');
 
 async function readFeedbackFile(): Promise<FeedbackRecord[]> {
   try {

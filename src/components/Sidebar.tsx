@@ -14,6 +14,7 @@ import {
   FiDatabase,
   FiSettings,
   FiShield,
+  FiActivity,
   FiImage,
   FiMenu,
   FiChevronLeft,
@@ -34,52 +35,39 @@ const WORKSPACE_NAV = [
   { href: '/',          label: 'Sohbet',         icon: FiHome },
   { href: '/generate',  label: 'Görsel Üretim',  icon: FiImage },
   { href: '/library',   label: 'Kütüphane',      icon: FiBook },
-  { href: '/memory',    label: 'Bellek',          icon: FiDatabase },
   { href: '/settings',  label: 'Ayarlar',         icon: FiSettings },
 ];
 
-const TOOLS_NAV = [
-  { href: '/feedback', label: 'Feedback', icon: FiThumbsUp },
-];
-
-const ADMIN_NAV_MAIN = [
-  { href: '/admin/dashboard',       label: 'Kontrol Merkezi',   icon: FiShield },
+const ADMIN_NAV_SUMMARY = [
+  { href: '/admin/dashboard',       label: 'Yönetici Paneli',   icon: FiShield },
   { href: '/admin/model-library',   label: 'Modeller',          icon: FiPackage },
-  { href: '/admin/image-assets',    label: 'Görseller',         icon: FiImage },
-  { href: '/admin/agent-tasks',     label: 'Dış Görevler',       icon: FiClipboard },
+  { href: '/admin/image-assets',    label: 'Görsel Varlıkları', icon: FiImage },
   { href: '/admin/agent',           label: 'Code Agent',          icon: FiCpu },
-  { href: '/admin/documents',       label: 'Hafıza / RAG',      icon: FiBook },
-  { href: '/admin/api-clients',     label: 'Provider API',      icon: FiKey },
+  { href: '/admin/documents',       label: 'Hafıza / RAG',      icon: FiDatabase },
 ];
 
 const ADMIN_SETTINGS_GROUPS = [
   {
     id: 'runtime',
-    label: 'Runtime ve Hazırlık',
-    icon: FiCpu,
+    label: 'Runtime & Sistem',
+    icon: FiActivity,
     items: [
       { href: '/admin/desktop-readiness', label: 'Masaüstü Hazırlığı', icon: FiCpu },
       { href: '/admin/release-candidate', label: 'Yayın Adayı', icon: FiShield },
-    ],
-  },
-  {
-    id: 'memory',
-    label: 'Hafıza ve Geri Bildirim',
-    icon: FiDatabase,
-    items: [
-      { href: '/admin/memory-cards',        label: 'Hafıza Kartları',   icon: FiLayers },
-      { href: '/admin/memory-write-queue',  label: 'Hafıza Kuyruğu',    icon: FiDatabase },
-      { href: '/admin/feedback',            label: 'Geri Bildirim',     icon: FiMessageSquare },
+      { href: '/admin/api-clients',     label: 'Provider API',      icon: FiKey },
+      { href: '/admin/agent-tasks',     label: 'Dış Görevler',       icon: FiClipboard },
     ],
   },
   {
     id: 'intelligence',
-    label: 'Lab ve Değerlendirme',
+    label: 'Lab & Geliştirici',
     icon: FiStar,
     items: [
       { href: '/admin/ai-lab',            label: 'Compatibility Lab',     icon: FiCpu },
       { href: '/admin/intelligence',      label: 'Nano Eval',          icon: FiStar },
       { href: '/admin/research-results',  label: 'Araştırma Sonuçları', icon: FiBook },
+      { href: '/admin/memory-cards',        label: 'Hafıza Kartları',   icon: FiLayers },
+      { href: '/admin/feedback',            label: 'Geri Bildirimler',     icon: FiMessageSquare },
     ],
   },
 ];
@@ -215,16 +203,11 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
               <NavLink key={item.href} {...item} active={pathname === item.href} />
             ))}
 
-            <SectionLabel label="Araçlar" />
-            {TOOLS_NAV.map((item) => (
-              <NavLink key={item.href} {...item} active={pathname === item.href} />
-            ))}
-
             {isAdmin ? (
               <>
                 <SectionLabel label="Yönetim" />
                 <div className="space-y-0.5">
-                  {ADMIN_NAV_MAIN.map((item) => (
+                  {ADMIN_NAV_SUMMARY.map((item) => (
                     <NavLink key={item.href} {...item} active={pathname === item.href} />
                   ))}
                 </div>
