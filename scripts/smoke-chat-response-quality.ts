@@ -44,6 +44,11 @@ const cases: Case[] = [
   { prompt: 'şunu düzelt', expectedIntent: 'default', minSentences: 1, requiredKeywords: ['detay'] },
   { prompt: 'devam et', expectedIntent: 'default', expectedTaskType: 'social_chat', minSentences: 1, requiredKeywords: ['devam'] },
   { prompt: 'bana papatya görseli oluşturur musun', expectedIntent: 'image_generation', expectedTaskType: 'image_generation', minSentences: 2, requiredKeywords: ['görsel', 'sdxl', 'modül'] },
+  { prompt: 'bana papatya görseli oluştutrur musun', expectedIntent: 'image_generation', expectedTaskType: 'image_generation', minSentences: 2, requiredKeywords: ['görsel', 'sdxl', 'modül'] },
+  { prompt: 'bir kedi resmi yapar mısın', expectedIntent: 'image_generation', expectedTaskType: 'image_generation', minSentences: 2, requiredKeywords: ['görsel', 'sdxl', 'modül'] },
+  { prompt: 'modern ai logosu olustur', expectedIntent: 'image_generation', expectedTaskType: 'image_generation', minSentences: 2, requiredKeywords: ['görsel', 'sdxl', 'modül'] },
+  { prompt: 'görsel nedir', expectedIntent: 'general_knowledge', expectedTaskType: 'general_knowledge', minSentences: 3, requiredKeywords: ['görsel'] },
+  { prompt: 'fotoğrafçılık nedir', expectedIntent: 'general_knowledge', expectedTaskType: 'general_knowledge', minSentences: 3, requiredKeywords: ['fotoğraf'] },
 ];
 
 function sentenceCount(value: string) {

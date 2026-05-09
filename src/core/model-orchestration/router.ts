@@ -1,12 +1,11 @@
 import { ModelIntent, OrchestrationPlan, OrchestrationTarget, ExecutionMode } from './types';
+import { isImageGenerationIntentText } from '../conversation/conversation-quality';
 
 export function routeRequest(prompt: string): OrchestrationPlan {
   const p = prompt.toLowerCase();
   
   // 1. Image Generation Intent
-  const imageKeywords = ['resim', 'görsel', 'fotoğraf', 'illüstrasyon', 'logo', 'ikon', 'papatya', 'manzara'];
-  const actionKeywords = ['oluştur', 'yap', 'üret', 'çiz', 'tasarla', 'hazırla'];
-  if ((imageKeywords.some(k => p.includes(k)) && actionKeywords.some(k => p.includes(k))) || p.includes('image:')) {
+  if (isImageGenerationIntentText(prompt)) {
     return {
       intent: 'image_generation',
       selectedTarget: 'sdxl',

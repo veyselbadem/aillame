@@ -9,6 +9,7 @@ import {
 import {
   buildConversationAnswer,
   detectUserIntent,
+  isImageGenerationIntentText,
   normalizeAssistantAnswer,
 } from '../conversation/conversation-quality';
 import {
@@ -67,13 +68,7 @@ export function classifyTask(prompt: string): NanoCognitivePlan {
   }
 
   // 2. Image Generation
-  const imageKeywords = ['resim', 'görsel', 'fotoğraf', 'illüstrasyon', 'logo', 'ikon', 'papatya', 'kedi', 'manzara', 'doğa', 'gün batımı', 'ai logosu'];
-  const actionKeywords = ['oluştur', 'yap', 'üret', 'çiz', 'tasarla', 'hazırla'];
-  
-  const hasImageTopic = imageKeywords.some(k => p.includes(k));
-  const hasAction = actionKeywords.some(k => p.includes(k));
-
-  if (hasImageTopic && hasAction) {
+  if (isImageGenerationIntentText(prompt)) {
     return {
       taskType: 'image_generation',
       toolTarget: 'SDXL',

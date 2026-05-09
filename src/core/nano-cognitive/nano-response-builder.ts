@@ -67,6 +67,8 @@ export function detectNanoResponseIntent(prompt: string): NanoResponseIntent {
   const text = normalizeForMatch(prompt);
   const baseIntent = detectUserIntent(prompt);
 
+  if (baseIntent === 'image_generation') return baseIntent;
+
   if (
     includesAny(text, ['timeout', 'hata', 'açılmıyor', 'çalışmıyor', 'debug', 'log', 'port', 'stack']) ||
     (includesAny(text, ['gemma', 'ollama', 'runtime', 'server']) && includesAny(text, ['ne yapmalıyım', 'sorun', 'neden']))

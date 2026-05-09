@@ -59,15 +59,83 @@ function includesAny(text: string, keywords: readonly string[]): boolean {
   return keywords.some((keyword) => text.includes(keyword));
 }
 
+function normalizeForIntentMatch(value: string): string {
+  return value
+    .trim()
+    .toLocaleLowerCase('tr-TR')
+    .replace(/[çğıöşü]/g, (char) => ({ ç: 'c', ğ: 'g', ı: 'i', ö: 'o', ş: 's', ü: 'u' }[char] || char))
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function intentTokens(value: string): string[] {
+  return normalizeForIntentMatch(value).split(' ').filter(Boolean);
+}
+
+function levenshteinDistance(a: string, b: string): number {
+  if (a === b) return 0;
+  if (!a.length) return b.length;
+  if (!b.length) return a.length;
+
+  const previous = Array.from({ length: b.length + 1 }, (_, index) => index);
+  const current = new Array<number>(b.length + 1);
+
+  for (let i = 1; i <= a.length; i += 1) {
+    current[0] = i;
+    for (let j = 1; j <= b.length; j += 1) {
+      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+      current[j] = Math.min(
+        current[j - 1] + 1,
+        previous[j] + 1,
+        previous[j - 1] + cost,
+      );
+    }
+    for (let j = 0; j <= b.length; j += 1) previous[j] = current[j];
+  }
+
+  return previous[b.length];
+}
+
+function isCloseIntentToken(token: string, target: string): boolean {
+  if (token === target || token.includes(target)) return true;
+  if (target.length < 4 || token.length < 4) return false;
+  const maxDistance = target.length >= 7 ? 2 : 1;
+  return Math.abs(token.length - target.length) <= maxDistance && levenshteinDistance(token, target) <= maxDistance;
+}
+
+const IMAGE_TOPIC_TERMS = [
+  'gorsel', 'resim', 'resmi', 'fotograf', 'foto', 'logo', 'ikon', 'illustrasyon',
+  'papatya', 'manzara', 'kedi', 'kopek', 'araba', 'ev', 'doga',
+] as const;
+
+const IMAGE_ACTION_TERMS = [
+  'olustur', 'olusturur', 'olusturabilir', 'uret', 'yap', 'yapar', 'ciz', 'cizer', 'tasarla', 'hazirla',
+] as const;
+
+export function isImageGenerationIntentText(prompt: string): boolean {
+  const normalized = normalizeForIntentMatch(prompt);
+  if (!normalized) return false;
+
+  if (normalized.includes('image generate') || normalized.includes('generate image') || normalized.includes('image:')) {
+    return true;
+  }
+
+  const tokens = intentTokens(prompt);
+  const hasImageTopic = IMAGE_TOPIC_TERMS.some((term) => tokens.some((token) => token === term || token.startsWith(term)));
+  const hasGenerationAction = IMAGE_ACTION_TERMS.some((term) => tokens.some((token) => isCloseIntentToken(token, term)));
+
+  return hasImageTopic && hasGenerationAction;
+}
+
 export function detectUserIntent(prompt: string): ConversationIntent {
   const text = normalizeText(prompt);
 
   if (!text) return 'default';
 
-  if (
-    includesAny(text, ['görsel oluştur', 'resim oluştur', 'fotoğraf oluştur', 'görsel üret', 'resim üret', 'resmi yap', 'resim yap', 'image generate', 'generate image']) ||
-    (includesAny(text, ['oluştur', 'yap', 'üret', 'çiz']) && includesAny(text, ['papatya', 'manzara', 'kedi', 'köpek', 'araba', 'ev', 'logo', 'ikon']))
-  ) {
+  if (isImageGenerationIntentText(prompt)) {
     return 'image_generation';
   }
 
