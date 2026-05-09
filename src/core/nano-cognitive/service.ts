@@ -8,6 +8,7 @@ import {
 } from './types';
 import {
   buildConversationAnswer,
+  classifyIntentWithConfidence,
   detectUserIntent,
   isImageGenerationIntentText,
   normalizeAssistantAnswer,
@@ -31,6 +32,7 @@ export { getGeneralKnowledgeResponse };
 
 export function classifyTask(prompt: string): NanoCognitivePlan {
   const p = prompt.toLowerCase().trim();
+  const intentMeta = classifyIntentWithConfidence(prompt);
 
   // [NANO-F2] Skor tabanlı görev ağırlık katmanı
   const taskScore = { // [NANO-F2]
@@ -63,17 +65,19 @@ export function classifyTask(prompt: string): NanoCognitivePlan {
       toolTarget: 'QuickResponse',
       confidenceScore: 0.95,
       reason: 'User is engaging in social conversation or providing a short dialogue continuation.',
+      intentMeta,
       taskScore
     };
   }
 
   // 2. Image Generation
-  if (isImageGenerationIntentText(prompt)) {
+  if (intentMeta.intent === 'image_generation' || isImageGenerationIntentText(prompt)) {
     return {
       taskType: 'image_generation',
       toolTarget: 'SDXL',
-      confidenceScore: 0.95,
+      confidenceScore: intentMeta.intent === 'image_generation' ? intentMeta.confidence : 0.95,
       reason: 'User requested image generation with clear topic and action.',
+      intentMeta,
       taskScore
     };
   }
@@ -85,6 +89,7 @@ export function classifyTask(prompt: string): NanoCognitivePlan {
       toolTarget: 'Qwen',
       confidenceScore: 0.9,
       reason: 'User requested image analysis.',
+      intentMeta,
       taskScore
     };
   }
@@ -96,6 +101,7 @@ export function classifyTask(prompt: string): NanoCognitivePlan {
       toolTarget: 'GeneralKnowledge',
       confidenceScore: 0.85,
       reason: 'User wants a list or examples.',
+      intentMeta,
       taskScore
     };
   }
@@ -107,6 +113,7 @@ export function classifyTask(prompt: string): NanoCognitivePlan {
       toolTarget: 'GeneralKnowledge',
       confidenceScore: 0.85,
       reason: 'User wants a comparison.',
+      intentMeta,
       taskScore
     };
   }
@@ -118,6 +125,7 @@ export function classifyTask(prompt: string): NanoCognitivePlan {
       toolTarget: 'safeFallback',
       confidenceScore: 0.9,
       reason: 'User wants more elaboration.',
+      intentMeta,
       taskScore
     };
   }
@@ -129,17 +137,19 @@ export function classifyTask(prompt: string): NanoCognitivePlan {
       toolTarget: 'safeFallback',
       confidenceScore: 0.9,
       reason: 'User wants to continue or expand.',
+      intentMeta,
       taskScore
     };
   }
 
   // 3. General Knowledge (Prioritize over research/code for specific "nedir" terms)
-  if (isGeneralKnowledge(p)) {
+  if (intentMeta.intent === 'general_knowledge' || isGeneralKnowledge(p)) {
     return {
       taskType: 'general_knowledge',
       toolTarget: 'GeneralKnowledge',
-      confidenceScore: 0.9,
+      confidenceScore: intentMeta.intent === 'general_knowledge' ? intentMeta.confidence : 0.9,
       reason: 'Question about current events or research.',
+      intentMeta,
       taskScore
     };
   }
@@ -150,12 +160,25 @@ export function classifyTask(prompt: string): NanoCognitivePlan {
       taskType: 'current_research',
       toolTarget: 'Web Search',
       confidenceScore: 0.85,
-      reason: 'User requested real-time information.'
+      reason: 'User requested real-time information.',
+      intentMeta
+    };
+  }
+
+  if (intentMeta.routeTarget === 'agent') {
+    return {
+      taskType: 'agent_task',
+      toolTarget: 'CodeAgent',
+      confidenceScore: intentMeta.confidence,
+      reason: 'User requested an explicit agent/project operation.',
+      intentMeta,
+      taskScore
     };
   }
 
   // 5. Code Help
   if (
+    intentMeta.intent === 'coding_help' ||
     shouldEscalate ||
     p.includes('kod') ||
     p.includes('yazılım') ||
@@ -169,8 +192,9 @@ export function classifyTask(prompt: string): NanoCognitivePlan {
     return {
       taskType: 'code_help',
       toolTarget: 'Qwen',
-      confidenceScore: 0.8,
+      confidenceScore: intentMeta.intent === 'coding_help' ? intentMeta.confidence : 0.8,
       reason: shouldEscalate ? 'Task complexity or code patterns require Pro escalation.' : 'User requested programming assistance.',
+      intentMeta,
       taskScore
     };
   }
@@ -179,8 +203,9 @@ export function classifyTask(prompt: string): NanoCognitivePlan {
   return {
     taskType: 'unknown',
     toolTarget: 'safeFallback',
-    confidenceScore: 0.5,
+    confidenceScore: intentMeta.confidence || 0.5,
     reason: 'Task type could not be confidently determined.',
+    intentMeta,
     taskScore
   };
 }

@@ -4,6 +4,7 @@ export type NanoTaskType =
   | 'general_knowledge'
   | 'current_research'
   | 'code_help'
+  | 'agent_task'
   | 'image_generation'
   | 'image_analysis'
   | 'list_examples'
@@ -19,17 +20,30 @@ export type NanoToolTarget =
   | 'QuickResponse'
   | 'GeneralKnowledge'
   | 'Qwen'
+  | 'CodeAgent'
   | 'Web Search'
   | 'SDXL'
   | 'Gemma'
   | 'Ollama'
   | 'safeFallback';
 
+export type NanoRouteTarget = 'text' | 'igm' | 'code' | 'agent' | 'clarification';
+
+export interface NanoIntentMetadata {
+  intent: string;
+  confidence: number;
+  normalizedText: string;
+  matchedSignals: string[];
+  fallbackReason?: string;
+  routeTarget: NanoRouteTarget;
+}
+
 export interface NanoCognitivePlan {
   taskType: NanoTaskType;
   toolTarget: NanoToolTarget;
   confidenceScore: number;
   reason: string;
+  intentMeta?: NanoIntentMetadata;
   taskScore?: {
     complexity: number;
     research: number;

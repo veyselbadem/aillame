@@ -61,6 +61,7 @@
         "smoke:chat-response-quality": "npx tsx scripts/smoke-chat-response-quality.ts",
         "smoke:chat-image-intent": "npx tsx scripts/smoke-chat-image-intent.ts",
         "smoke:chat-image-job-live": "npx tsx scripts/smoke-chat-image-job-live.ts",
+        "smoke:nano-language-intelligence": "npx tsx scripts/smoke-nano-language-intelligence.ts",
         "smoke:chat-copy-ui": "npx tsx scripts/smoke-chat-copy-ui.ts",
         "smoke:chat-runtime-attribution": "npx tsx scripts/smoke-chat-runtime-attribution.ts",
         "core:build": "napi build --platform --release --cargo-cwd aillame-core",
