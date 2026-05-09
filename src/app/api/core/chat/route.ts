@@ -20,6 +20,8 @@ import {
   classifyTask
 } from '@/core/nano-cognitive/service';
 import { imageGenerationService } from '@/core/runtime/image/image-generation-service';
+import { getActiveChatModelId, getActiveImageModelId } from '@core/model-management/active-model-store';
+import { MODEL_REGISTRY } from '@core/models/registry';
 
 function buildRuntimeAttribution(input: {
     provider: string;
@@ -109,13 +111,48 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ status: 'ready' });
         }
 
+        // 0. Active model override — if user selected an Ollama model, route ALL chat there
+        const activeChatModelId = getActiveChatModelId();
+        const activeRegistryModel = activeChatModelId ? MODEL_REGISTRY[activeChatModelId] : null;
+        const isActiveOllama = activeRegistryModel
+            ? activeRegistryModel.runtime === 'ollama'
+            : typeof activeChatModelId === 'string' && activeChatModelId.startsWith('ollama-');
+
+        if (activeChatModelId && isActiveOllama) {
+            try {
+                const { generateOllamaResponse } = await import('@/core/inference/ollama');
+                const ollamaModelName = activeRegistryModel?.externalModelId
+                    || (activeChatModelId.startsWith('ollama-') ? activeChatModelId.slice(7) : activeChatModelId);
+                const ollamaAnswer = await generateOllamaResponse({
+                    prompt,
+                    messages,
+                    maxTokens: typeof body?.maxTokens === 'number' ? body.maxTokens : 512,
+                    temperature: body.temperature ?? 0.8,
+                    model: ollamaModelName,
+                });
+                return NextResponse.json({
+                    response: ollamaAnswer,
+                    modelId: activeChatModelId,
+                    provider: 'ollama',
+                    runtime: 'ollama',
+                    activeModelId: activeChatModelId,
+                    fallbackUsed: false,
+                    degraded: false,
+                    runtimeAttribution: { provider: 'ollama', modelId: activeChatModelId, runtime: 'ollama', fallbackUsed: false, degraded: false, reason: null },
+                });
+            } catch (ollamaError: any) {
+                console.warn('[chat] Active Ollama model failed, falling back to Nano:', ollamaError?.message);
+                // Fall through to Nano pipeline
+            }
+        }
+
         // 1. Nano Cognitive Layer - Task Classification
         const cognitivePlan = classifyTask(prompt);
         const intentMeta = cognitivePlan.intentMeta || classifyIntentWithConfidence(prompt);
         const taskScore = cognitivePlan.taskScore || { complexity: 0, research: 0, code: 0, creative: 0 };
         const plan = routeRequest(prompt); // Keep orchestration plan for compatibility
         const conversationIntent = detectUserIntent(prompt);
-        const maxTokens = Math.max(requestedMaxTokens, getRecommendedMaxTokens(conversationIntent));
+        const maxTokens = Math.max(typeof body?.maxTokens === 'number' ? body.maxTokens : 100, getRecommendedMaxTokens(conversationIntent));
         const directConversationAnswer = buildConversationAnswer(prompt, messages);
         const shouldUseLiveResearch = conversationIntent === 'research_summary' && /güncel|haber|son dakika|bugünkü|araştır/i.test(prompt);
 
@@ -185,11 +222,15 @@ export async function POST(req: NextRequest) {
                     console.warn('Image prompt translation failed, fallback to original', e);
                 }
 
+                const activeImgModel =
+                    getActiveImageModelId() ||
+                    process.env.AILLAME_IGM_ACTIVE_MODEL ||
+                    'sdxl-base-1.0';
                 const result = await imageGenerationService.createJob({
                     projectId: 'default-chat',
                     sourceApp: 'aillame-chat',
                     prompt: finalPrompt,
-                    modelId: process.env.AILLAME_IGM_ACTIVE_MODEL || 'sdxl-base-1.0'
+                    modelId: activeImgModel
                 });
 
                 if (result.success) {
@@ -312,7 +353,7 @@ export async function POST(req: NextRequest) {
             }
         }
 
-        // 4. Engine'i al
+        // 4. Engine'i al (Nano / default)
         const requestedCheckpoint = req.headers.get('x-aillame-checkpoint') || undefined;
         const requestedVersion = requestedCheckpoint === 'v1' || requestedCheckpoint === 'v2'
             ? requestedCheckpoint

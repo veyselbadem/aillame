@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { installManagedModel } from '@core/model-management/downloader';
 import { getAllModelInstallStatuses } from '@core/model-management/status';
 import { removeLocalModel } from '@core/model-library';
+import { readActiveModelSelection, writeActiveModelSelection } from '@core/model-management/active-model-store';
 
 export async function GET() {
   return NextResponse.json({ models: await getAllModelInstallStatuses() });
@@ -21,13 +22,25 @@ export async function POST(req: NextRequest) {
     }
 
     if (action === 'remove') {
-      // For removal, we use the model library service directly
-      // This handles both Ollama and local files.
       const result = await removeLocalModel({
         modelId,
         confirmDelete: true,
         dryRun: false
       });
+
+      // Clear active selection if the removed model was active
+      if (result.ok) {
+        const sel = readActiveModelSelection();
+        const chatCleared = sel.activeChatModelId === modelId;
+        const imageCleared = sel.activeImageModelId === modelId;
+        if (chatCleared || imageCleared) {
+          writeActiveModelSelection({
+            activeChatModelId: chatCleared ? null : sel.activeChatModelId,
+            activeImageModelId: imageCleared ? null : sel.activeImageModelId,
+          });
+        }
+      }
+
       return NextResponse.json({
         success: result.ok,
         message: result.message,

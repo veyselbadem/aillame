@@ -3,16 +3,35 @@ import path from 'path';
 import { imageGenerationService } from '@/core/runtime/image/image-generation-service';
 import { imageJobStore } from '@/core/runtime/image/jobs/image-job-file-store';
 import { getProjectRoot, resolveProjectRelative } from '@core/project-root';
+import { getActiveImageModelId } from '@core/model-management/active-model-store';
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
+
+    // Resolve active image model: user selection → env var → undefined (service decides)
+    const activeImageModelId =
+      getActiveImageModelId() ||
+      process.env.AILLAME_IGM_ACTIVE_MODEL ||
+      undefined;
+
+    if (!activeImageModelId) {
+      return NextResponse.json(
+        {
+          success: false,
+          error:
+            'Aktif görsel üretim modeli seçilmemiş. Ayarlar > Yerel Model Envanteri ekranından bir görsel modeli aktif yapın.',
+        },
+        { status: 422 }
+      );
+    }
+
     const result = await imageGenerationService.createJob({
       projectId: 'default',
       sourceApp: 'aillame-ui',
       prompt: body.prompt,
       negativePrompt: body.negativePrompt,
-      modelId: process.env.AILLAME_IGM_ACTIVE_MODEL
+      modelId: activeImageModelId,
     });
 
     if (!result.success) {
