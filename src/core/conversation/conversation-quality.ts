@@ -64,18 +64,18 @@ export function detectUserIntent(prompt: string): ConversationIntent {
 
   if (!text) return 'default';
 
-  const gkPatterns = ['nedir', 'nedir?', 'ne demek', 'hakkında bilgi', 'anlatır mısın', 'açıklar mısın', 'nedir bu rust'];
-  if (gkPatterns.some(p => text.endsWith(p) || text.includes(p + ' ') || text === 'rust')) {
-    const isTask = includesAny(text, ['yaz', 'oluştur', 'çiz', 'hata', 'error', 'çalışmıyor', 'düzelt', 'nasıl yapılır']);
-    const isImage = includesAny(text, ['görsel', 'resim', 'fotoğraf', 'üret', 'yap', 'çiz']);
-    if (!isTask || (isImage && !text.includes('kod'))) return 'general_knowledge';
-  }
-
   if (
     includesAny(text, ['görsel oluştur', 'resim oluştur', 'fotoğraf oluştur', 'görsel üret', 'resim üret', 'resmi yap', 'resim yap', 'image generate', 'generate image']) ||
     (includesAny(text, ['oluştur', 'yap', 'üret', 'çiz']) && includesAny(text, ['papatya', 'manzara', 'kedi', 'köpek', 'araba', 'ev', 'logo', 'ikon']))
   ) {
     return 'image_generation';
+  }
+
+  const gkPatterns = ['nedir', 'nedir?', 'ne demek', 'hakkında bilgi', 'anlatır mısın', 'açıklar mısın', 'nedir bu rust'];
+  if (gkPatterns.some(p => text.endsWith(p) || text.includes(p + ' ') || text === 'rust')) {
+    const isTask = includesAny(text, ['yaz', 'oluştur', 'çiz', 'hata', 'error', 'çalışmıyor', 'düzelt', 'nasıl yapılır']);
+    const isImage = includesAny(text, ['görsel', 'resim', 'fotoğraf', 'üret', 'yap', 'çiz']);
+    if (!isTask || (isImage && !text.includes('kod'))) return 'general_knowledge';
   }
 
   if (

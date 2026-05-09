@@ -217,11 +217,11 @@ export function buildIntentAwareNanoAnswer(prompt: string, history: ChatMessageL
 
     case 'image_generation':
       return [
-        'Bu bir görsel üretim isteği gibi görünüyor. Papatya veya başka bir görsel oluşturmak için şu an doğrudan chat içinden üretim yapamıyor olabilirim (IGM modülüne bağlı olarak).',
+        'Görsel üretim isteğini algıladım. Sistem şu an bu isteği SDXL (IGM) modülüne yönlendiriyor.',
         '',
-        'Görsel oluşturmak için yan menüdeki **Görsel Üretim** (Image Generation) panelini kullanabilir veya `/api/image-generation` endpointi üzerinden talep gönderebilirsin.',
+        'Üretim başladığında İş No ile takip edebilirsin. Eğer bir sorun oluşursa Görsel Üretim panelinden manuel olarak da devam edebilirsin.',
         '',
-        'İstersen oluşturmak istediğin görsel için bana detaylı bir "prompt" (betimleme) hazırlatabilirsin; bu betimlemeyi SDXL gibi modellerde kullanarak en iyi sonucu alabilirsin.',
+        'İstersen bu görsel için prompt detaylarını daha da zenginleştirebilirim.',
       ].join('\n');
 
     case 'ai_lab_analysis':

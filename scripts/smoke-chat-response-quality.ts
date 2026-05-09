@@ -72,7 +72,7 @@ async function main() {
       prompt: "bana papatya görseli oluşturur musun", 
       expectedIntent: "image_generation", 
       shouldClarify: false,
-      requiredKeywords: ["görsel", "üretim", "panel"] 
+      requiredKeywords: ["Görsel üretim", "algıladım", "SDXL", "IGM"] 
     },
     { 
       prompt: "javascript ile toplama fonksiyonu yaz", 

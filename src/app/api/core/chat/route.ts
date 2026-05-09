@@ -11,7 +11,6 @@ import {
   improveAssistantAnswer,
   normalizeAssistantAnswer,
 } from '@/core/conversation/conversation-quality';
-
 import { 
   getQuickResponse, 
   getGeneralKnowledgeResponse, 
@@ -19,6 +18,7 @@ import {
   safeFallback,
   classifyTask
 } from '@/core/nano-cognitive/service';
+import { imageGenerationService } from '@/core/runtime/image/image-generation-service';
 
 
 
@@ -89,11 +89,41 @@ export async function POST(req: NextRequest) {
 
         // 4. Handle Image Generation
         if (cognitivePlan.taskType === 'image_generation' || plan.selectedTarget === 'sdxl') {
-            return NextResponse.json({
-                response: normalizeAssistantAnswer('Görsel üretim modülü (SDXL) şu an sohbet içinde doğrudan desteklenmiyor. Lütfen Görsel Üretim sayfasını kullanın veya daha sonra tekrar deneyin.'),
-                modelId: 'aillame-nano-v1-planner',
-                plan: { ...plan, cognitivePlan, conversationIntent }
-            });
+            try {
+                // Extract clean prompt for image generation
+                const imagePrompt = prompt
+                    .replace(/bana|oluşturur musun|yapar mısın|çiz|üret|bir|tane|olsun/gi, '')
+                    .trim();
+                
+                const result = await imageGenerationService.createJob({
+                    projectId: 'default-chat',
+                    sourceApp: 'aillame-chat',
+                    prompt: imagePrompt || prompt,
+                    modelId: process.env.AILLAME_IGM_ACTIVE_MODEL || 'sdxl-base-1.0'
+                });
+
+                if (result.success) {
+                    return NextResponse.json({
+                        response: improveAssistantAnswer(prompt, `Görsel üretim isteğini aldım. "${imagePrompt || prompt}" betimlemesiyle üretimi başlattım (İş No: ${result.jobId}). Sonuç hazır olduğunda Görsel Üretim panelinden veya buradan takip edebilirsin.`, messages),
+                        modelId: 'aillame-nano-v1-igm-handoff',
+                        plan: { ...plan, cognitivePlan, conversationIntent },
+                        imageJobId: result.jobId
+                    });
+                } else {
+                    return NextResponse.json({
+                        response: improveAssistantAnswer(prompt, `Görsel üretim şu an başlatılamadı: ${result.warning || 'Bilinmeyen hata'}. Lütfen daha sonra tekrar deneyin.`, messages),
+                        modelId: 'aillame-nano-v1-igm-error',
+                        plan: { ...plan, cognitivePlan, conversationIntent }
+                    });
+                }
+            } catch (error: any) {
+                console.error('Image Handoff Error:', error);
+                return NextResponse.json({
+                    response: improveAssistantAnswer(prompt, `Görsel üretim modülüne yönlendirme sırasında bir hata oluştu. Lütfen Görsel Üretim sayfasını kullanın.`, messages),
+                    modelId: 'aillame-nano-v1-igm-exception',
+                    plan: { ...plan, cognitivePlan, conversationIntent }
+                });
+            }
         }
 
 

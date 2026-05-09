@@ -4,7 +4,9 @@ export function routeRequest(prompt: string): OrchestrationPlan {
   const p = prompt.toLowerCase();
   
   // 1. Image Generation Intent
-  if (p.includes('resim oluştur') || p.includes('çiz') || p.includes('görsel üret') || p.includes('image:')) {
+  const imageKeywords = ['resim', 'görsel', 'fotoğraf', 'illüstrasyon', 'logo', 'ikon', 'papatya', 'manzara'];
+  const actionKeywords = ['oluştur', 'yap', 'üret', 'çiz', 'tasarla', 'hazırla'];
+  if ((imageKeywords.some(k => p.includes(k)) && actionKeywords.some(k => p.includes(k))) || p.includes('image:')) {
     return {
       intent: 'image_generation',
       selectedTarget: 'sdxl',

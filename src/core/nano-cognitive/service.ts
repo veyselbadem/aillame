@@ -67,12 +67,18 @@ export function classifyTask(prompt: string): NanoCognitivePlan {
   }
 
   // 2. Image Generation
-  if (p.includes('resim oluştur') || p.includes('çiz') || p.includes('görsel üret') || p.includes('logo tasarla')) {
+  const imageKeywords = ['resim', 'görsel', 'fotoğraf', 'illüstrasyon', 'logo', 'ikon', 'papatya', 'kedi', 'manzara'];
+  const actionKeywords = ['oluştur', 'yap', 'üret', 'çiz', 'tasarla', 'hazırla'];
+  
+  const hasImageTopic = imageKeywords.some(k => p.includes(k));
+  const hasAction = actionKeywords.some(k => p.includes(k));
+
+  if (hasImageTopic && hasAction) {
     return {
       taskType: 'image_generation',
       toolTarget: 'SDXL',
-      confidenceScore: 0.9,
-      reason: 'User requested image generation.',
+      confidenceScore: 0.95,
+      reason: 'User requested image generation with clear topic and action.',
       taskScore
     };
   }
