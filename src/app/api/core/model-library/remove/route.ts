@@ -6,7 +6,7 @@ export const runtime = 'nodejs';
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json().catch(() => ({}));
-    const result = removeLocalModel({
+    const result = await removeLocalModel({
       modelId: typeof body?.modelId === 'string' ? body.modelId : '',
       dryRun: body?.dryRun !== false,
       confirmDelete: body?.confirmDelete === true,

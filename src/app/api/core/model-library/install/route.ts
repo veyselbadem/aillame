@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
       ? (runtimeCandidate as ModelRuntimeKind)
       : undefined;
 
-    const result = prepareModelInstall({
+    const result = await prepareModelInstall({
       modelId: typeof body?.modelId === 'string' ? body.modelId : '',
       sourceUrl: typeof body?.sourceUrl === 'string' ? body.sourceUrl : undefined,
       expectedRuntime,

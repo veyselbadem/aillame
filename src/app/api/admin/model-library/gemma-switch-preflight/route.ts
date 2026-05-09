@@ -45,7 +45,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   }
 
   try {
-    const result = preflightGemmaModelSwitch({
+    const result = await preflightGemmaModelSwitch({
       modelId: typeof payload.modelId === 'string' ? payload.modelId : undefined,
       localPath: typeof payload.localPath === 'string' ? payload.localPath : undefined,
       dryRun: true,

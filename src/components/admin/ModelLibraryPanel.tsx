@@ -6,6 +6,7 @@ import {
   fetchModelLibraryList,
   discoverModelLibrary,
   dryRunRemoveModel,
+  removeModel,
   fetchModelPreferences,
   updateModelPreference,
   clearModelPreference,
@@ -190,12 +191,13 @@ function validCapabilitiesOf(model: LocalModelMetadata): DefaultModelCapabilityU
 interface ModelRowProps {
   model: LocalModelMetadata;
   onRemoveSimulate: (id: string) => void;
+  onRemove: (id: string) => void;
   onSetDefault: (cap: DefaultModelCapabilityUi, modelId: string) => void;
   busy: boolean;
   prefBusy: ReadonlySet<DefaultModelCapabilityUi>;
 }
 
-function ModelRow({ model, onRemoveSimulate, onSetDefault, busy, prefBusy }: ModelRowProps) {
+function ModelRow({ model, onRemoveSimulate, onRemove, onSetDefault, busy, prefBusy }: ModelRowProps) {
   const caps = validCapabilitiesOf(model);
 
   return (
@@ -233,13 +235,22 @@ function ModelRow({ model, onRemoveSimulate, onSetDefault, busy, prefBusy }: Mod
               Set as {cap}
             </button>
           ))}
-          <button
-            disabled={busy}
-            onClick={() => onRemoveSimulate(model.id)}
-            className="text-[9px] font-black text-rose-500/60 hover:text-rose-500 disabled:opacity-40 uppercase tracking-widest mt-1"
-          >
-            Simulate Remove
-          </button>
+          <div className="flex gap-2 mt-1">
+            <button
+              disabled={busy}
+              onClick={() => onRemoveSimulate(model.id)}
+              className="text-[9px] font-black text-zinc-500 hover:text-zinc-400 disabled:opacity-40 uppercase tracking-widest"
+            >
+              Simüle Et
+            </button>
+            <button
+              disabled={busy}
+              onClick={() => onRemove(model.id)}
+              className="text-[9px] font-black text-rose-500/80 hover:text-rose-500 disabled:opacity-40 uppercase tracking-widest"
+            >
+              Kaldır
+            </button>
+          </div>
         </div>
       </td>
     </tr>
@@ -309,6 +320,25 @@ export default function ModelLibraryPanel() {
     const result = await dryRunRemoveModel(modelId);
     setActionResult(result);
     setActionBusy(false);
+  };
+
+  const handleRemove = async (modelId: string) => {
+    if (!window.confirm(`Bu modeli tamamen kaldırmak istediğinize emin misiniz?\nModel ID: ${modelId}\n\nNot: Bu işlem geri alınamaz.`)) {
+      return;
+    }
+    setActionBusy(true);
+    setActionResult(null);
+    try {
+      const result = await removeModel(modelId);
+      setActionResult(result);
+      if (result.ok) {
+        await loadList();
+      }
+    } catch {
+      setError('Kaldırma işlemi sırasında beklenmeyen bir hata oluştu.');
+    } finally {
+      setActionBusy(false);
+    }
   };
 
   const handleSetDefault = async (cap: DefaultModelCapabilityUi, modelId: string) => {
@@ -423,6 +453,7 @@ export default function ModelLibraryPanel() {
                   key={model.id}
                   model={model}
                   onRemoveSimulate={handleRemoveSimulate}
+                  onRemove={handleRemove}
                   onSetDefault={handleSetDefault}
                   busy={actionBusy}
                   prefBusy={prefBusy}

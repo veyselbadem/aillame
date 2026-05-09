@@ -5,7 +5,7 @@ export const runtime = 'nodejs';
 
 export async function GET() {
   try {
-    const models = listLocalModels();
+    const models = await listLocalModels();
     return NextResponse.json({ success: true, data: { models } });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Model listesi alınamadı.';

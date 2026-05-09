@@ -17,6 +17,7 @@ export type ModelProviderKind =
 
 export type ModelCapability =
   | 'text'
+  | 'chat'
   | 'code'
   | 'vision'
   | 'image'

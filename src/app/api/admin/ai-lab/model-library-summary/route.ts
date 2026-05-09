@@ -10,7 +10,7 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const summary = getAiLabModelLibrarySummary();
+    const summary = await getAiLabModelLibrarySummary();
     return NextResponse.json({ success: true, data: summary });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Model library summary failed.';

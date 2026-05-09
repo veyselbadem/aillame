@@ -39,6 +39,37 @@ export function getModelFileRuntimeKind(fileName: string): ModelRuntimeKind {
   }
 }
 
+export function getAllowedModelRoots(): string[] {
+  const roots = [
+    process.env.AILLAME_MODEL_LIBRARY_DIR,
+    process.env.AILLAME_MODEL_LIBRARY_ROOT,
+    process.env.AILLAME_GEMMA_MODELS_DIR,
+    normalizeLocalModelPath(path.join(process.cwd(), 'models')),
+    normalizeLocalModelPath(path.join(process.cwd(), 'public', 'model')),
+    normalizeLocalModelPath(path.join(process.cwd(), 'runtime', 'models')),
+    normalizeLocalModelPath(path.join(process.cwd(), 'runtime', 'checkpoints')),
+    normalizeLocalModelPath(path.join(process.cwd(), 'local-models')),
+  ]
+    .map((value) => normalizeLocalModelPath(value || ''))
+    .filter(Boolean)
+    .filter((value, index, list) => list.indexOf(value) === index);
+
+  return roots;
+}
+
+export function isPathInsideAllowedRoots(filePath: string): boolean {
+  const target = normalizeLocalModelPath(path.resolve(filePath));
+  if (!target) return false;
+
+  const roots = getAllowedModelRoots();
+  return roots.some((root) => {
+    const normalizedRoot = normalizeLocalModelPath(path.resolve(root));
+    if (!normalizedRoot) return false;
+    // Check if target is exactly the root or inside it
+    return target === normalizedRoot || target.startsWith(`${normalizedRoot}${path.sep}`);
+  });
+}
+
 export function sanitizeModelId(input: string): string {
   return (input || '')
     .trim()

@@ -11,7 +11,7 @@ export async function POST(req: NextRequest) {
       : undefined;
     const maxDepth = Number.isFinite(body?.maxDepth) ? Number(body.maxDepth) : undefined;
 
-    const snapshot = refreshLocalModelLibrary({ directories, maxDepth });
+    const snapshot = await refreshLocalModelLibrary({ directories, maxDepth });
     return NextResponse.json({ success: true, data: snapshot });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Model discovery başarısız.';

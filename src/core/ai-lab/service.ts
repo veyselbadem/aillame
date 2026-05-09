@@ -47,11 +47,11 @@ export type AiLabModelLibrarySummary = {
   gemmaGgufValidationReady: boolean;
 };
 
-export function getAiLabModelLibrarySummary(): AiLabModelLibrarySummary {
+export async function getAiLabModelLibrarySummary(): Promise<AiLabModelLibrarySummary> {
   const now = new Date().toISOString();
 
   try {
-    const models = listLocalModels();
+    const models = await listLocalModels();
     const preferences = getDefaultModelPreferences();
     const eventLogSummary = getRuntimeEventLogSummary();
     const gemmaAllowedRootsCount = getAllowedGemmaModelRoots().length;

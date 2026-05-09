@@ -1,3 +1,4 @@
+import fs from 'fs';
 import {
   type LocalModelDiscoveryOptions,
   type LocalModelMetadata,
@@ -8,7 +9,8 @@ import {
 } from './types';
 import { discoverLocalModels } from './discovery';
 import { createModelRegistrySnapshot, findModelById } from './model-registry';
-import { normalizeLocalModelPath, sanitizeModelId } from './paths';
+import { normalizeLocalModelPath, sanitizeModelId, isPathInsideAllowedRoots } from './paths';
+import { activeGgufModelService } from '../models/download/active-gguf-model-service';
 
 type InstallRecord = {
   installId: string;
@@ -22,17 +24,17 @@ type InstallRecord = {
 
 const installRecords = new Map<string, InstallRecord>();
 
-export function listLocalModels(options: LocalModelDiscoveryOptions = {}): LocalModelMetadata[] {
-  return discoverLocalModels(options);
+export async function listLocalModels(options: LocalModelDiscoveryOptions = {}): Promise<LocalModelMetadata[]> {
+  return await discoverLocalModels(options);
 }
 
-export function refreshLocalModelLibrary(options: LocalModelDiscoveryOptions = {}) {
-  const models = discoverLocalModels(options);
+export async function refreshLocalModelLibrary(options: LocalModelDiscoveryOptions = {}) {
+  const models = await discoverLocalModels(options);
   return createModelRegistrySnapshot(models);
 }
 
-export function getLocalModelStatus(modelId: string, options: LocalModelDiscoveryOptions = {}) {
-  const models = listLocalModels(options);
+export async function getLocalModelStatus(modelId: string, options: LocalModelDiscoveryOptions = {}) {
+  const models = await listLocalModels(options);
   const model = findModelById(models, modelId);
 
   if (!model) {
@@ -75,7 +77,7 @@ export function validateModelInstallRequest(request: ModelInstallRequest): { ok:
   return { ok: true };
 }
 
-export function prepareModelInstall(request: ModelInstallRequest): ModelInstallResult {
+export async function prepareModelInstall(request: ModelInstallRequest): Promise<ModelInstallResult> {
   const validation = validateModelInstallRequest(request);
   if (!validation.ok) {
     return {
@@ -98,7 +100,7 @@ export function prepareModelInstall(request: ModelInstallRequest): ModelInstallR
   }
 
   const modelId = sanitizeModelId(request.modelId);
-  const localStatus = getLocalModelStatus(modelId);
+  const localStatus = await getLocalModelStatus(modelId);
 
   if (localStatus.found && localStatus.model) {
     const installId = `install_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
@@ -156,9 +158,31 @@ export function getModelInstallStatus(installId: string) {
   };
 }
 
-export function removeLocalModel(request: ModelRemoveRequest): ModelRemoveResult {
+// ── Helpers for Removal ──────────────────────────────────────────────────
+
+async function deleteOllamaModel(ollamaName: string): Promise<{ ok: boolean; message: string }> {
+  const baseUrl = (process.env.AILLAME_OLLAMA_BASE_URL || 'http://127.0.0.1:11434').replace(/\/+$/, '');
+  try {
+    const res = await fetch(`${baseUrl}/api/delete`, {
+      method: 'DELETE',
+      body: JSON.stringify({ name: ollamaName }),
+    });
+    if (res.ok) {
+      return { ok: true, message: `Ollama modeli başarıyla kaldırıldı: ${ollamaName}` };
+    }
+    const errData = await res.json().catch(() => ({}));
+    return { ok: false, message: `Ollama hatası: ${errData.error || res.statusText}` };
+  } catch (error) {
+    return { ok: false, message: `Ollama sunucusuna bağlanılamadı: ${error instanceof Error ? error.message : String(error)}` };
+  }
+}
+
+// ── Main Removal Service ─────────────────────────────────────────────────
+
+export async function removeLocalModel(request: ModelRemoveRequest): Promise<ModelRemoveResult> {
   const modelId = sanitizeModelId(request?.modelId || '');
   const dryRun = request?.dryRun !== false;
+  const confirmDelete = request?.confirmDelete === true;
 
   if (!modelId) {
     return {
@@ -169,19 +193,112 @@ export function removeLocalModel(request: ModelRemoveRequest): ModelRemoveResult
     };
   }
 
+  // 1. Find the model to determine its runtime/provider and path
+  const models = await listLocalModels();
+  const model = findModelById(models, modelId);
+
+  if (!model) {
+    return {
+      ok: false,
+      dryRun,
+      message: 'Model kütüphanede bulunamadı. Zaten silinmiş veya farklı bir klasörde olabilir.',
+      modelId,
+    };
+  }
+
+  // Check if model is currently active
+  try {
+    const activeModel = activeGgufModelService.getActiveGgufModel();
+    if (activeModel && (activeModel.modelId === model.id || (model.localPath && activeModel.filePath === model.localPath))) {
+      return {
+        ok: false,
+        dryRun: false,
+        message: `Bu model (${model.name}) şu anda sistemde AKTİF olarak seçili. Silmeden önce başka bir modele geçiş yapmalısınız.`,
+        modelId,
+      };
+    }
+  } catch {
+    // Ignore error in active model check
+  }
+
   if (dryRun) {
     return {
       ok: true,
       dryRun: true,
-      message: 'Dry-run remove: model silinmedi, sadece doğrulama yapıldı.',
+      message: `Kaldırma simülasyonu: ${model.name} (${model.provider}) kaldırılabilir.`,
       modelId,
     };
+  }
+
+  if (!confirmDelete) {
+    return {
+      ok: false,
+      dryRun: false,
+      message: 'Silme işlemi için confirmDelete onayı gereklidir.',
+      modelId,
+    };
+  }
+
+  // 2. Perform actual deletion based on provider
+  
+  // Ollama models
+  if (model.provider === 'ollama' || model.runtime === 'ollama') {
+    const ollamaName = model.id.startsWith('ollama-') ? model.id.slice(7) : model.name;
+    const result = await deleteOllamaModel(ollamaName);
+    return {
+      ...result,
+      dryRun: false,
+      modelId,
+    };
+  }
+
+  // Local file-based models (GGUF, Safetensors, etc.)
+  if (model.localPath) {
+    if (!isPathInsideAllowedRoots(model.localPath)) {
+      return {
+        ok: false,
+        dryRun: false,
+        message: 'Güvenlik ihlali: Model dosyası izin verilen kök dizinlerin dışında.',
+        modelId,
+      };
+    }
+
+    try {
+      if (fs.existsSync(model.localPath)) {
+        const stats = fs.statSync(model.localPath);
+        if (stats.isDirectory()) {
+          fs.rmSync(model.localPath, { recursive: true, force: true });
+        } else {
+          fs.unlinkSync(model.localPath);
+        }
+        return {
+          ok: true,
+          dryRun: false,
+          message: `Model dosyası fiziksel olarak silindi: ${model.fileName || model.name}`,
+          modelId,
+        };
+      } else {
+        return {
+          ok: false,
+          dryRun: false,
+          message: 'Model dosyası fiziksel olarak bulunamadı; muhtemelen manuel silinmiş.',
+          modelId,
+        };
+      }
+    } catch (err) {
+      return {
+        ok: false,
+        dryRun: false,
+        message: `Fiziksel silme hatası: ${err instanceof Error ? err.message : String(err)}`,
+        modelId,
+      };
+    }
   }
 
   return {
     ok: false,
     dryRun: false,
-    message: 'Gerçek model silme bu fazda devre dışıdır.',
+    message: `Bu model türü (${model.provider}/${model.runtime}) için otomatik kaldırma henüz desteklenmiyor.`,
     modelId,
   };
 }

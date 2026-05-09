@@ -144,6 +144,28 @@ export async function dryRunRemoveModel(modelId: string): Promise<ModelLibraryAc
   }
 }
 
+export async function removeModel(modelId: string): Promise<ModelLibraryActionResult> {
+  const req: ModelRemoveRequest = { modelId, dryRun: false, confirmDelete: true };
+  try {
+    const res = await fetch('/api/core/model-library/remove', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(req),
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const json = await res.json();
+    if (!json.success) throw new Error(json.error ?? 'Kaldırma işlemi başarısız.');
+    const result: ModelRemoveResult = json.data;
+    return {
+      ok: result.ok,
+      message: result.message,
+      dryRun: result.dryRun,
+    };
+  } catch (err) {
+    return { ok: false, message: `Kaldırma başarısız: ${formatError(err)}`, dryRun: false };
+  }
+}
+
 // ── Preferences types ─────────────────────────────────────────────────────
 
 export type DefaultModelCapabilityUi =

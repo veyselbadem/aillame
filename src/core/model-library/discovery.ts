@@ -7,6 +7,7 @@ import {
 } from './types';
 import {
   getDefaultModelLibraryRoot,
+  getAllowedModelRoots,
   getModelFileRuntimeKind,
   isProbablyModelFile,
   normalizeLocalModelPath,
@@ -121,29 +122,52 @@ export function discoverModelsInDirectory(
   return found;
 }
 
-export function getDefaultDiscoveryDirectories(): string[] {
-  const defaults = [
-    getDefaultModelLibraryRoot(),
-    normalizeLocalModelPath(path.join(process.cwd(), 'public', 'model')),
-    normalizeLocalModelPath(path.join(process.cwd(), 'runtime', 'models')),
-    normalizeLocalModelPath(path.join(process.cwd(), 'runtime', 'checkpoints')),
-  ];
+import { listOllamaModels } from '../inference/ollama-availability';
 
-  return Array.from(new Set(defaults.filter(Boolean)));
+export function getDefaultDiscoveryDirectories(): string[] {
+  return getAllowedModelRoots();
 }
 
-export function discoverLocalModels(options: LocalModelDiscoveryOptions = {}): LocalModelMetadata[] {
+export async function discoverLocalModels(options: LocalModelDiscoveryOptions = {}): Promise<LocalModelMetadata[]> {
   const directories = options.directories && options.directories.length > 0
     ? options.directories.map(normalizeLocalModelPath).filter(Boolean)
     : getDefaultDiscoveryDirectories();
 
   const merged = new Map<string, LocalModelMetadata>();
 
+  // 1. Physical file discovery
   for (const directory of directories) {
     const discovered = discoverModelsInDirectory(directory, options);
     for (const model of discovered) {
       merged.set(model.id, model);
     }
+  }
+
+  // 2. Ollama discovery
+  try {
+    const ollama = await listOllamaModels({ timeoutMs: 2000 });
+    if (ollama.ok && Array.isArray(ollama.models)) {
+      for (const name of ollama.models) {
+        // Use a prefixed ID to avoid collisions with local files if necessary, 
+        // but Ollama names are usually distinct (e.g., gemma:2b)
+        const id = sanitizeModelId(`ollama-${name}`);
+        const now = new Date().toISOString();
+        merged.set(id, normalizeModelMetadata({
+          id,
+          name,
+          provider: 'ollama',
+          runtime: 'ollama',
+          capabilities: ['text', 'chat'], // Ollama models are primarily text/chat
+          status: 'available',
+          source: 'ollama-api',
+          lastCheckedAt: now,
+          updatedAt: now,
+          description: `Ollama-managed model: ${name}`,
+        }));
+      }
+    }
+  } catch (err) {
+    console.error('[discovery] Ollama discovery failed:', err);
   }
 
   return Array.from(merged.values());

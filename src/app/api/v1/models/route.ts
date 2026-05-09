@@ -38,9 +38,9 @@ export async function GET(request: NextRequest) {
       .map((entry) => entry.model)
       .filter((model) => isChatCompatibleModel(model));
 
-    let localModels: ReturnType<typeof listLocalModels> = [];
+    let localModels: any[] = [];
     try {
-      localModels = listLocalModels();
+      localModels = await listLocalModels();
     } catch {
       // model-library failure must not break the v1/models endpoint
     }

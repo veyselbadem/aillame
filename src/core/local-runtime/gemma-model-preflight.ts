@@ -1,7 +1,11 @@
 import fs from 'fs';
 import path from 'path';
 import { listLocalModels } from '@core/model-library';
-import { normalizeLocalModelPath } from '@core/model-library/paths';
+import {
+  normalizeLocalModelPath,
+  getAllowedModelRoots,
+  isPathInsideAllowedRoots,
+} from '@core/model-library/paths';
 
 export interface GemmaModelPreflightRequest {
   modelId?: string;
@@ -36,30 +40,7 @@ const MIN_GGUF_SIZE_BYTES = 16;
 const DEFAULT_MAX_SIZE_BYTES = Number(process.env.AILLAME_GEMMA_PREFLIGHT_MAX_SIZE_BYTES || 0);
 
 export function getAllowedGemmaModelRoots(): string[] {
-  const roots = [
-    process.env.AILLAME_MODEL_LIBRARY_DIR,
-    process.env.AILLAME_MODEL_LIBRARY_ROOT,
-    process.env.AILLAME_GEMMA_MODELS_DIR,
-    normalizeLocalModelPath(path.join(process.cwd(), 'runtime', 'models')),
-    normalizeLocalModelPath(path.join(process.cwd(), 'models')),
-    normalizeLocalModelPath(path.join(process.cwd(), 'local-models')),
-  ]
-    .map((value) => normalizeLocalModelPath(value || ''))
-    .filter(Boolean)
-    .filter((value, index, list) => list.indexOf(value) === index);
-
-  return roots;
-}
-
-export function isPathInsideAllowedRoots(filePath: string, roots: string[]): boolean {
-  const target = normalizeLocalModelPath(path.resolve(filePath));
-  if (!target) return false;
-
-  return roots.some((root) => {
-    const normalizedRoot = normalizeLocalModelPath(path.resolve(root));
-    if (!normalizedRoot) return false;
-    return target === normalizedRoot || target.startsWith(`${normalizedRoot}${path.sep}`);
-  });
+  return getAllowedModelRoots();
 }
 
 export function readGgufMagicBytes(filePath: string): boolean | undefined {
@@ -84,7 +65,7 @@ function sanitizeReportedPath(filePath?: string): string | undefined {
   return normalized || undefined;
 }
 
-function resolveLocalPath(request: GemmaModelPreflightRequest): { modelId?: string; localPath?: string } {
+async function resolveLocalPath(request: GemmaModelPreflightRequest): Promise<{ modelId?: string; localPath?: string }> {
   if (request.localPath) {
     return {
       modelId: request.modelId,
@@ -97,7 +78,8 @@ function resolveLocalPath(request: GemmaModelPreflightRequest): { modelId?: stri
   }
 
   try {
-    const match = listLocalModels().find((model) => model.id === request.modelId);
+    const models = await listLocalModels();
+    const match = models.find((model) => model.id === request.modelId);
     return {
       modelId: request.modelId,
       localPath: match?.localPath ? normalizeLocalModelPath(match.localPath) : undefined,
@@ -107,9 +89,10 @@ function resolveLocalPath(request: GemmaModelPreflightRequest): { modelId?: stri
   }
 }
 
-export function validateGemmaModelPath(input: GemmaModelPreflightRequest): GemmaModelPreflightResult {
-  const resolved = resolveLocalPath(input);
+export async function validateGemmaModelPath(input: GemmaModelPreflightRequest): Promise<GemmaModelPreflightResult> {
+  const resolved = await resolveLocalPath(input);
   const roots = getAllowedGemmaModelRoots();
+// ... (rest of the code remains same until end of function)
   const filePath = resolved.localPath;
   const checks: GemmaModelPreflightChecks = {
     pathAllowed: false,
@@ -131,7 +114,7 @@ export function validateGemmaModelPath(input: GemmaModelPreflightRequest): Gemma
     };
   }
 
-  checks.pathAllowed = isPathInsideAllowedRoots(filePath, roots);
+  checks.pathAllowed = isPathInsideAllowedRoots(filePath);
   checks.extensionAllowed = filePath.toLowerCase().endsWith('.gguf');
 
   let stats: fs.Stats | undefined;
@@ -182,8 +165,8 @@ export function validateGemmaModelPath(input: GemmaModelPreflightRequest): Gemma
   };
 }
 
-export function preflightGemmaModelSwitch(
+export async function preflightGemmaModelSwitch(
   request: GemmaModelPreflightRequest,
-): GemmaModelPreflightResult {
-  return validateGemmaModelPath(request);
-}
+): Promise<GemmaModelPreflightResult> {
+  return await validateGemmaModelPath(request);
+}
