@@ -28,6 +28,12 @@ check.py
 start_training.bat
 test-bpe.js
 test-f4b.js
+worker_stderr.log
+*.tmp
+*.temp
+*.bak
+readiness_report*.json
+curl-*.txt
 
 # ---- Build logları (repo kökünde biriken) ------------------
 build-*.log

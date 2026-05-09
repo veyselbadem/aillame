@@ -15,6 +15,6 @@ export interface LLMProvider {
     onToken?: (token: string) => void,
     signal?: AbortSignal,
     options?: LLMGenerateOptions
-  ): Promise<string | void>;
+  ): Promise<string | any>;
   analyze?(file: any): Promise<any>;
 }

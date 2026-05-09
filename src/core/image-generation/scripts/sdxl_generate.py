@@ -8,6 +8,7 @@ import sys
 
 
 def main() -> int:
+    sys.stdin = io.TextIOWrapper(sys.stdin.buffer, encoding='utf-8')
     parser = argparse.ArgumentParser()
     parser.add_argument("--request", help="Path to JSON request file")
     args, unknown = parser.parse_known_args()

@@ -5,6 +5,7 @@ import { Message } from '@apptypes/message';
 import FeedbackActions from './FeedbackActions';
 import { FiAlertTriangle, FiCopy, FiCheck } from 'react-icons/fi';
 import { useState } from 'react';
+import ChatImageGenerationCard from './chat/ChatImageGenerationCard';
 
 interface MessageItemProps {
   message: Message;
@@ -145,6 +146,14 @@ export default function MessageItem({ message, index = 0, conversationId, prompt
                 </div>
               )}
             </div>
+            
+            {message.imageJobId && (
+              <ChatImageGenerationCard 
+                jobId={message.imageJobId} 
+                prompt={message.imagePrompt ?? ''} 
+                englishPrompt={message.imageEnglishPrompt ?? ''} 
+              />
+            )}
 
             {message.attachments && message.attachments.length > 0 && (
               <div className="mt-4 grid grid-cols-2 gap-3">

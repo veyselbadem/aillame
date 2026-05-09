@@ -47,7 +47,7 @@ export class IGMWorkerProcessBridge implements IGMWorker {
             success: false,
             jobId: 'na',
             status: 'failed',
-            error: `IGM process exited with code ${code}: ${stderr}`
+            error: `IGM process exited with code ${code}. STDERR: ${stderr.slice(0, 300)}`
           });
         }
 
@@ -57,7 +57,7 @@ export class IGMWorkerProcessBridge implements IGMWorker {
             responseData = JSON.parse(fs.readFileSync(responsePath, 'utf8'));
           } else {
             const jsonMatch = stdout.match(/\{[\s\S]*\}/);
-            if (!jsonMatch) throw new Error('Worker produced no valid JSON output.');
+            if (!jsonMatch) throw new Error(`Worker produced no valid JSON output. STDOUT: ${stdout.slice(0, 300)}`);
             responseData = JSON.parse(jsonMatch[0]);
           }
 
@@ -89,18 +89,19 @@ export class IGMWorkerProcessBridge implements IGMWorker {
         }
       };
 
-      const timeoutMs = Number(process.env.AILLAME_IGM_TIMEOUT_MS) || 300000;
+      const timeoutMs = Number(process.env.AILLAME_IGM_TIMEOUT_MS) || 600000;
       let fullArgs = [...args];
 
       if (protocol === 'foundation') {
-        fs.writeFileSync(requestPath, JSON.stringify(request, null, 2));
+        fs.writeFileSync(requestPath, JSON.stringify(request, null, 2), 'utf8');
         fullArgs.push('--request', requestPath, '--output', responsePath);
       }
 
       const child = spawn(command, fullArgs, {
         cwd: projectRoot,
         windowsHide: true,
-      });
+        encoding: 'utf8'
+      } as any);
 
       const timeout = setTimeout(() => {
         child.kill();

@@ -7,6 +7,8 @@ async function pollJobStatus(jobId: string, timeoutMs: number = 300000): Promise
   const startTime = Date.now();
 
   console.log(`Polling job ${jobId} status from ${jobsFile}...`);
+  let lastProgress = -1;
+  let lastStatus = '';
 
   while (Date.now() - startTime < timeoutMs) {
     if (fs.existsSync(jobsFile)) {
@@ -16,19 +18,24 @@ async function pollJobStatus(jobId: string, timeoutMs: number = 300000): Promise
         try {
           const job = JSON.parse(lines[i]);
           if (job.jobId === jobId) {
-            console.log(`Current status: ${job.status} (Progress: ${job.progress}%)`);
+            if (job.status !== lastStatus || job.progress !== lastProgress) {
+              console.log(`   [Job Status] ${job.status} (Progress: ${job.progress || 0}%)`);
+              lastStatus = job.status;
+              lastProgress = job.progress || 0;
+            }
             if (job.status === 'completed' || job.status === 'failed' || job.status === 'not-configured') {
               return job;
             }
+            break;
           }
         } catch (e) {
           continue;
         }
       }
     }
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    await new Promise(resolve => setTimeout(resolve, 3000));
   }
-  throw new Error(`Job ${jobId} timed out after ${timeoutMs/1000}s`);
+  return { status: 'timeout', errorSummary: `Job ${jobId} timed out after ${timeoutMs/1000}s` };
 }
 
 async function testImageJobLive() {
@@ -50,7 +57,7 @@ async function testImageJobLive() {
       throw new Error(`Chat API failed with status ${response.status}: ${errorText}`);
     }
 
-    const data = await response.json();
+    const data = await response.json().catch(() => ({}));
     console.log("Chat Response:", data.response.substring(0, 100) + "...");
     
     if (!data.imageJobId || data.modelId !== 'aillame-nano-v1-igm-handoff') {
@@ -61,7 +68,7 @@ async function testImageJobLive() {
     console.log(`\n[STEP 1] Handoff successful. Job ID: ${jobId}`);
 
     // Wait for job execution
-    const jobResult = await pollJobStatus(jobId);
+    const jobResult = await pollJobStatus(jobId, 300000); // 5 min timeout
     
     if (jobResult.status === 'completed') {
       console.log(`\n[STEP 2] Job completed successfully!`);
@@ -78,7 +85,7 @@ async function testImageJobLive() {
           console.log(`[STEP 3] Asset record found in store.`);
           
           // Check physical file
-          const assetData = assetContent.split('\n').filter(l => l.includes(assetId)).map(l => JSON.parse(l))[0];
+          const assetData = assetContent.split('\n').filter((l: string) => l.includes(assetId)).map((l: string) => JSON.parse(l))[0];
           const physicalFile = path.join(process.cwd(), '.aillame-data', 'assets', 'images', assetData.fileName);
           if (fs.existsSync(physicalFile)) {
             const stats = fs.statSync(physicalFile);
@@ -96,6 +103,10 @@ async function testImageJobLive() {
       } else {
         throw new Error("Job completed but no outputAssetIds found.");
       }
+    } else if (jobResult.status === 'timeout') {
+      console.error(`\n[STEP 2] Job FAILED - TIMEOUT.`);
+      console.error(`Error: ${jobResult.errorSummary}`);
+      process.exit(1);
     } else {
       console.error(`\n[STEP 2] Job FAILED.`);
       console.error(`Status: ${jobResult.status}`);
@@ -104,7 +115,7 @@ async function testImageJobLive() {
     }
 
   } catch (error: any) {
-    if (error.code === 'ECONNREFUSED' || error.message.includes('fetch failed')) {
+    if (error.code === 'ECONNREFUSED' || (error.message && error.message.includes('fetch failed'))) {
       console.error("\n[FAIL] Server not running on localhost:3000. Start the server to run live verification.");
       process.exit(1);
     } else {

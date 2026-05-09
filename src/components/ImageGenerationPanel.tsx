@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { FiDownload, FiImage, FiLoader, FiZap } from 'react-icons/fi';
 import { DEFAULT_IMAGE_GENERATION_MODEL_ID, MODEL_REGISTRY } from '@core/models/registry';
 import { IMAGE_SIZE_PRESETS, type ImageSizePreset } from '@core/image-generation/types';
@@ -24,10 +24,13 @@ export default function ImageGenerationPanel() {
   const [error, setError] = useState<string | null>(null);
   const [image, setImage] = useState<string | null>(null);
   const [seed, setSeed] = useState<number | null>(null);
+  const [jobId, setJobId] = useState<string | null>(null);
+  const [jobStatus, setJobStatus] = useState<string | null>(null);
 
   const generate = async () => {
     if (!prompt.trim()) return;
     setLoading(true);
+    setJobStatus('queued');
     setError(null);
 
     try {
@@ -38,18 +41,44 @@ export default function ImageGenerationPanel() {
       });
 
       const payload = await response.json();
-      if (!response.ok) {
-        throw new Error(payload.error || 'Görsel üretimi başarısız oldu.');
+      if (!response.ok || !payload.success) {
+        throw new Error(payload.error || payload.warning || 'Görsel üretimi başlatılamadı.');
       }
-
-      setImage(payload.image);
-      setSeed(payload.seed ?? null);
+      setJobId(payload.jobId);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Görsel üretimi başarısız oldu.');
-    } finally {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (jobId && ['queued', 'running'].includes(jobStatus || '')) {
+      interval = setInterval(async () => {
+        try {
+          const res = await fetch(`/api/image-generation?jobId=${jobId}`);
+          const data = await res.json();
+          if (data.job) {
+            setJobStatus(data.job.status);
+            if (data.job.status === 'completed') {
+              setLoading(false);
+              if (data.job.outputAssetIds?.length > 0) {
+                setImage(`/api/image-generation/view?assetId=${data.job.outputAssetIds[0]}`);
+              }
+              clearInterval(interval);
+            } else if (['failed', 'not-configured'].includes(data.job.status)) {
+              setLoading(false);
+              setError(`Worker Error: ${data.job.errorSummary || data.job.status}`);
+              clearInterval(interval);
+            }
+          }
+        } catch (e) {
+          console.error('Polling error', e);
+        }
+      }, 3000);
+    }
+    return () => clearInterval(interval);
+  }, [jobId, jobStatus]);
 
   return (
     <div className="w-full max-w-6xl mx-auto px-4 pt-12 md:pt-20 pb-12 animate-fade-in">
@@ -140,7 +169,7 @@ export default function ImageGenerationPanel() {
               className="w-full h-12 rounded-2xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-black uppercase tracking-[0.2em] text-xs flex items-center justify-center gap-2 disabled:opacity-40 disabled:grayscale transition-all hover:shadow-lg hover:shadow-indigo-500/20"
             >
               {loading ? <FiLoader className="animate-spin" /> : <FiZap />}
-              Üret
+              {jobStatus === 'queued' ? 'Sırada...' : jobStatus === 'running' ? 'Üretiliyor...' : 'Üret'}
             </button>
           </div>
         </section>

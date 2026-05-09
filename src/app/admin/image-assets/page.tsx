@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { adminFetch, requireAdminTokenOrRedirect } from '@lib/admin-fetch';
-import { RiImageLine, RiHistoryLine, RiPulseLine, RiCheckboxCircleLine, RiErrorWarningLine } from 'react-icons/ri';
+import { RiImageLine, RiHistoryLine, RiPulseLine, RiCheckboxCircleLine, RiErrorWarningLine, RiDeleteBinLine } from 'react-icons/ri';
 import StatusBadge from '@components/ui/StatusBadge';
 
 export default function ImageAssetManagerPage() {
@@ -41,6 +41,33 @@ export default function ImageAssetManagerPage() {
       // Diagnostic only
     } finally {
       setLoading(false);
+    }
+  };
+  
+  const handleDelete = async (assetId: string) => {
+    if (!confirm('Bu görsel varlığını kalıcı olarak silmek istediğine emin misin?')) return;
+    
+    try {
+      const res = await adminFetch(`/api/admin/image/assets?assetId=${assetId}`, {
+        method: 'DELETE'
+      });
+      if (res.ok) {
+        setJobs(prev => prev.map(job => {
+          if (job.outputAssetIds?.includes(assetId)) {
+            return {
+              ...job,
+              outputAssetIds: job.outputAssetIds.filter((id: string) => id !== assetId)
+            };
+          }
+          return job;
+        }));
+      } else {
+        const error = await res.json();
+        alert(`Silme hatası: ${error.error || 'Bilinmeyen hata'}`);
+      }
+    } catch (err) {
+      console.error('Delete error:', err);
+      alert('Silme işlemi sırasında teknik bir hata oluştu.');
     }
   };
 
@@ -108,6 +135,7 @@ export default function ImageAssetManagerPage() {
                   <th className="py-5 px-4">Prompt Bağlamı</th>
                   <th className="py-5 px-4">Cihaz / Motor</th>
                   <th className="py-5 px-4 text-center">Durum</th>
+                  <th className="py-5 px-4 text-center">İşlemler</th>
                   <th className="py-5 px-8 text-right">Zaman Damgası</th>
                 </tr>
               </thead>
@@ -148,7 +176,23 @@ export default function ImageAssetManagerPage() {
                     </td>
                     <td className="py-6 px-4">
                       <div className="flex items-center justify-center">
-                        <StatusBadge variant={job.status === 'completed' ? 'completed' : 'running'} label={job.status === 'completed' ? 'tamamlandı' : 'çalışıyor'} className="!text-[8px] !px-2 !py-0.5" />
+                        <StatusBadge 
+                          variant={job.status === 'completed' ? 'completed' : job.status === 'failed' ? 'failed' : job.status === 'queued' ? 'warning' : 'running'} 
+                          label={job.status === 'completed' ? 'tamamlandı' : job.status === 'failed' ? 'hata' : job.status === 'queued' ? 'sırada' : 'çalışıyor'} 
+                          className="!text-[8px] !px-2 !py-0.5" 
+                        />
+                      </div>
+                    </td>
+                    <td className="py-6 px-4">
+                      <div className="flex items-center justify-center">
+                        <button
+                          onClick={() => job.outputAssetIds?.[0] && handleDelete(job.outputAssetIds[0])}
+                          disabled={!job.outputAssetIds?.[0]}
+                          className="p-2 rounded-xl text-slate-400 hover:text-rose-500 hover:bg-rose-500/10 transition-all disabled:opacity-20 disabled:cursor-not-allowed"
+                          title="Varlığı Sil"
+                        >
+                          <RiDeleteBinLine size={18} />
+                        </button>
                       </div>
                     </td>
                     <td className="py-6 px-8 text-right">

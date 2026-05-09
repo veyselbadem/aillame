@@ -27,7 +27,7 @@ export interface OrchestratorOptions {
 export async function orchestrateChat(
   input: string,
   options?: OrchestratorOptions
-): Promise<string> {
+): Promise<string | any> {
   const analyzed = analyzeRequest(input);
   const llmMode = options?.llmMode ?? 'hybrid';
   const tier = options?.tier ?? 'nano';

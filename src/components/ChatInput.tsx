@@ -42,11 +42,10 @@ export default function ChatInput({
   };
 
   const handleSend = () => {
+    if (disabled || isEmpty || voiceState === 'listening') return;
     onSend();
-    if (!disabled) {
-      justSubmittedRef.current = true;
-      setTimeout(focusTextarea, 0);
-    }
+    justSubmittedRef.current = true;
+    setTimeout(focusTextarea, 0);
   };
 
   useEffect(() => {

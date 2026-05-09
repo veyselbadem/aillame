@@ -62,16 +62,18 @@ export class ImageGenerationService {
     // and concurrent process launches can exhaust memory on desktop setups.
     this.executionQueue = this.executionQueue
       .catch(() => undefined)
-      .then(() => this.runJob(jobId, request));
+      .then(() => this.runJob(jobId, request).catch(e => {
+        console.error("IGM runJob critical failure:", e);
+      }));
 
     return { success: true, jobId };
 
   }
 
   private async runJob(jobId: string, request: TextToImageRequest) {
-    await imageJobStore.updateJob(jobId, { status: 'running', progress: 10 });
-    
     try {
+      await imageJobStore.updateJob(jobId, { status: 'running', progress: 10 });
+      
       const modelDir = process.env.AILLAME_IGM_MODEL_DIR;
       let resolvedModelId = request.modelId || process.env.AILLAME_IGM_ACTIVE_MODEL || "";
       
@@ -126,10 +128,11 @@ export class ImageGenerationService {
       } else {
         await imageJobStore.updateJob(jobId, { 
           status: response.status === 'not-configured' ? 'not-configured' : 'failed',
-          errorSummary: response.error || 'Worker success but no asset produced.'
+          errorSummary: response.error || 'Worker returned success but no asset produced. Missing imagePath?'
         });
       }
     } catch (err: any) {
+      console.error(`[IGM Worker Error] Job ${jobId} failed:`, err);
       await imageJobStore.updateJob(jobId, { status: 'failed', errorSummary: err.message });
     }
   }

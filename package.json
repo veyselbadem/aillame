@@ -68,6 +68,7 @@
         "core:dev": "napi build --cargo-cwd aillame-core",
         "core:train": "npx tsx src/core/engine/supervisor.ts",
         "core:test": "npx tsx src/core/engine/test-rust.ts",
+        "repair:image-assets": "npx tsx scripts/repair-image-assets.ts",
         "dev:turbo": "next dev",
         "build:turbo": "next build",
         "desktop:dev": "tauri dev",

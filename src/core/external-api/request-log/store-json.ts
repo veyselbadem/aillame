@@ -1,8 +1,9 @@
 import { readFile, writeFile } from 'fs/promises';
 import path from 'path';
+import { resolveProjectRelative } from '../../project-root';
 import type { ExternalApiRequestLogRecord } from './types';
 
-const REQUEST_LOG_STORE_PATH = path.join(process.cwd(), 'external-api-request-log.json');
+const REQUEST_LOG_STORE_PATH = resolveProjectRelative('.aillame-data/logs/external-api-request-log.json');
 
 async function readRequestLogFile(): Promise<ExternalApiRequestLogRecord[]> {
   try {

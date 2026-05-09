@@ -4,6 +4,7 @@ import * as path from 'path';
 import { fileURLToPath } from 'url';
 import { getAillameEngine } from './rust-core';
 import { AillameTokenizer } from './tokenizer';
+import { runtimeLogger } from '../storage/runtime-logger';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -211,7 +212,7 @@ async function startRustTraining() {
                 const logMsg = `Zaman Dilimi ${i}/${epochs} - Kayıp: ${loss.toFixed(4)}`;
                 console.log(logMsg);
                 try {
-                    fs.appendFileSync(path.join(process.cwd(), 'training_log.txt'), logMsg + '\n');
+                    runtimeLogger.logTraining(logMsg);
                 } catch (e) {
                     // Log yazma hatası eğitimi durdurmasın
                 }

@@ -32,4 +32,7 @@ export type Message = {
   createdAt: number;
   attachments?: ImageAttachment[];
   metadata?: MessageMetadata;
+  imageJobId?: string;
+  imagePrompt?: string;
+  imageEnglishPrompt?: string;
 };

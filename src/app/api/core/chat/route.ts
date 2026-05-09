@@ -166,20 +166,42 @@ export async function POST(req: NextRequest) {
                     .replace(/bana|oluşturur musun|yapar mısın|çiz|üret|bir|tane|olsun/gi, '')
                     .trim();
                 
+                const basePrompt = imagePrompt || prompt;
+                let finalPrompt = basePrompt;
+
+                try {
+                    const { inferWithVersionControl } = await import('@/core/nano-cognitive/service');
+                    const translatePrompt = `You are a translator. Translate the following image generation prompt to English. Return ONLY the translated prompt, nothing else.\n\nPrompt: ${basePrompt}`;
+                    const translateResult = await inferWithVersionControl(
+                        translatePrompt,
+                        { complexity: 0, research: 0, code: 0, creative: 0 },
+                        50,
+                        0.3
+                    );
+                    if (translateResult?.response && !looksMalformedNanoText(translateResult.response)) {
+                        finalPrompt = translateResult.response.trim();
+                    }
+                } catch (e) {
+                    console.warn('Image prompt translation failed, fallback to original', e);
+                }
+
                 const result = await imageGenerationService.createJob({
                     projectId: 'default-chat',
                     sourceApp: 'aillame-chat',
-                    prompt: imagePrompt || prompt,
+                    prompt: finalPrompt,
                     modelId: process.env.AILLAME_IGM_ACTIVE_MODEL || 'sdxl-base-1.0'
                 });
 
                 if (result.success) {
                     const modelId = 'aillame-nano-v1-igm-handoff';
+                    const statusMsg = `Görsel üretim isteğini aldım. "${imagePrompt || prompt}" betimlemesiyle arka planda üretimi başlattım (İş No: ${result.jobId}). Durum: Sıraya Alındı. Sonuç hazır olduğunda Görsel Üretim panelinden veya Yönetim panelinden takip edebilirsin.`;
                     return chatJson({
-                        response: improveAssistantAnswer(prompt, `Görsel üretim isteğini aldım. "${imagePrompt || prompt}" betimlemesiyle üretimi başlattım (İş No: ${result.jobId}). Sonuç hazır olduğunda Görsel Üretim panelinden veya buradan takip edebilirsin.`, messages),
+                        response: improveAssistantAnswer(prompt, statusMsg, messages),
                         modelId,
                         plan: { ...plan, cognitivePlan, conversationIntent, intentMeta },
-                        imageJobId: result.jobId
+                        imageJobId: result.jobId,
+                        imagePrompt: imagePrompt || prompt,
+                        imageEnglishPrompt: finalPrompt
                     }, buildRuntimeAttribution({ provider: 'aillame-igm', modelId, runtime: 'igm-image-generation-service' }));
                 } else {
                     const modelId = 'aillame-nano-v1-igm-error';

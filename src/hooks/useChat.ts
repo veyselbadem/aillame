@@ -132,7 +132,7 @@ export function useChat(conversationId?: string, runtimeSettings?: UseChatRuntim
   };
 
   const sendMessage = async () => {
-    if ((!input.trim() && attachments.length === 0) || !conversationId) return;
+    if (loading || modelLoading || (!input.trim() && attachments.length === 0) || !conversationId) return;
 
     abortControllerRef.current = new AbortController();
     const signal = abortControllerRef.current.signal;
@@ -197,9 +197,30 @@ export function useChat(conversationId?: string, runtimeSettings?: UseChatRuntim
 
       if (signal.aborted) return;
 
-      const replyContent = typeof result === 'string' ? result : JSON.stringify(result, null, 2);
+      let replyContent = '';
+      let extraData: any = {};
+
+      if (typeof result === 'string') {
+        replyContent = result;
+      } else if (result && typeof result === 'object') {
+        replyContent = result.response || result.answer || JSON.stringify(result, null, 2);
+        extraData = {
+          imageJobId: result.imageJobId,
+          imagePrompt: result.imagePrompt,
+          imageEnglishPrompt: result.imageEnglishPrompt
+        };
+      }
+
+      const finalAssistantMessage: Message = { 
+        ...placeholder, 
+        content: replyContent,
+        ...extraData
+      };
+
       updateAssistantContent(assistantId, () => replyContent);
-      await memory.addMessage(conversationId, { ...placeholder, content: replyContent });
+      setMessages(prev => prev.map(m => m.id === assistantId ? finalAssistantMessage : m));
+      
+      await memory.addMessage(conversationId, finalAssistantMessage);
 
       liveLearning.learnFromConversation(outgoingInput, replyContent)
         .catch(err => console.error('[LiveLearning] Senkronizasyon hatası:', err));

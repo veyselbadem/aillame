@@ -94,25 +94,21 @@ export class AillameLocalProvider implements LLMProvider {
             }
 
             const data = await response.json().catch(() => ({}));
-            const rawResult = typeof data?.response === 'string'
-                ? data.response
-                : (typeof data?.answer === 'string' ? data.answer : '');
-            const result = rawResult.trim();
-
-            if (!result) {
-                return 'Aillame Nano şu an anlamlı bir yanıt üretemedi. Lütfen isteği biraz daha netleştirip tekrar deneyin.';
-            }
-
+            
             if (onToken) {
+                const rawResult = typeof data?.response === 'string'
+                    ? data.response
+                    : (typeof data?.answer === 'string' ? data.answer : '');
+                const result = rawResult.trim();
+
                 for (const char of result) {
                     if (signal?.aborted) throw new Error('AbortError');
                     onToken(char);
-                    // await new Promise((r) => setTimeout(r, 10)); // [NANO-F2] Eski yapay gecikme
-                    await Promise.resolve(); // [NANO-F2] Yapay gecikme kaldırıldı
+                    await Promise.resolve();
                 }
             }
 
-            return result;
+            return data;
         } catch (error) {
             if (error instanceof Error && error.name === 'AbortError') {
                 return 'Aillame Nano şu an yanıtı tamamlayamadı. Lütfen daha kısa bir mesajla tekrar deneyin.';

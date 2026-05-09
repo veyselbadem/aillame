@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import { resolveProjectRelative } from '@/core/project-root';
 
 export type ImageJobStatus = 'queued' | 'running' | 'completed' | 'failed' | 'cancelled' | 'degraded' | 'not-configured';
 
@@ -26,20 +27,31 @@ export interface ImageJobRecord {
 
 export class ImageJobFileStore {
   private filePath: string;
+  private cache: ImageJobRecord[] | null = null;
+  private lastMtime: number = 0;
 
   constructor(dataDir: string = '.aillame-data') {
-    if (!fs.existsSync(dataDir)) {
-      fs.mkdirSync(dataDir, { recursive: true });
+    const absoluteDataDir = resolveProjectRelative(dataDir);
+    if (!fs.existsSync(absoluteDataDir)) {
+      fs.mkdirSync(absoluteDataDir, { recursive: true });
     }
-    this.filePath = path.join(dataDir, 'image-jobs.jsonl');
+    this.filePath = path.join(absoluteDataDir, 'image-jobs.jsonl');
   }
 
   async addJob(job: ImageJobRecord): Promise<void> {
     const line = JSON.stringify(job) + '\n';
     await fs.promises.appendFile(this.filePath, line);
+    if (this.cache) {
+      this.cache = [job, ...this.cache].sort((a, b) => b.createdAt - a.createdAt);
+    }
   }
 
   async listJobs(projectId?: string): Promise<ImageJobRecord[]> {
+    this.checkFileFreshness();
+    if (this.cache) {
+      return projectId ? this.cache.filter(j => j.projectId === projectId) : this.cache;
+    }
+
     if (!fs.existsSync(this.filePath)) return [];
 
     const content = await fs.promises.readFile(this.filePath, 'utf8');
@@ -49,15 +61,27 @@ export class ImageJobFileStore {
     for (const line of lines) {
       try {
         const job = JSON.parse(line) as ImageJobRecord;
-        if (!projectId || job.projectId === projectId) {
-          jobs.push(job);
-        }
+        jobs.push(job);
       } catch (err) {
         console.warn('Corrupt line in image job history:', err);
       }
     }
 
-    return jobs.sort((a, b) => b.createdAt - a.createdAt);
+    this.cache = jobs.sort((a, b) => b.createdAt - a.createdAt);
+    return projectId ? this.cache.filter(j => j.projectId === projectId) : this.cache;
+  }
+
+  private checkFileFreshness(): void {
+    if (!fs.existsSync(this.filePath)) {
+      this.cache = null;
+      this.lastMtime = 0;
+      return;
+    }
+    const mtime = fs.statSync(this.filePath).mtimeMs;
+    if (mtime > this.lastMtime) {
+      this.cache = null;
+      this.lastMtime = mtime;
+    }
   }
 
   async updateJob(jobId: string, updates: Partial<ImageJobRecord>): Promise<boolean> {
@@ -72,9 +96,33 @@ export class ImageJobFileStore {
     });
 
     if (found) {
-      await fs.promises.writeFile(this.filePath, updated.map(j => JSON.stringify(j)).join('\n') + '\n');
+      this.cache = updated;
+      await fs.promises.writeFile(this.filePath, updated.map(j => JSON.stringify(j)).join('\n') + '\n', 'utf8');
+      this.lastMtime = fs.statSync(this.filePath).mtimeMs;
     }
     return found;
+  }
+
+  async removeAssetIdFromJobs(assetId: string): Promise<void> {
+    const jobs = await this.listJobs();
+    let modified = false;
+    const updated = jobs.map(j => {
+      if (j.outputAssetIds?.includes(assetId)) {
+        modified = true;
+        return {
+          ...j,
+          outputAssetIds: j.outputAssetIds.filter(id => id !== assetId),
+          updatedAt: Date.now()
+        };
+      }
+      return j;
+    });
+
+    if (modified) {
+      this.cache = updated;
+      await fs.promises.writeFile(this.filePath, updated.map(j => JSON.stringify(j)).join('\n') + '\n', 'utf8');
+      this.lastMtime = fs.statSync(this.filePath).mtimeMs;
+    }
   }
 }
 

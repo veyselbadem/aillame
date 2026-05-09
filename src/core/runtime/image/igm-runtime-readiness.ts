@@ -39,7 +39,9 @@ export class IGMRuntimeReadiness {
     const enabled = process.env.AILLAME_IGM_RUNTIME_ENABLED === 'true';
     const modelDir = process.env.AILLAME_IGM_MODEL_DIR;
     const activeModel = process.env.AILLAME_IGM_ACTIVE_MODEL;
-    const outputDir = process.env.AILLAME_IGM_OUTPUT_DIR || '.aillame-data/assets/images';
+    const outputDir = process.env.AILLAME_IGM_OUTPUT_DIR 
+        ? resolveProjectRelative(process.env.AILLAME_IGM_OUTPUT_DIR)
+        : resolveProjectRelative('.aillame-data/assets/images');
     const device = (process.env.AILLAME_IGM_DEVICE as any) || 'auto';
 
     if (!enabled) missingConfig.push('AILLAME_IGM_RUNTIME_ENABLED is false');
@@ -121,7 +123,9 @@ export class IGMRuntimeReadiness {
     let succeeded = false;
 
     // Check actual job history for acceptance
-    const dataDir = process.env.AILLAME_DATA_DIR || '.aillame-data';
+    const dataDir = process.env.AILLAME_DATA_DIR 
+        ? resolveProjectRelative(process.env.AILLAME_DATA_DIR)
+        : resolveProjectRelative('.aillame-data');
     const jobsFile = path.join(dataDir, 'image-jobs.jsonl');
     
     if (fs.existsSync(jobsFile)) {
@@ -131,7 +135,7 @@ export class IGMRuntimeReadiness {
         if (lines.length > 0) {
           attempted = true;
           // Find the latest successful real job to extract device info
-          for (let i = lines.length - 1; i >= 0; i--) {
+          for (let i = 0; i < lines.length; i++) {
             try {
               const job = JSON.parse(lines[i]);
               const isSuccess = job.status === 'completed' && !job.isPlaceholder && !job.isMock;

@@ -1,12 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server';
 import path from 'path';
-import { generateImageWithSdxl } from '@core/image-generation/sdxl';
+import { imageGenerationService } from '@/core/runtime/image/image-generation-service';
+import { imageJobStore } from '@/core/runtime/image/jobs/image-job-file-store';
 import { getProjectRoot, resolveProjectRelative } from '@core/project-root';
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const result = await generateImageWithSdxl(body);
+    const result = await imageGenerationService.createJob({
+      projectId: 'default',
+      sourceApp: 'aillame-ui',
+      prompt: body.prompt,
+      negativePrompt: body.negativePrompt,
+      modelId: process.env.AILLAME_IGM_ACTIVE_MODEL
+    });
+
+    if (!result.success) {
+      return NextResponse.json({ error: result.warning || 'Failed to queue job' }, { status: 400 });
+    }
     
     // Add runtime diagnostics for validation
     const projectRoot = getProjectRoot();
@@ -17,9 +28,13 @@ export async function POST(req: NextRequest) {
     
     return NextResponse.json({
       ...result,
+      success: true,
+      jobId: result.jobId,
       diagnostics: {
         projectRoot: path.basename(projectRoot),
-        resolvedPython: path.isAbsolute(resolvedPython) ? `...${path.sep}${path.basename(path.dirname(resolvedPython))}${path.sep}${path.basename(resolvedPython)}` : resolvedPython,
+        resolvedPython: path.isAbsolute(resolvedPython)
+          ? '...' + path.sep + path.basename(path.dirname(resolvedPython)) + path.sep + path.basename(resolvedPython)
+          : resolvedPython,
         workerScriptPath: path.basename(workerScriptPath),
         spawnCwd: path.basename(projectRoot),
         timestamp: new Date().toISOString()
@@ -27,6 +42,15 @@ export async function POST(req: NextRequest) {
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Görsel üretimi başarısız oldu.';
-    return NextResponse.json({ error: message }, { status: 500 });
+    return NextResponse.json({ success: false, error: message }, { status: 500 });
   }
+}
+
+export async function GET(req: NextRequest) {
+  const jobId = req.nextUrl.searchParams.get('jobId');
+  if (!jobId) return NextResponse.json({ error: 'Missing jobId' }, { status: 400 });
+  const jobs = await imageJobStore.listJobs();
+  const job = jobs.find((j: any) => j.jobId === jobId);
+  if (!job) return NextResponse.json({ error: 'Job not found' }, { status: 404 });
+  return NextResponse.json({ job });
 }

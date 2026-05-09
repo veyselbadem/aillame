@@ -1,8 +1,9 @@
 import { readFile, writeFile } from 'fs/promises';
 import path from 'path';
+import { resolveProjectRelative } from '../project-root';
 import type { MemoryWriteLogRecord, CreateMemoryWriteLogInput } from './types';
 
-const MEMORY_WRITE_LOG_STORE_PATH = path.join(process.cwd(), 'memory-write-log.json');
+const MEMORY_WRITE_LOG_STORE_PATH = resolveProjectRelative('.aillame-data/logs/memory-write-log.json');
 
 async function readLogFile(): Promise<MemoryWriteLogRecord[]> {
   try {
