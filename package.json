@@ -60,6 +60,7 @@
                     "validate:nano-training-candidates": "node scripts/validate-nano-training-candidates.mjs",
                     "smoke:chat-response-quality": "npx tsx scripts/smoke-chat-response-quality.ts",
                     "smoke:chat-image-intent": "npx tsx scripts/smoke-chat-image-intent.ts",
+                    "smoke:chat-image-job-live": "npx tsx scripts/smoke-chat-image-job-live.ts",
                     "core:build":  "napi build --platform --release --cargo-cwd aillame-core",
                     "core:dev":  "napi build --cargo-cwd aillame-core",
                     "core:train":  "npx tsx src/core/engine/supervisor.ts",

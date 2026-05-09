@@ -1,3 +1,5 @@
+import fs from 'fs';
+import path from 'path';
 import { imageJobStore, ImageJobRecord } from "./jobs/image-job-file-store";
 import { imageAssetStore } from "./assets/image-asset-file-store";
 import { IGMRuntimeReadiness } from "./igm-runtime-readiness";
@@ -25,8 +27,10 @@ export class ImageGenerationService {
 
     const jobId = `job_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
     
-    // 2. Readiness Check
     const readiness = IGMRuntimeReadiness.getDiagnostics();
+    if (!readiness.configured) {
+      return { success: false, warning: `IGM Runtime is not configured: ${readiness.reason}` };
+    }
 
     // 3. Create Job Record
     const job: ImageJobRecord = {
@@ -36,7 +40,7 @@ export class ImageGenerationService {
       mode: 'text-to-image',
       prompt: request.prompt,
       negativePrompt: request.negativePrompt,
-      status: readiness.configured ? 'queued' : 'not-configured',
+      status: 'queued',
       progress: 0,
       modelId: request.modelId || process.env.AILLAME_IGM_ACTIVE_MODEL,
       outputAssetIds: [],
@@ -53,10 +57,8 @@ export class ImageGenerationService {
       metadata: { jobId, projectId: request.projectId }
     });
 
-    if (readiness.configured) {
-      // Background execution
-      this.runJob(jobId, request);
-    }
+    // Background execution
+    this.runJob(jobId, request);
 
     return { success: true, jobId };
 
@@ -66,6 +68,23 @@ export class ImageGenerationService {
     await imageJobStore.updateJob(jobId, { status: 'running', progress: 10 });
     
     try {
+      const modelDir = process.env.AILLAME_IGM_MODEL_DIR;
+      let resolvedModelId = request.modelId || process.env.AILLAME_IGM_ACTIVE_MODEL || "";
+      
+      if (modelDir && resolvedModelId && !path.isAbsolute(resolvedModelId)) {
+        // Try to resolve relative to model dir
+        const fullPath = path.join(modelDir, resolvedModelId);
+        if (fs.existsSync(fullPath)) {
+          resolvedModelId = fullPath;
+        } else {
+          // Check for .safetensors extension if missing
+          const withExt = fullPath.endsWith('.safetensors') ? fullPath : `${fullPath}.safetensors`;
+          if (fs.existsSync(withExt)) {
+            resolvedModelId = withExt;
+          }
+        }
+      }
+
       const response = await igmWorker.generate({
         prompt: request.prompt,
         negativePrompt: request.negativePrompt,
@@ -73,7 +92,7 @@ export class ImageGenerationService {
         height: request.height || 512,
         steps: 20,
         seed: -1,
-        modelId: request.modelId || "",
+        modelId: resolvedModelId,
         outputDir: imageAssetStore.getAssetsDirectory()
       });
 
