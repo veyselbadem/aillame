@@ -192,6 +192,15 @@ export function buildIntentAwareNanoAnswer(prompt: string, history: ChatMessageL
         'Güncel bilgi gerekiyorsa Web Search kaynakları toplandıktan sonra Nano final özetini bu kaynaklara yaslamalı; provider fallback metinlerini kanıt gibi kullanmamalı.',
       ].join('\n');
 
+    case 'general_knowledge':
+      return [
+        'Bu konu hakkında doğrudan ve kısa bir açıklama hazırlıyorum.',
+        '',
+        'Aillame Nano olarak temel bilgileri sağlayabilirim; daha derin analiz veya güncel veri gerekiyorsa Gemma veya Web Search modüllerini kullanmanı önerebilirim.',
+        '',
+        'İstersen konuyu biraz daha daraltabilirsin (örneğin: tarihçesi, nasıl çalıştığı veya temel bileşenleri gibi).',
+      ].join('\n');
+
     case 'ai_lab_analysis':
     case 'ai_lab_reflection':
       return [

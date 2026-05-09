@@ -182,12 +182,28 @@ function matchesPhrase(prompt: string, phrases: string[]): boolean {
 }
 
 function isGeneralKnowledge(p: string): boolean {
-  const base = [
-    'ekonomi nedir', 'yapay zeka nedir', 'javascript nedir',
-    'psikoloji nedir', 'hukuk nedir', 'enflasyon nedir',
-    'arz ve talep nedir', 'api nedir', 'algoritma nedir', 'web sitesi nedir'
+  const genericPatterns = [
+    'nedir', 'nelerdir', 'hakkında bilgi', 'anlatır mısın', 'kimdir', 'hangisidir', 
+    'nasıl oluşur', 'ne zaman kuruldu', 'nerededir'
   ];
-  return base.some(b => p.includes(b));
+  
+  const isQuestion = p.endsWith('?') || genericPatterns.some(pattern => p.includes(pattern));
+  
+  // Exclude other major intents
+  const isExclusion = matchesPhrase(p, [
+    'kod', 'yazılım', 'script', 'function', 'resim', 'çiz', 'görsel', 'logo',
+    'nasılsın', 'merhaba', 'selam', 'hata', 'error', 'çalışmıyor', 'güncel', 'haber'
+  ]);
+
+  if (isExclusion) return false;
+  
+  const specificGk = [
+    'ekonomi', 'yapay zeka', 'javascript', 'psikoloji', 'hukuk', 'enflasyon',
+    'arz ve talep', 'api', 'algoritma', 'web sitesi', 'evren', 'güneş sistemi',
+    'fotosentez', 'osmanlı', 'türkiye', 'bilim', 'tarih'
+  ];
+
+  return isQuestion || specificGk.some(s => p.includes(s));
 }
 
 export function getQuickResponse(prompt: string, history: { role: string, content: string }[] = []): string | null {

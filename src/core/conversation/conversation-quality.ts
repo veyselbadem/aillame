@@ -7,6 +7,7 @@ export type ConversationIntent =
   | 'casual_chat'
   | 'troubleshooting'
   | 'ai_lab_analysis'
+  | 'general_knowledge'
   | 'default';
 
 import { buildDynamicContext, injectMemories, ContextMessage } from './context-manager'; // [NANO-F3]
@@ -99,6 +100,13 @@ export function detectUserIntent(prompt: string): ConversationIntent {
     return 'casual_chat';
   }
 
+  if (
+    (text.endsWith('nedir') || text.endsWith('nedir?') || text.includes('hakkında bilgi') || text.includes('anlatır mısın')) &&
+    !includesAny(text, ['kod', 'javascript', 'python', 'hata', 'resim', 'çiz'])
+  ) {
+    return 'general_knowledge';
+  }
+
   return 'default';
 }
 
@@ -178,6 +186,12 @@ export function buildAnswerStyleGuide(intent: ConversationIntent): string {
     ],
     default: [
       'Kullanıcının niyetini makul biçimde yorumla ve yardımcı bir cevap ver.',
+      'Eğer bu bir genel bilgi sorusuysa doğrudan ve kısa bir açıklama ile başla.',
+    ],
+    general_knowledge: [
+      'Konu hakkında doğrudan, doğru ve kısa bir açıklama ver.',
+      'Gereksiz netleştirme sorularından kaçın.',
+      'Eğer konu çok genişse en önemli 2-3 noktayı vurgula.',
     ],
   };
 
@@ -285,6 +299,17 @@ export function hasAnswerQualityIssue(answer: string, intent: ConversationIntent
   if (/yanıtı tamamlayamadı|kısa cevap tekrar denenebilir|anlayamadı|planlama aşamasında/i.test(normalized)) return true;
 
   const minLength = shouldUseDetailedExplanation(intent) ? 180 : 70;
+  
+  if (intent === 'general_knowledge') {
+    const genericForbidden = [
+        'konuyu önce sadeleştireyim', 
+        'amacımız neyi anlamak', 
+        'hedefini tek cümleyle',
+        'Makul varsayımla devam'
+    ];
+    if (genericForbidden.some(p => normalized.includes(p))) return true;
+  }
+
   return normalized.length < minLength && intent !== 'casual_chat';
 }
 
