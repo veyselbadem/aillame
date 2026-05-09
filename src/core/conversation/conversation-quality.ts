@@ -63,6 +63,13 @@ export function detectUserIntent(prompt: string): ConversationIntent {
 
   if (!text) return 'default';
 
+  const gkPatterns = ['nedir', 'nedir?', 'ne demek', 'hakkında bilgi', 'anlatır mısın', 'açıklar mısın'];
+  if (gkPatterns.some(p => text.endsWith(p) || text.includes(p + ' '))) {
+    // Eğer mesaj açıkça bir kod yazma/hata giderme talebi değilse genel bilgi kabul et
+    const isTask = includesAny(text, ['yaz', 'oluştur', 'çiz', 'hata', 'error', 'çalışmıyor', 'düzelt', 'nasıl yapılır']);
+    if (!isTask) return 'general_knowledge';
+  }
+
   if (
     includesAny(text, ['açılmıyor', 'çalışmıyor', 'hata', 'error', 'timeout', 'zaman aşımı', 'port', 'log', 'debug']) &&
     includesAny(text, ['gemma', 'ollama', 'sunucu', 'server', 'model', 'runtime', 'ne yapmalıyım'])
@@ -98,13 +105,6 @@ export function detectUserIntent(prompt: string): ConversationIntent {
     includesAny(text, ['merhaba', 'selam', 'nasılsın', 'kimsin', 'ne yapabiliyorsun', 'kendini tanıt', 'teşekkür'])
   ) {
     return 'casual_chat';
-  }
-
-  if (
-    (text.endsWith('nedir') || text.endsWith('nedir?') || text.includes('hakkında bilgi') || text.includes('anlatır mısın')) &&
-    !includesAny(text, ['kod', 'javascript', 'python', 'hata', 'resim', 'çiz'])
-  ) {
-    return 'general_knowledge';
   }
 
   return 'default';
@@ -296,7 +296,7 @@ export function hasAnswerQualityIssue(answer: string, intent: ConversationIntent
   if (/reasoning_content|<think>|<\/think>/i.test(answer)) return true;
   if (/Ä±|Ã§|Ã¶|Ã¼|ÅŸ|ÄŸ|Â/.test(answer)) return true;
   if (/&#x27;|&quot;|&amp;|&lt;|&gt;/i.test(answer)) return true;
-  if (/yanıtı tamamlayamadı|kısa cevap tekrar denenebilir|anlayamadı|planlama aşamasında/i.test(normalized)) return true;
+  if (/yanıtı tamamlayamadı|kısa cevap tekrar denenebilir|anlayamadı|planlama aşamasında|kod mantığıyla düşünelim|somut bir kod parçası|ne yapmak istediğini belirle/i.test(normalized)) return true;
 
   const minLength = shouldUseDetailedExplanation(intent) ? 180 : 70;
   
@@ -360,13 +360,11 @@ export function buildConversationAnswer(prompt: string, messages: ChatMessageLik
       }
 
       return [
-        'Bunu kod mantığıyla düşünelim: önce kavramı sadeleştir, sonra küçük bir örnekle dene.',
+        'Kod yazarken veya bir algoritma kurgularken mantığı şu adımlarla kurmak genelde en iyi sonucu verir:',
         '',
-        '1. Ne yapmak istediğini belirle: veri mi dönüştüreceksin, yoksa sadece işlem mi yapacaksın?',
-        '2. Eğer sonuç olarak yeni bir değer/dizi gerekiyorsa dönüş değeri olan yapıları seç.',
-        '3. Eğer sadece loglama, kontrol veya yan etki gerekiyorsa daha basit döngü yeterli olabilir.',
-        '',
-        'İstersen bu soruyu somut bir kod parçası üzerinden birlikte düzeltebilirim.',
+        '1. Önce girdilerin ve beklenen çıktının tipini belirle.',
+        '2. İşlemi küçük parçalara bölerek her adımda değişkenler veya fonksiyonlar üzerindeki durumu kontrol et.',
+        '3. Hata alıyorsan hata mesajını, almıyorsan elindeki kod örneğini paylaş; birlikte üzerinden geçelim.',
       ].join('\n');
 
     case 'project_planning':

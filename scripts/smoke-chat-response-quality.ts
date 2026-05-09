@@ -15,16 +15,28 @@ async function main() {
       requiredKeywords: ["evren", "galaksi", "patlama"] 
     },
     { 
-      prompt: "güneş sistemi nedir", 
+      prompt: "yıldız nedir", 
       expectedIntent: "general_knowledge", 
       shouldClarify: false,
-      requiredKeywords: ["güneş", "gezegen", "yörünge"]
+      requiredKeywords: ["yıldız", "plazma", "enerji"] 
     },
     { 
-      prompt: "yapay zeka nedir", 
+      prompt: "javascript nedir", 
       expectedIntent: "general_knowledge", 
       shouldClarify: false,
-      requiredKeywords: ["zek", "öğrenme", "bilgisayar"]
+      requiredKeywords: ["programlama", "web", "etkileşim"]
+    },
+    { 
+      prompt: "html nedir", 
+      expectedIntent: "general_knowledge", 
+      shouldClarify: false,
+      requiredKeywords: ["markup", "yapı", "etiket"]
+    },
+    { 
+      prompt: "css nedir", 
+      expectedIntent: "general_knowledge", 
+      shouldClarify: false,
+      requiredKeywords: ["stil", "tasarım", "görsel"]
     },
     { 
       prompt: "fotosentez nedir", 
@@ -33,10 +45,28 @@ async function main() {
       requiredKeywords: ["ışık", "oksijen", "bitki"]
     },
     { 
+      prompt: "hukuk nedir", 
+      expectedIntent: "general_knowledge", 
+      shouldClarify: false,
+      requiredKeywords: ["adalet", "kural", "toplum"]
+    },
+    { 
+      prompt: "psikoloji nedir", 
+      expectedIntent: "general_knowledge", 
+      shouldClarify: false,
+      requiredKeywords: ["zihin", "davranış", "bilim"]
+    },
+    { 
       prompt: "bunu yapabilir misin", 
       expectedIntent: "default", 
       shouldClarify: true,
       requiredKeywords: []
+    },
+    { 
+      prompt: "javascript ile toplama fonksiyonu yaz", 
+      expectedIntent: "coding_help", 
+      shouldClarify: false,
+      requiredKeywords: ["kod", "algoritma", "fonksiyon"]
     },
   ];
 
@@ -48,7 +78,10 @@ async function main() {
     "sağlayabilirim",
     "önerebilirim",
     "daraltabilirsin",
-    "gerekiyorsa"
+    "gerekiyorsa",
+    "kod mantığıyla düşünelim",
+    "somut bir kod parçası",
+    "ne yapmak istediğini belirle"
   ];
 
   for (const tc of testCases) {

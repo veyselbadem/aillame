@@ -44,6 +44,9 @@ const WEAK_FALLBACK_PATTERNS = [
   /model .*haz[ıi]r de[ğg]il/i,
   /pro modunu deneyin/i,
   /tam kar[şs][ıi]layacak/i,
+  /yanıtı tamamlayamadı/i,
+  /kısa bir mesajla tekrar deneyin/i,
+  /kod mantığıyla düşünelim/i,
 ];
 
 function normalizeForMatch(value: string): string {
@@ -111,15 +114,16 @@ export function buildIntentAwareNanoAnswer(prompt: string, history: ChatMessageL
 
     case 'coding_help':
       return [
-        'Bunu yeni öğrenen biri için sade düşünelim: önce kavramın ne işe yaradığını, sonra küçük bir örneği ve en son ne zaman kullanılacağını ayırmak iyi olur.',
+        'Kodlama ile ilgili bu konuda temel mantığı şu şekilde kurabiliriz:',
         '',
-        '```js',
-        'const liste = [1, 2, 3];',
-        'const sonuc = liste.map((sayi) => sayi * 2);',
-        'console.log(sonuc); // [2, 4, 6]',
+        '```javascript',
+        '// Örnek yapı',
+        'function ornekFonksiyon(deger) {',
+        '  return deger * 2;',
+        '}',
         '```',
         '',
-        'Kod sorularında temel kural şu: eğer yeni bir değer üretmek istiyorsan dönüş değeri olan yapıları, sadece işlem yapmak istiyorsan daha basit döngüleri seç. İstersen kendi kod parçanı gönder; nerede takıldığını birlikte ayıralım.',
+        'Kod yazarken en önemli nokta, veri akışını ve mantıksal operatörleri doğru kurgulamaktır. Eğer elinde spesifik bir hata veya kod parçası varsa paylaşabilirsin; böylece doğrudan çözüm üretebiliriz.',
       ].join('\n');
 
     case 'debugging':
@@ -196,12 +200,15 @@ export function buildIntentAwareNanoAnswer(prompt: string, history: ChatMessageL
       const direct = getGeneralKnowledgeResponse(prompt);
       if (direct) return direct;
       
+      const topic = prompt.replace(/nedir|ne demek|\?|hakkında bilgi ver|açıklar mısın|anlatır mısın/gi, '').trim();
+      const topicUpper = topic.toUpperCase();
+
       return [
-        'Bu konu hakkında temel bir açıklama yapmam gerekirse:',
+        `${topicUpper} konusu, temel olarak belirli prensipler ve yapılar üzerine kurulmuş bir kavramdır.`,
         '',
-        `${prompt.replace(/nedir|\?|hakkında bilgi ver/gi, '').trim().toUpperCase()} konusu, genel olarak temel prensipleriyle ele alınması gereken önemli bir başlıktır.`,
+        `Genel bir tanımlama yapmak gerekirse ${topic}, kendi alanında önemli bir yer tutar ve çeşitli alt bileşenlerden oluşur. Bu konuda daha derinlemesine bir analiz veya en güncel verileri elde etmek isterseniz, Gemma veya Web Search modüllerini aktive ederek kapsamlı bir araştırma başlatabiliriz.`,
         '',
-        'Aillame Nano olarak bu konuda kısa bir sentez sunabilirim. Eğer daha detaylı, teknik veya güncel bir araştırma istersen, Gemma veya Web Search modüllerini aktive ederek kapsamlı bir analiz başlatabiliriz.',
+        `Şimdilik bu temel çerçeve üzerinden ilerleyebiliriz. Eğer spesifik olarak merak ettiğin bir detay varsa lütfen sor.`,
       ].join('\n');
     }
 
@@ -294,11 +301,20 @@ export function getGeneralKnowledgeResponse(prompt: string): string | null {
   if (p.includes('fotosentez')) {
     return 'Fotosentez; bitkilerin, alglerin ve bazı bakterilerin güneş ışığını kullanarak karbondioksit ve sudan organik besin (glikoz) ve oksijen üretmesi sürecidir. Bu süreçte klorofiller ışık enerjisini emer ve kimyasal enerjiye dönüştürür. Fotosentez, yeryüzündeki yaşamın temelidir çünkü hem besin zincirinin başlangıcını oluşturur hem de atmosferdeki oksijen dengesini sağlar.';
   }
+  if (p.includes('yıldız')) {
+    return 'Yıldız, kendi ışığını ve ısısını üreten, kütleçekimi ile bir arada tutulan devasa bir plazma küresidir. Yıldızların merkezinde gerçekleşen nükleer füzyon süreci, hidrojenin helyuma dönüşmesini sağlar ve bu sırada muazzam bir enerji açığa çıkar. Gece gökyüzünde gördüğümüz çoğu yıldız Samanyolu Galaksisi’ndedir; Güneş de Dünya’ya en yakın ve yaşamın kaynağı olan yıldızdır.';
+  }
+  if (p.includes('html nedir')) {
+    return 'HTML (HyperText Markup Language), web sayfalarının yapısını ve içeriğini oluşturmak için kullanılan standart işaretleme dilidir. HTML bir programlama dili değil, tarayıcıya metinlerin, görsellerin ve diğer öğelerin sayfada nasıl yerleşeceğini bildiren bir yapı taşıdır. Sayfa başlıkları, paragraflar, linkler ve formlar gibi tüm görsel elemanlar HTML etiketleri (tags) ile tanımlanır.';
+  }
+  if (p.includes('css nedir')) {
+    return 'CSS (Cascading Style Sheets), HTML ile oluşturulan web sayfalarının görsel tasarımını ve düzenini kontrol etmek için kullanılan bir stil dilidir. Renkler, yazı tipleri, boşluklar, hizalamalar ve farklı ekran boyutlarına göre değişen mizanpajlar (responsive design) CSS ile ayarlanır. CSS sayesinde içerik (HTML) ve tasarım birbirinden ayrılarak web sitelerinin yönetimi kolaylaştırılır.';
+  }
   if (p.includes('yapay zeka')) {
     return 'Yapay zeka (AI); bilgisayar sistemlerinin normalde insan zekası gerektiren öğrenme, problem çözme, karar verme ve dil anlama gibi görevleri yerine getirme yeteneğidir. Makine öğrenmesi ve derin öğrenme gibi alt dallarıyla verileri analiz ederek deneyimlerden öğrenir. Günümüzde otonom araçlardan tıbbi teşhis sistemlerine, yaratıcı içerik üretiminden kişisel asistanlara kadar geniş bir alanda kullanılmaktadır.';
   }
   if (p.includes('ekonomi nedir')) return 'Ekonomi, kaynakların sınırlı olduğu bir ortamda insanların ihtiyaçlarını karşılamak için üretilen mal ve hizmetlerin üretimi, dağıtımı ve tüketimi ile ilgilenen sosyal bir bilim dalıdır.';
-  if (p.includes('javascript nedir')) return 'JavaScript, web sayfalarına etkileşim ve dinamik davranış kazandırmak için kullanılan, modern web geliştirmenin temel taşlarından biri olan programlama dilidir.';
+  if (p.includes('javascript nedir')) return 'JavaScript, web sayfalarına etkileşim ve dinamik davranış kazandırmak için kullanılan, modern web geliştirmenin temel taşlarından biri olan programlama dilidir. HTML sayfanın yapısını, CSS görünümünü, JavaScript ise davranışını kontrol eder. Örneğin butona tıklanınca menü açılması, form kontrolü yapılması veya dinamik veri gösterilmesi JavaScript ile sağlanabilir.';
   if (p.includes('psikoloji nedir')) return 'Psikoloji, insan ve hayvan davranışlarını, zihinsel süreçleri ve bunların altında yatan biyolojik, sosyal nedenleri inceleyen bilim dalıdır.';
   if (p.includes('hukuk nedir')) return 'Hukuk, toplum yaşamını düzenleyen, devlet eliyle yaptırıma bağlanmış olan ve adaleti sağlamayı amaçlayan kurallar bütünüdür.';
   if (p.includes('enflasyon nedir')) return 'Enflasyon, bir ekonomide mal ve hizmet fiyatlarının genel seviyesinin sürekli ve belirgin bir şekilde artması, dolayısıyla paranın satın alma gücünün düşmesidir.';

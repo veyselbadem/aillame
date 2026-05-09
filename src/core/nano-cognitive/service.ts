@@ -186,23 +186,22 @@ function matchesPhrase(prompt: string, phrases: string[]): boolean {
 
 function isGeneralKnowledge(p: string): boolean {
   const genericPatterns = [
-    'nedir', 'nelerdir', 'hakkında bilgi', 'anlatır mısın', 'kimdir', 'hangisidir', 
-    'nasıl oluşur', 'ne zaman kuruldu', 'nerededir'
+    'nedir', 'nelerdir', 'hakkında bilgi', 'anlatır mısın', 'açıklar mısın', 'kimdir', 'hangisidir', 
+    'nasıl oluşur', 'ne zaman kuruldu', 'nerededir', 'ne demek'
   ];
   
   const isQuestion = p.endsWith('?') || genericPatterns.some(pattern => p.includes(pattern));
   
-  // Exclude other major intents
+  // Exclude explicit task/code creation
   const isExclusion = matchesPhrase(p, [
-    'kod', 'yazılım', 'script', 'function', 'resim', 'çiz', 'görsel', 'logo',
-    'nasılsın', 'merhaba', 'selam', 'hata', 'error', 'çalışmıyor', 'güncel', 'haber'
+    'yaz', 'oluştur', 'çiz', 'tasarla', 'kodla', 'hata', 'error', 'çalışmıyor'
   ]);
 
   if (isExclusion) return false;
   
   const specificGk = [
-    'ekonomi', 'yapay zeka', 'javascript', 'psikoloji', 'hukuk', 'enflasyon',
-    'arz ve talep', 'api', 'algoritma', 'web sitesi', 'evren', 'güneş sistemi',
+    'ekonomi', 'yapay zeka', 'javascript', 'html', 'css', 'react', 'psikoloji', 'hukuk', 'enflasyon',
+    'arz ve talep', 'api', 'algoritma', 'web sitesi', 'evren', 'yıldız', 'güneş sistemi',
     'fotosentez', 'osmanlı', 'türkiye', 'bilim', 'tarih'
   ];
 
@@ -604,6 +603,7 @@ export function looksMalformedNanoText(text: string): boolean {
   const lowerText = trimmed.toLowerCase();
   if (lowerText.includes('işlem durduruldu') || lowerText.includes('islem durduruldu')) return true;
   if (lowerText.includes('pro modunu deneyin') || lowerText.includes('pro modu')) return true;
+  if (lowerText.includes('yanıtı tamamlayamadı') || lowerText.includes('tekrar deneyin') || lowerText.includes('anlayamadı')) return true;
   if (lowerText.includes('yerel model') || lowerText.includes('hazır değil')) return true;
   if (lowerText.includes('[web search]') || lowerText.includes('json') || trimmed.startsWith('{') || trimmed.startsWith('[')) return true;
 
