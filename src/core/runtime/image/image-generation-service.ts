@@ -18,6 +18,7 @@ export interface TextToImageRequest {
 
 export class ImageGenerationService {
   private SENSITIVE_PATTERNS = [/\b(api[_-]?key|secret|token|password|credential)\b/i];
+  private executionQueue: Promise<void> = Promise.resolve();
 
   async createJob(request: TextToImageRequest): Promise<{ success: boolean; jobId?: string; warning?: string }> {
     // 1. Safety Check
@@ -57,8 +58,11 @@ export class ImageGenerationService {
       metadata: { jobId, projectId: request.projectId }
     });
 
-    // Background execution
-    this.runJob(jobId, request);
+    // Background execution is serialized because local IGM workers load large models
+    // and concurrent process launches can exhaust memory on desktop setups.
+    this.executionQueue = this.executionQueue
+      .catch(() => undefined)
+      .then(() => this.runJob(jobId, request));
 
     return { success: true, jobId };
 

@@ -17,7 +17,7 @@ async function pollJobStatus(jobId: string, timeoutMs: number = 300000): Promise
           const job = JSON.parse(lines[i]);
           if (job.jobId === jobId) {
             console.log(`Current status: ${job.status} (Progress: ${job.progress}%)`);
-            if (job.status === 'completed' || job.status === 'failed') {
+            if (job.status === 'completed' || job.status === 'failed' || job.status === 'not-configured') {
               return job;
             }
           }
@@ -53,7 +53,7 @@ async function testImageJobLive() {
     const data = await response.json();
     console.log("Chat Response:", data.response.substring(0, 100) + "...");
     
-    if (!data.imageJobId) {
+    if (!data.imageJobId || data.modelId !== 'aillame-nano-v1-igm-handoff') {
       throw new Error("Chat response did not contain an imageJobId. Intent detection might have failed.");
     }
 
@@ -82,6 +82,9 @@ async function testImageJobLive() {
           const physicalFile = path.join(process.cwd(), '.aillame-data', 'assets', 'images', assetData.fileName);
           if (fs.existsSync(physicalFile)) {
             const stats = fs.statSync(physicalFile);
+            if (stats.size <= 0) {
+              throw new Error(`Physical file exists but is empty: ${physicalFile}`);
+            }
             console.log(`[STEP 4] Physical file exists: ${path.basename(physicalFile)} (${stats.size} bytes)`);
             console.log(`\n[FINAL] PASS: Real image generated and persisted via Chat Handoff.`);
           } else {
@@ -95,13 +98,15 @@ async function testImageJobLive() {
       }
     } else {
       console.error(`\n[STEP 2] Job FAILED.`);
+      console.error(`Status: ${jobResult.status}`);
       console.error(`Error: ${jobResult.errorSummary || 'No error details'}`);
       process.exit(1);
     }
 
   } catch (error: any) {
     if (error.code === 'ECONNREFUSED' || error.message.includes('fetch failed')) {
-      console.log("\n[SKIP] Server not running on localhost:3000. Start the server to run live verification.");
+      console.error("\n[FAIL] Server not running on localhost:3000. Start the server to run live verification.");
+      process.exit(1);
     } else {
       console.error("\n[ERROR] Verification failed:", error.message);
       process.exit(1);

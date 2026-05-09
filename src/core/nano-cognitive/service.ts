@@ -67,7 +67,7 @@ export function classifyTask(prompt: string): NanoCognitivePlan {
   }
 
   // 2. Image Generation
-  const imageKeywords = ['resim', 'görsel', 'fotoğraf', 'illüstrasyon', 'logo', 'ikon', 'papatya', 'kedi', 'manzara'];
+  const imageKeywords = ['resim', 'görsel', 'fotoğraf', 'illüstrasyon', 'logo', 'ikon', 'papatya', 'kedi', 'manzara', 'doğa', 'gün batımı', 'ai logosu'];
   const actionKeywords = ['oluştur', 'yap', 'üret', 'çiz', 'tasarla', 'hazırla'];
   
   const hasImageTopic = imageKeywords.some(k => p.includes(k));
@@ -160,7 +160,17 @@ export function classifyTask(prompt: string): NanoCognitivePlan {
   }
 
   // 5. Code Help
-  if (shouldEscalate || p.includes('kod') || p.includes('yazılım') || p.includes('javascript') || p.includes('python') || p.includes('hata')) { // [NANO-F2]
+  if (
+    shouldEscalate ||
+    p.includes('kod') ||
+    p.includes('yazılım') ||
+    p.includes('hata') ||
+    p.includes('error') ||
+    p.includes('cannot read') ||
+    p.includes('typeerror') ||
+    ((p.includes('javascript') || p.includes('typescript') || p.includes('python') || p.includes('react') || p.includes('fonksiyon')) &&
+      (p.includes('yaz') || p.includes('yap') || p.includes('oluştur') || p.includes('düzelt') || p.includes('örnek') || p.includes('cannot read')))
+  ) { // [NANO-F2]
     return {
       taskType: 'code_help',
       toolTarget: 'Qwen',
@@ -200,10 +210,10 @@ function isGeneralKnowledge(p: string): boolean {
   
   // Exclude explicit task/code creation
   const isExclusion = matchesPhrase(p, [
-    'yaz', 'oluştur', 'çiz', 'tasarla', 'kodla', 'hata', 'error', 'çalışmıyor'
+    'yaz', 'yap', 'oluştur', 'çiz', 'tasarla', 'kodla', 'düzelt', 'hata', 'error', 'cannot read', 'çalışmıyor'
   ]);
 
-  const isImage = matchesPhrase(p, ['görsel', 'resim', 'fotoğraf', 'üret', 'yap', 'çiz']);
+  const isImage = matchesPhrase(p, ['görsel', 'resim', 'fotoğraf']) || (matchesPhrase(p, ['üret', 'çiz']) && matchesPhrase(p, ['logo', 'papatya', 'kedi', 'manzara', 'doğa']));
   if (isExclusion && !(isImage && !p.includes('kod'))) return false;
   
   const specificGk = [

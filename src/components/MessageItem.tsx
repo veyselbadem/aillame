@@ -39,6 +39,7 @@ export default function MessageItem({ message, index = 0, conversationId, prompt
 
   const handleCopy = () => {
     if (!message.content) return;
+    if (typeof navigator === 'undefined' || !navigator.clipboard?.writeText) return;
     navigator.clipboard.writeText(message.content).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
@@ -76,6 +77,14 @@ export default function MessageItem({ message, index = 0, conversationId, prompt
               color: 'var(--status-warning-text)'
             }}
           >
+            <button
+              onClick={handleCopy}
+              className="absolute top-3 right-3 p-2 rounded-xl transition-all duration-300 opacity-0 group-hover:opacity-100 backdrop-blur-md border bg-amber-500/5 border-amber-500/10 hover:bg-amber-500/10 text-amber-500"
+              title="Kopyala"
+              aria-label={copied ? 'Mesaj kopyalandı' : 'Mesajı kopyala'}
+            >
+              {copied ? <FiCheck size={14} className="text-emerald-500" /> : <FiCopy size={14} />}
+            </button>
             <div className="flex items-center gap-2 mb-2">
               <div className="w-5 h-5 rounded-lg bg-amber-500/20 flex items-center justify-center">
                 <FiAlertTriangle size={10} className="text-amber-500 flex-shrink-0" />
@@ -118,6 +127,7 @@ export default function MessageItem({ message, index = 0, conversationId, prompt
                   : 'bg-indigo-500/5 border-indigo-500/10 hover:bg-indigo-500/10 text-indigo-400'
               }`}
               title="Kopyala"
+              aria-label={copied ? 'Mesaj kopyalandı' : 'Mesajı kopyala'}
             >
               {copied ? <FiCheck size={14} className="text-emerald-500" /> : <FiCopy size={14} />}
             </button>

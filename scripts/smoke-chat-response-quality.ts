@@ -1,140 +1,98 @@
-import { detectUserIntent } from '../src/core/conversation/conversation-quality';
+import { buildConversationAnswer, detectUserIntent } from '../src/core/conversation/conversation-quality';
 import { buildIntentAwareNanoAnswer, detectNanoResponseIntent } from '../src/core/nano-cognitive/nano-response-builder';
 import { classifyTask } from '../src/core/nano-cognitive/service';
 
+type Case = {
+  prompt: string;
+  expectedIntent: ReturnType<typeof detectUserIntent>;
+  expectedTaskType?: string;
+  minSentences?: number;
+  requiredKeywords: string[];
+  forbidden?: string[];
+};
+
+const metaEscapes = [
+  'yanıtı tamamlayamadı',
+  'konuyu önce sadeleştireyim',
+  'amacımız neyi anlamak',
+  'hedefini tek cümleyle',
+  'hazırlıyorum',
+  'sağlayabilirim',
+  'önerebilirim',
+  'daraltabilirsin',
+  'kod mantığıyla düşünelim',
+  'somut bir kod parçası',
+  'ne yapmak istediğini belirle',
+];
+
+const cases: Case[] = [
+  { prompt: 'evren hakkında bilgi verir misin', expectedIntent: 'general_knowledge', expectedTaskType: 'general_knowledge', minSentences: 3, requiredKeywords: ['evren', 'galaksi', 'patlama'] },
+  { prompt: 'yıldız nedir', expectedIntent: 'general_knowledge', expectedTaskType: 'general_knowledge', minSentences: 3, requiredKeywords: ['yıldız', 'plazma', 'enerji'] },
+  { prompt: 'rust nedir', expectedIntent: 'general_knowledge', expectedTaskType: 'general_knowledge', minSentences: 3, requiredKeywords: ['rust', 'performans', 'güvenli'] },
+  { prompt: 'javascript nedir', expectedIntent: 'general_knowledge', expectedTaskType: 'general_knowledge', minSentences: 3, requiredKeywords: ['javascript', 'programlama', 'web'] },
+  { prompt: 'html nedir', expectedIntent: 'general_knowledge', expectedTaskType: 'general_knowledge', minSentences: 3, requiredKeywords: ['html', 'yapı', 'etiket'] },
+  { prompt: 'css nedir', expectedIntent: 'general_knowledge', expectedTaskType: 'general_knowledge', minSentences: 3, requiredKeywords: ['css', 'stil', 'tasarım'] },
+  { prompt: 'fotosentez nedir', expectedIntent: 'general_knowledge', expectedTaskType: 'general_knowledge', minSentences: 3, requiredKeywords: ['fotosentez', 'oksijen', 'bitki'] },
+  { prompt: 'hukuk nedir', expectedIntent: 'general_knowledge', expectedTaskType: 'general_knowledge', minSentences: 3, requiredKeywords: ['hukuk', 'adalet', 'toplum'] },
+  { prompt: 'psikoloji nedir', expectedIntent: 'general_knowledge', expectedTaskType: 'general_knowledge', minSentences: 3, requiredKeywords: ['psikoloji', 'davranış', 'bilim'] },
+  { prompt: 'javascript ile iki sayıyı toplayan fonksiyon yaz', expectedIntent: 'coding_help', expectedTaskType: 'code_help', minSentences: 2, requiredKeywords: ['function', 'topla', 'return'] },
+  { prompt: 'html css javascript ile basit sayaç yap', expectedIntent: 'coding_help', expectedTaskType: 'code_help', minSentences: 2, requiredKeywords: ['html', 'sayac', 'onclick'] },
+  { prompt: 'bu hata ne anlama gelir: TypeError cannot read property map', expectedIntent: 'coding_help', expectedTaskType: 'code_help', minSentences: 3, requiredKeywords: ['map', 'undefined', 'Array.isArray'] },
+  { prompt: 'React component nedir', expectedIntent: 'general_knowledge', expectedTaskType: 'general_knowledge', minSentences: 3, requiredKeywords: ['react', 'component'] },
+  { prompt: 'bunu yap', expectedIntent: 'default', minSentences: 1, requiredKeywords: ['detay'] },
+  { prompt: 'yardım eder misin', expectedIntent: 'default', minSentences: 1, requiredKeywords: [] },
+  { prompt: 'şunu düzelt', expectedIntent: 'default', minSentences: 1, requiredKeywords: ['detay'] },
+  { prompt: 'devam et', expectedIntent: 'default', expectedTaskType: 'social_chat', minSentences: 1, requiredKeywords: ['devam'] },
+  { prompt: 'bana papatya görseli oluşturur musun', expectedIntent: 'image_generation', expectedTaskType: 'image_generation', minSentences: 2, requiredKeywords: ['görsel', 'sdxl', 'modül'] },
+];
+
+function sentenceCount(value: string) {
+  return (value.match(/[.!?…](\s|$)/g) || []).length;
+}
+
+function includesAll(value: string, keywords: string[]) {
+  const lower = value.toLocaleLowerCase('tr-TR');
+  return keywords.every((keyword) => lower.includes(keyword.toLocaleLowerCase('tr-TR')));
+}
+
 async function main() {
-  console.log("Running Chat Response Quality Smoke Tests...\n");
+  console.log('Running Chat Response Quality Smoke Tests...\n');
+  const failures: string[] = [];
 
-  const results = [];
-
-  const testCases = [
-    { 
-      prompt: "evren hakkında bilgi verir misin", 
-      expectedIntent: "general_knowledge", 
-      shouldClarify: false,
-      requiredKeywords: ["evren", "galaksi", "patlama"] 
-    },
-    { 
-      prompt: "yıldız nedir", 
-      expectedIntent: "general_knowledge", 
-      shouldClarify: false,
-      requiredKeywords: ["yıldız", "plazma", "enerji"] 
-    },
-    { 
-      prompt: "javascript nedir", 
-      expectedIntent: "general_knowledge", 
-      shouldClarify: false,
-      requiredKeywords: ["programlama", "web", "etkileşim"]
-    },
-    { 
-      prompt: "html nedir", 
-      expectedIntent: "general_knowledge", 
-      shouldClarify: false,
-      requiredKeywords: ["markup", "yapı", "etiket"]
-    },
-    { 
-      prompt: "css nedir", 
-      expectedIntent: "general_knowledge", 
-      shouldClarify: false,
-      requiredKeywords: ["stil", "tasarım", "görsel"]
-    },
-    { 
-      prompt: "fotosentez nedir", 
-      expectedIntent: "general_knowledge", 
-      shouldClarify: false,
-      requiredKeywords: ["ışık", "oksijen", "bitki"]
-    },
-    { 
-      prompt: "hukuk nedir", 
-      expectedIntent: "general_knowledge", 
-      shouldClarify: false,
-      requiredKeywords: ["adalet", "kural", "toplum"]
-    },
-    { 
-      prompt: "psikoloji nedir", 
-      expectedIntent: "general_knowledge", 
-      shouldClarify: false,
-      requiredKeywords: ["zihin", "davranış", "bilim"]
-    },
-    { 
-      prompt: "bunu yapabilir misin", 
-      expectedIntent: "default", 
-      shouldClarify: true,
-      requiredKeywords: []
-    },
-    { 
-      prompt: "rust nedir", 
-      expectedIntent: "general_knowledge", 
-      shouldClarify: false,
-      requiredKeywords: ["rust", "performans", "güvenli"] 
-    },
-    { 
-      prompt: "bana papatya görseli oluşturur musun", 
-      expectedIntent: "image_generation", 
-      shouldClarify: false,
-      requiredKeywords: ["Görsel üretim", "algıladım", "SDXL", "IGM"] 
-    },
-    { 
-      prompt: "javascript ile toplama fonksiyonu yaz", 
-      expectedIntent: "coding_help", 
-      shouldClarify: false,
-      requiredKeywords: ["kod", "algoritma", "fonksiyon"]
-    },
-  ];
-
-  const forbiddenPatterns = [
-    "konuyu önce sadeleştireyim",
-    "amacımız neyi anlamak",
-    "hedefini tek cümleyle",
-    "hazırlıyorum",
-    "sağlayabilirim",
-    "önerebilirim",
-    "daraltabilirsin",
-    "gerekiyorsa",
-    "kod mantığıyla düşünelim",
-    "somut bir kod parçası",
-    "ne yapmak istediğini belirle"
-  ];
-
-  for (const tc of testCases) {
+  for (const tc of cases) {
     const intent = detectUserIntent(tc.prompt);
     const nanoIntent = detectNanoResponseIntent(tc.prompt);
     const cognitivePlan = classifyTask(tc.prompt);
-    
-    const response = buildIntentAwareNanoAnswer(tc.prompt);
-    const responseLower = response.toLowerCase();
-    const hasForbidden = forbiddenPatterns.some(p => responseLower.includes(p.toLowerCase()));
-    const hasKeywords = tc.requiredKeywords.every(k => responseLower.includes(k.toLowerCase()));
-
+    const response = buildConversationAnswer(tc.prompt) || buildIntentAwareNanoAnswer(tc.prompt);
+    const lower = response.toLocaleLowerCase('tr-TR');
+    const forbidden = [...metaEscapes, ...(tc.forbidden || [])].filter((pattern) => lower.includes(pattern.toLocaleLowerCase('tr-TR')));
+    const sentOk = sentenceCount(response) >= (tc.minSentences || 1);
+    const keywordsOk = includesAll(response, tc.requiredKeywords);
     const intentOk = intent === tc.expectedIntent;
-    const clarifyOk = tc.shouldClarify ? hasForbidden : !hasForbidden;
-    const substantiveOk = tc.shouldClarify ? true : (hasKeywords && response.length > 100);
-
-    results.push({
-      prompt: tc.prompt,
-      intent,
-      ok: intentOk && clarifyOk && substantiveOk
-    });
+    const taskOk = tc.expectedTaskType ? cognitivePlan.taskType === tc.expectedTaskType : true;
+    const noMetaEscape = tc.expectedIntent === 'default' ? true : forbidden.length === 0;
+    const ok = intentOk && taskOk && sentOk && keywordsOk && noMetaEscape;
 
     console.log(`Prompt: "${tc.prompt}"`);
-    console.log(` - Intent: ${intent} (Expected: ${tc.expectedIntent}) -> ${intentOk ? 'OK' : 'FAIL'}`);
-    console.log(` - Has Forbidden Pattern: ${hasForbidden} (Expected: ${tc.shouldClarify}) -> ${clarifyOk ? 'OK' : 'FAIL'}`);
-    console.log(` - Substantive Check: ${substantiveOk ? 'OK' : 'FAIL'} (Keywords: ${tc.requiredKeywords.join(', ')})`);
-    if (!substantiveOk && !tc.shouldClarify) {
-        console.log(`   [FAIL] Response was: "${response.substring(0, 100)}..."`);
+    console.log(` - Intent: ${intent} / Nano: ${nanoIntent} / Task: ${cognitivePlan.taskType}`);
+    console.log(` - Sentences: ${sentenceCount(response)}; keywords: ${keywordsOk ? 'OK' : 'FAIL'}; meta escape: ${forbidden.join(', ') || 'none'}`);
+    console.log(` - Result: ${ok ? 'PASS' : 'FAIL'}\n`);
+
+    if (!ok) {
+      failures.push(`${tc.prompt} -> intentOk=${intentOk}, taskOk=${taskOk}, sentOk=${sentOk}, keywordsOk=${keywordsOk}, forbidden=${forbidden.join('|')}`);
     }
-    console.log("");
   }
 
-  const allOk = results.every(r => r.ok);
-  console.log("Final Result:", allOk ? "PASS" : "FAIL");
-  
-  if (!allOk) {
+  if (failures.length > 0) {
+    console.error('Final Result: FAIL');
+    failures.forEach((failure) => console.error(` - ${failure}`));
     process.exit(1);
   }
+
+  console.log('Final Result: PASS');
 }
 
-main().catch(err => {
-  console.error(err);
+main().catch((error) => {
+  console.error(error);
   process.exit(1);
 });

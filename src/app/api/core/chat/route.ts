@@ -20,6 +20,35 @@ import {
 } from '@/core/nano-cognitive/service';
 import { imageGenerationService } from '@/core/runtime/image/image-generation-service';
 
+function buildRuntimeAttribution(input: {
+    provider: string;
+    modelId: string;
+    runtime: string;
+    fallbackUsed?: boolean;
+    degraded?: boolean;
+    reason?: string;
+}) {
+    return {
+        provider: input.provider,
+        modelId: input.modelId,
+        runtime: input.runtime,
+        fallbackUsed: Boolean(input.fallbackUsed),
+        degraded: Boolean(input.degraded),
+        reason: input.reason || null
+    };
+}
+
+function chatJson(payload: Record<string, any>, attribution: ReturnType<typeof buildRuntimeAttribution>) {
+    return NextResponse.json({
+        ...payload,
+        provider: attribution.provider,
+        runtime: attribution.runtime,
+        fallbackUsed: attribution.fallbackUsed,
+        degraded: attribution.degraded,
+        runtimeAttribution: attribution
+    });
+}
+
 
 
 
@@ -55,22 +84,24 @@ export async function POST(req: NextRequest) {
         const shouldUseLiveResearch = conversationIntent === 'research_summary' && /güncel|haber|son dakika|bugünkü|araştır/i.test(prompt);
 
         if (directConversationAnswer && !shouldUseLiveResearch) {
-            return NextResponse.json({
+            const modelId = `aillame-nano-v1-quality-${conversationIntent}`;
+            return chatJson({
                 response: normalizeAssistantAnswer(directConversationAnswer),
-                modelId: `aillame-nano-v1-quality-${conversationIntent}`,
+                modelId,
                 plan: { ...plan, cognitivePlan, conversationIntent }
-            });
+            }, buildRuntimeAttribution({ provider: 'aillame-nano', modelId, runtime: 'nano-quality-direct' }));
         }
 
         // 2. Handle Social Chat / Quick Response
         if (cognitivePlan.taskType === 'social_chat') {
             const quickResponse = getQuickResponse(prompt, messages);
             if (quickResponse) {
-                return NextResponse.json({ 
+                const modelId = 'aillame-nano-v1-cognitive-social';
+                return chatJson({
                     response: normalizeAssistantAnswer(quickResponse), 
-                    modelId: 'aillame-nano-v1-cognitive-social',
+                    modelId,
                     plan: { ...plan, cognitivePlan, conversationIntent }
-                });
+                }, buildRuntimeAttribution({ provider: 'aillame-nano', modelId, runtime: 'nano-cognitive-social' }));
             }
         }
 
@@ -79,11 +110,12 @@ export async function POST(req: NextRequest) {
             const generalKnowledge = getGeneralKnowledgeResponse(prompt);
             if (generalKnowledge) {
                 // Return local General Knowledge immediately for performance
-                return NextResponse.json({
+                const modelId = 'aillame-nano-v1-cognitive-gk';
+                return chatJson({
                     response: improveAssistantAnswer(prompt, generalKnowledge, messages),
-                    modelId: 'aillame-nano-v1-cognitive-gk',
+                    modelId,
                     plan: { ...plan, cognitivePlan, conversationIntent }
-                });
+                }, buildRuntimeAttribution({ provider: 'aillame-nano', modelId, runtime: 'nano-cognitive-general-knowledge' }));
             }
         }
 
@@ -103,26 +135,29 @@ export async function POST(req: NextRequest) {
                 });
 
                 if (result.success) {
-                    return NextResponse.json({
+                    const modelId = 'aillame-nano-v1-igm-handoff';
+                    return chatJson({
                         response: improveAssistantAnswer(prompt, `Görsel üretim isteğini aldım. "${imagePrompt || prompt}" betimlemesiyle üretimi başlattım (İş No: ${result.jobId}). Sonuç hazır olduğunda Görsel Üretim panelinden veya buradan takip edebilirsin.`, messages),
-                        modelId: 'aillame-nano-v1-igm-handoff',
+                        modelId,
                         plan: { ...plan, cognitivePlan, conversationIntent },
                         imageJobId: result.jobId
-                    });
+                    }, buildRuntimeAttribution({ provider: 'aillame-igm', modelId, runtime: 'igm-image-generation-service' }));
                 } else {
-                    return NextResponse.json({
+                    const modelId = 'aillame-nano-v1-igm-error';
+                    return chatJson({
                         response: improveAssistantAnswer(prompt, `Görsel üretim şu an başlatılamadı: ${result.warning || 'Bilinmeyen hata'}. Lütfen daha sonra tekrar deneyin.`, messages),
-                        modelId: 'aillame-nano-v1-igm-error',
+                        modelId,
                         plan: { ...plan, cognitivePlan, conversationIntent }
-                    });
+                    }, buildRuntimeAttribution({ provider: 'aillame-igm', modelId, runtime: 'igm-image-generation-service', fallbackUsed: true, degraded: true, reason: result.warning || 'image_job_create_failed' }));
                 }
             } catch (error: any) {
                 console.error('Image Handoff Error:', error);
-                return NextResponse.json({
+                const modelId = 'aillame-nano-v1-igm-exception';
+                return chatJson({
                     response: improveAssistantAnswer(prompt, `Görsel üretim modülüne yönlendirme sırasında bir hata oluştu. Lütfen Görsel Üretim sayfasını kullanın.`, messages),
-                    modelId: 'aillame-nano-v1-igm-exception',
+                    modelId,
                     plan: { ...plan, cognitivePlan, conversationIntent }
-                });
+                }, buildRuntimeAttribution({ provider: 'aillame-igm', modelId, runtime: 'igm-image-generation-service', fallbackUsed: true, degraded: true, reason: error?.message || 'image_exception' }));
             }
         }
 
@@ -136,11 +171,12 @@ export async function POST(req: NextRequest) {
             } else {
                 planningMsg += `${plan.selectedTarget} katmanı şu an planlama aşamasında.`;
             }
-            return NextResponse.json({ 
+            const modelId = 'aillame-nano-v1-planner';
+            return chatJson({
                 response: improveAssistantAnswer(prompt, planningMsg, messages), 
-                modelId: 'aillame-nano-v1-planner',
+                modelId,
                 plan: { ...plan, cognitivePlan, conversationIntent }
-            });
+            }, buildRuntimeAttribution({ provider: 'aillame-nano', modelId, runtime: 'nano-planner', fallbackUsed: true, degraded: true, reason: 'planning_only' }));
         }
 
         if (plan.selectedTarget === 'web_search' || cognitivePlan.taskType === 'current_research') {
@@ -172,11 +208,12 @@ export async function POST(req: NextRequest) {
                     summary = `Aillame Nano: Güncel kaynakları taradım ve şu sonuçlara ulaştım:\n\n${summary}\n\nBu bilgi konunun güncel durumunu yansıtıyor.`;
                 }
 
-                return NextResponse.json({
+                const modelId = 'aillame-nano-v1-web-search';
+                return chatJson({
                     response: improveAssistantAnswer(prompt, summary, messages),
-                    modelId: 'aillame-nano-v1-web-search',
+                    modelId,
                     plan: { ...plan, cognitivePlan, conversationIntent }
-                });
+                }, buildRuntimeAttribution({ provider: 'aillame-nano', modelId, runtime: 'web-search-summary' }));
             } catch (error) {
 
                 console.error('Web Search Error:', error);
@@ -184,11 +221,12 @@ export async function POST(req: NextRequest) {
                 const manualSummary = `Araştırma modülünde bir sorun oluştu, ancak şu sonuçlara ulaştım:\n\n` + 
                                      prompt + " konusuyla ilgili güncel kaynakları kontrol ediyorum.";
                 
-                return NextResponse.json({
+                const modelId = 'aillame-nano-v1-web-search-fallback';
+                return chatJson({
                     response: improveAssistantAnswer(prompt, manualSummary, messages),
-                    modelId: 'aillame-nano-v1-web-search-fallback',
+                    modelId,
                     plan: { ...plan, cognitivePlan, conversationIntent }
-                });
+                }, buildRuntimeAttribution({ provider: 'aillame-nano', modelId, runtime: 'web-search-summary', fallbackUsed: true, degraded: true, reason: 'web_search_error' }));
             }
         }
 
@@ -200,11 +238,12 @@ export async function POST(req: NextRequest) {
         const core = await getSharedCore(requestedVersion);
         if (!core) {
             const fallback = safeFallback(prompt, messages);
-            return NextResponse.json({ 
+            const modelId = 'aillame-nano-v1-fallback';
+            return chatJson({
                 response: improveAssistantAnswer(prompt, fallback, messages), 
-                modelId: 'aillame-nano-v1-fallback',
+                modelId,
                 plan: { ...plan, cognitivePlan, conversationIntent }
-            });
+            }, buildRuntimeAttribution({ provider: 'aillame-nano', modelId, runtime: 'nano-safe-fallback', fallbackUsed: true, degraded: true, reason: 'core_unavailable' }));
         }
 
         const { engine, tokenizer } = core;
@@ -225,16 +264,17 @@ export async function POST(req: NextRequest) {
             ? improveAssistantAnswer(prompt, safeFallback(prompt, messages), messages)
             : improveAssistantAnswer(prompt, rawResponse, messages);
 
-        return NextResponse.json({ 
+        return chatJson({
             response, 
             modelId,
             plan: { ...plan, cognitivePlan, conversationIntent, taskScore }
-        });
+        }, buildRuntimeAttribution({ provider: 'aillame-nano', modelId, runtime: 'nano-versioned-inference', fallbackUsed: looksMalformedNanoText(rawResponse), degraded: looksMalformedNanoText(rawResponse), reason: looksMalformedNanoText(rawResponse) ? 'malformed_nano_text' : undefined }));
     } catch (error: any) {
         console.error('API Chat Error:', error);
-        return NextResponse.json({ 
+        const modelId = 'aillame-nano-v1-error';
+        return chatJson({
             response: improveAssistantAnswer(prompt, safeFallback(prompt, messages), messages), 
-            modelId: 'aillame-nano-v1-error' 
-        });
+            modelId
+        }, buildRuntimeAttribution({ provider: 'aillame-nano', modelId, runtime: 'nano-error-fallback', fallbackUsed: true, degraded: true, reason: error?.message || 'chat_route_error' }));
     }
 }

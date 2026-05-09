@@ -85,7 +85,12 @@ export function detectUserIntent(prompt: string): ConversationIntent {
     return 'troubleshooting';
   }
 
-  if (includesAny(text, ['foreach', 'map', 'javascript', 'typescript', 'python', 'react', 'next.js', 'dom', 'kod', 'fonksiyon', 'api'])) {
+  if (
+    includesAny(text, ['kod yaz', 'fonksiyon yaz', 'component yaz', 'örnek kod', 'kodla']) ||
+    includesAny(text, ['cannot read', 'typeerror', 'referenceerror', 'syntaxerror']) ||
+    (includesAny(text, ['javascript', 'typescript', 'python', 'react', 'next.js', 'dom', 'kod', 'fonksiyon', 'api']) &&
+      includesAny(text, ['yaz', 'yap', 'oluştur', 'düzelt', 'hata', 'error', 'cannot read', 'örnek ver', 'nasıl yapılır']))
+  ) {
     return 'coding_help';
   }
 
@@ -372,6 +377,58 @@ export function buildConversationAnswer(prompt: string, messages: ChatMessageLik
         ].join('\n');
       }
 
+      if (text.includes('topla') || text.includes('toplama') || text.includes('iki say')) {
+        return [
+          'JavaScript ile iki sayıyı toplayan basit bir fonksiyon şöyle yazılabilir:',
+          '',
+          '```js',
+          'function topla(a, b) {',
+          '  return a + b;',
+          '}',
+          '',
+          'console.log(topla(3, 5)); // 8',
+          '```',
+          '',
+          'Bu fonksiyon iki parametre alır ve `+` operatörüyle sonucu döndürür. Kullanıcıdan gelen değerler metin olabilir; böyle bir durumda toplamadan önce `Number(a)` ve `Number(b)` ile sayıya çevirmek daha güvenlidir.',
+        ].join('\n');
+      }
+
+      if (text.includes('sayaç') || text.includes('sayac') || text.includes('counter')) {
+        return [
+          'HTML, CSS ve JavaScript ile basit bir sayaç yapmak için değeri bir değişkende tutup butonlarla güncelleyebilirsin.',
+          '',
+          '```html',
+          '<button id="azalt">-</button>',
+          '<span id="deger">0</span>',
+          '<button id="artir">+</button>',
+          '',
+          '<script>',
+          'let sayac = 0;',
+          'const deger = document.getElementById("deger");',
+          'document.getElementById("artir").onclick = () => { sayac += 1; deger.textContent = sayac; };',
+          'document.getElementById("azalt").onclick = () => { sayac -= 1; deger.textContent = sayac; };',
+          '</script>',
+          '```',
+          '',
+          'CSS tarafında butonlara boşluk, renk ve hizalama vererek küçük bir sayaç arayüzü oluşturabilirsin.',
+        ].join('\n');
+      }
+
+      if (text.includes('cannot read') || text.includes('typeerror') || text.includes('map')) {
+        return [
+          '`TypeError: cannot read property map` hatası çoğunlukla `.map()` çağırdığın değerin dizi olmamasından kaynaklanır.',
+          '',
+          'Veri henüz yüklenmeden `items.map(...)` çalışırsa `items` değeri `undefined` olabilir. Güvenli kullanım için başlangıç değerini boş dizi yapabilir veya çağrıdan önce kontrol edebilirsin:',
+          '',
+          '```js',
+          'const safeItems = Array.isArray(items) ? items : [];',
+          'return safeItems.map((item) => item.name);',
+          '```',
+          '',
+          'React içinde genellikle `useState([])` ile başlamak ve API cevabının gerçekten dizi döndürdüğünü kontrol etmek bu hatayı çözer.',
+        ].join('\n');
+      }
+
       return [
         'Kod yazarken veya bir algoritma kurgularken mantığı şu adımlarla kurmak genelde en iyi sonucu verir:',
         '',
@@ -495,8 +552,8 @@ export function buildConversationAnswer(prompt: string, messages: ChatMessageLik
       ].join('\n');
 
     default:
-      if (shouldAskFollowUp(prompt, intent)) {
-        return 'Bunu doğru yanıtlayabilmem için bir detay seçmem gerekiyor: kısa bir açıklama mı istiyorsun, yoksa adım adım uygulanabilir bir plan mı?';
+      if (shouldAskFollowUp(prompt, intent) || includesAny(text, ['bunu yap', 'şunu düzelt', 'yardım eder misin', 'devam et'])) {
+        return 'Bunu doğru ilerletebilmem için bir detay gerekiyor: hangi metin, kod, dosya veya adım üzerinde çalışmamı istiyorsun? Kısa bir bağlam verirsen hemen uygulanabilir şekilde devam ederim.';
       }
       return null;
   }

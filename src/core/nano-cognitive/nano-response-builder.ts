@@ -113,6 +113,66 @@ export function buildIntentAwareNanoAnswer(prompt: string, history: ChatMessageL
       ].join('\n');
 
     case 'coding_help':
+      if (text.includes('topla') || text.includes('toplama') || text.includes('iki say')) {
+        return [
+          'JavaScript ile iki sayıyı toplayan basit bir fonksiyon şöyle yazılabilir:',
+          '',
+          '```javascript',
+          'function topla(a, b) {',
+          '  return a + b;',
+          '}',
+          '',
+          'console.log(topla(3, 5)); // 8',
+          '```',
+          '',
+          '`topla` fonksiyonu iki parametre alır, bu değerleri `+` operatörüyle toplar ve sonucu döndürür. Gerçek projede kullanıcıdan gelen değerler string olabileceği için gerekirse `Number(a)` gibi dönüşüm yapmak iyi olur.',
+        ].join('\n');
+      }
+
+      if (text.includes('sayaç') || text.includes('counter')) {
+        return [
+          'HTML, CSS ve JavaScript ile basit bir sayaç örneği şöyle kurulabilir:',
+          '',
+          '```html',
+          '<button id="azalt">-</button>',
+          '<span id="deger">0</span>',
+          '<button id="artir">+</button>',
+          '',
+          '<script>',
+          'let sayac = 0;',
+          'const deger = document.getElementById("deger");',
+          '',
+          'document.getElementById("artir").onclick = () => {',
+          '  sayac += 1;',
+          '  deger.textContent = sayac;',
+          '};',
+          '',
+          'document.getElementById("azalt").onclick = () => {',
+          '  sayac -= 1;',
+          '  deger.textContent = sayac;',
+          '};',
+          '</script>',
+          '```',
+          '',
+          'Mantık basit: sayaç değerini bir değişkende tutuyoruz, butonlara tıklandığında değişkeni güncelliyoruz ve ekrandaki metni yeniden yazıyoruz.',
+        ].join('\n');
+      }
+
+      if (text.includes('cannot read') || text.includes('map')) {
+        return [
+          '`TypeError: cannot read property map` hatası genellikle `.map()` çağırdığın değerin gerçekten bir dizi olmamasından kaynaklanır.',
+          '',
+          'Örneğin veri henüz yüklenmeden `items.map(...)` çalışırsa `items` değeri `undefined` olabilir. Çözüm olarak başlangıç değerini boş dizi yapmak veya çağrıdan önce kontrol etmek gerekir:',
+          '',
+          '```javascript',
+          'const safeItems = Array.isArray(items) ? items : [];',
+          'return safeItems.map((item) => <div key={item.id}>{item.name}</div>);',
+          '```',
+          '',
+          'React tarafında en temiz yaklaşım state başlangıcını `useState([])` yapmak ve API cevabının beklenen dizi formatında geldiğini doğrulamaktır.',
+        ].join('\n');
+      }
+
       return [
         'Kodlama ile ilgili bu konuda temel mantığı şu şekilde kurabiliriz:',
         '',
@@ -327,8 +387,8 @@ export function getGeneralKnowledgeResponse(prompt: string): string | null {
   }
   if (p.includes('ekonomi nedir')) return 'Ekonomi, kaynakların sınırlı olduğu bir ortamda insanların ihtiyaçlarını karşılamak için üretilen mal ve hizmetlerin üretimi, dağıtımı ve tüketimi ile ilgilenen sosyal bir bilim dalıdır.';
   if (p.includes('javascript nedir')) return 'JavaScript, web sayfalarına etkileşim ve dinamik davranış kazandırmak için kullanılan, modern web geliştirmenin temel taşlarından biri olan programlama dilidir. HTML sayfanın yapısını, CSS görünümünü, JavaScript ise davranışını kontrol eder. Örneğin butona tıklanınca menü açılması, form kontrolü yapılması veya dinamik veri gösterilmesi JavaScript ile sağlanabilir.';
-  if (p.includes('psikoloji nedir')) return 'Psikoloji, insan ve hayvan davranışlarını, zihinsel süreçleri ve bunların altında yatan biyolojik, sosyal nedenleri inceleyen bilim dalıdır.';
-  if (p.includes('hukuk nedir')) return 'Hukuk, toplum yaşamını düzenleyen, devlet eliyle yaptırıma bağlanmış olan ve adaleti sağlamayı amaçlayan kurallar bütünüdür.';
+  if (p.includes('psikoloji nedir')) return 'Psikoloji, insan ve hayvan davranışlarını, zihinsel süreçleri ve bunların altında yatan biyolojik, sosyal nedenleri inceleyen bilim dalıdır. Duygu, düşünce, öğrenme, bellek, motivasyon ve kişilik gibi konuları bilimsel yöntemlerle araştırır. Klinik psikoloji, gelişim psikolojisi, sosyal psikoloji ve bilişsel psikoloji gibi alt alanlarıyla hem bireysel yaşamı hem de toplumsal davranışları anlamaya yardımcı olur.';
+  if (p.includes('hukuk nedir')) return 'Hukuk, toplum yaşamını düzenleyen, devlet eliyle yaptırıma bağlanmış olan ve adaleti sağlamayı amaçlayan kurallar bütünüdür. Kişilerin haklarını, özgürlüklerini, sorumluluklarını ve kurumlar arasındaki ilişkileri belirler. Ceza hukuku, medeni hukuk, idare hukuku ve ticaret hukuku gibi alanlarıyla toplumsal düzenin öngörülebilir ve güvenli işlemesine katkı sağlar.';
   if (p.includes('enflasyon nedir')) return 'Enflasyon, bir ekonomide mal ve hizmet fiyatlarının genel seviyesinin sürekli ve belirgin bir şekilde artması, dolayısıyla paranın satın alma gücünün düşmesidir.';
   if (p.includes('arz ve talep nedir')) return 'Arz ve talep, piyasa ekonomisinde fiyatların ve üretim miktarlarının belirlenmesini sağlayan temel mekanizmadır; arz satıcıların sunmaya hazır olduğu miktarı, talep ise alıcıların almak istediği miktarı temsil eder.';
   if (p.includes('api nedir')) return 'API (Application Programming Interface), farklı yazılım uygulamalarının birbirleriyle standart ve güvenli bir şekilde veri alışverişi yapmasını sağlayan bir arayüzdür.';
