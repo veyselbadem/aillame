@@ -202,15 +202,27 @@ export function buildIntentAwareNanoAnswer(prompt: string, history: ChatMessageL
       
       const topic = prompt.replace(/nedir|ne demek|\?|hakkında bilgi ver|açıklar mısın|anlatır mısın/gi, '').trim();
       const topicUpper = topic.toUpperCase();
+      
+      const techKeywords = ['dil', 'programlama', 'yazılım', 'framework', 'kütüphane', 'api', 'server', 'veritabanı', 'bulut', 'frontend', 'backend'];
+      const isTech = includesAny(topic.toLowerCase(), techKeywords);
 
       return [
-        `${topicUpper} konusu, temel olarak belirli prensipler ve yapılar üzerine kurulmuş bir kavramdır.`,
+        `${topicUpper} konusu, ${isTech ? 'teknoloji ve yazılım dünyasında' : 'genel çerçevede'} temel prensipler ve yapılar üzerine kurulmuş bir kavramdır.`,
         '',
         `Genel bir tanımlama yapmak gerekirse ${topic}, kendi alanında önemli bir yer tutar ve çeşitli alt bileşenlerden oluşur. Bu konuda daha derinlemesine bir analiz veya en güncel verileri elde etmek isterseniz, Gemma veya Web Search modüllerini aktive ederek kapsamlı bir araştırma başlatabiliriz.`,
         '',
         `Şimdilik bu temel çerçeve üzerinden ilerleyebiliriz. Eğer spesifik olarak merak ettiğin bir detay varsa lütfen sor.`,
       ].join('\n');
     }
+
+    case 'image_generation':
+      return [
+        'Bu bir görsel üretim isteği gibi görünüyor. Papatya veya başka bir görsel oluşturmak için şu an doğrudan chat içinden üretim yapamıyor olabilirim (IGM modülüne bağlı olarak).',
+        '',
+        'Görsel oluşturmak için yan menüdeki **Görsel Üretim** (Image Generation) panelini kullanabilir veya `/api/image-generation` endpointi üzerinden talep gönderebilirsin.',
+        '',
+        'İstersen oluşturmak istediğin görsel için bana detaylı bir "prompt" (betimleme) hazırlatabilirsin; bu betimlemeyi SDXL gibi modellerde kullanarak en iyi sonucu alabilirsin.',
+      ].join('\n');
 
     case 'ai_lab_analysis':
     case 'ai_lab_reflection':
@@ -322,6 +334,10 @@ export function getGeneralKnowledgeResponse(prompt: string): string | null {
   if (p.includes('api nedir')) return 'API (Application Programming Interface), farklı yazılım uygulamalarının birbirleriyle standart ve güvenli bir şekilde veri alışverişi yapmasını sağlayan bir arayüzdür.';
   if (p.includes('algoritma nedir')) return 'Algoritma, belirli bir sorunu çözmek veya bir görevi yerine getirmek için tanımlanmış, mantıksal ve adım adım izlenen talimatlar dizisidir.';
   if (p.includes('web sitesi nedir')) return 'Web sitesi, internet üzerinde bir alan adı altında toplanmış, metin, görsel ve videolar içeren, birbirine bağlı dijital sayfalar bütünüdür.';
+  
+  if (p.includes('rust nedir') || p.includes('rust programlama')) {
+    return 'Rust, performans ve bellek güvenliğine odaklanan modern bir programlama dilidir. C ve C++ gibi sistem programlama alanlarında kullanılabilir, ancak bellek hatalarını azaltmak için sahiplik ve ödünç alma (ownership and borrowing) gibi kurallar kullanır. WebAssembly, oyun motorları, işletim sistemi bileşenleri, komut satırı araçları ve yüksek performanslı servislerde tercih edilebilir.';
+  }
 
   return null;
 }

@@ -3,7 +3,8 @@
 import { useRef, useEffect } from 'react';
 import { Message } from '@apptypes/message';
 import FeedbackActions from './FeedbackActions';
-import { FiAlertTriangle } from 'react-icons/fi';
+import { FiAlertTriangle, FiCopy, FiCheck } from 'react-icons/fi';
+import { useState } from 'react';
 
 interface MessageItemProps {
   message: Message;
@@ -28,11 +29,21 @@ export default function MessageItem({ message, index = 0, conversationId, prompt
   const ref = useRef<HTMLDivElement>(null);
   const isFallback = !isUser && isFallbackMessage(message.content);
 
+  const [copied, setCopied] = useState(false);
+
   useEffect(() => {
     if (ref.current) {
       ref.current.style.animationDelay = `${Math.min(index * 40, 300)}ms`;
     }
   }, [index]);
+
+  const handleCopy = () => {
+    if (!message.content) return;
+    navigator.clipboard.writeText(message.content).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  };
 
   return (
     <div
@@ -98,8 +109,21 @@ export default function MessageItem({ message, index = 0, conversationId, prompt
               </span>
             )}
 
+            {/* Copy Button */}
+            <button
+              onClick={handleCopy}
+              className={`absolute top-3 right-3 p-2 rounded-xl transition-all duration-300 opacity-0 group-hover:opacity-100 backdrop-blur-md border ${
+                isUser 
+                  ? 'bg-white/10 border-white/10 hover:bg-white/20 text-indigo-100' 
+                  : 'bg-indigo-500/5 border-indigo-500/10 hover:bg-indigo-500/10 text-indigo-400'
+              }`}
+              title="Kopyala"
+            >
+              {copied ? <FiCheck size={14} className="text-emerald-500" /> : <FiCopy size={14} />}
+            </button>
+
             {/* Content */}
-            <div className={`whitespace-pre-wrap break-words ${isUser ? 'font-medium' : 'font-normal'}`}>
+            <div className={`whitespace-pre-wrap break-words pr-8 ${isUser ? 'font-medium' : 'font-normal'}`}>
               {message.content ? (
                 message.content
               ) : (

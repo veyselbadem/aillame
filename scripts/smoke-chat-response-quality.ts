@@ -63,6 +63,18 @@ async function main() {
       requiredKeywords: []
     },
     { 
+      prompt: "rust nedir", 
+      expectedIntent: "general_knowledge", 
+      shouldClarify: false,
+      requiredKeywords: ["rust", "performans", "güvenli"] 
+    },
+    { 
+      prompt: "bana papatya görseli oluşturur musun", 
+      expectedIntent: "image_generation", 
+      shouldClarify: false,
+      requiredKeywords: ["görsel", "üretim", "panel"] 
+    },
+    { 
       prompt: "javascript ile toplama fonksiyonu yaz", 
       expectedIntent: "coding_help", 
       shouldClarify: false,

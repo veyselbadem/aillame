@@ -187,22 +187,23 @@ function matchesPhrase(prompt: string, phrases: string[]): boolean {
 function isGeneralKnowledge(p: string): boolean {
   const genericPatterns = [
     'nedir', 'nelerdir', 'hakkında bilgi', 'anlatır mısın', 'açıklar mısın', 'kimdir', 'hangisidir', 
-    'nasıl oluşur', 'ne zaman kuruldu', 'nerededir', 'ne demek'
+    'nasıl oluşur', 'ne zaman kuruldu', 'nerededir', 'ne demek', 'nedir bu rust'
   ];
   
-  const isQuestion = p.endsWith('?') || genericPatterns.some(pattern => p.includes(pattern));
+  const isQuestion = p.endsWith('?') || genericPatterns.some(pattern => p.includes(pattern)) || p === 'rust';
   
   // Exclude explicit task/code creation
   const isExclusion = matchesPhrase(p, [
     'yaz', 'oluştur', 'çiz', 'tasarla', 'kodla', 'hata', 'error', 'çalışmıyor'
   ]);
 
-  if (isExclusion) return false;
+  const isImage = matchesPhrase(p, ['görsel', 'resim', 'fotoğraf', 'üret', 'yap', 'çiz']);
+  if (isExclusion && !(isImage && !p.includes('kod'))) return false;
   
   const specificGk = [
     'ekonomi', 'yapay zeka', 'javascript', 'html', 'css', 'react', 'psikoloji', 'hukuk', 'enflasyon',
     'arz ve talep', 'api', 'algoritma', 'web sitesi', 'evren', 'yıldız', 'güneş sistemi',
-    'fotosentez', 'osmanlı', 'türkiye', 'bilim', 'tarih'
+    'fotosentez', 'osmanlı', 'türkiye', 'bilim', 'tarih', 'rust'
   ];
 
   return isQuestion || specificGk.some(s => p.includes(s));
