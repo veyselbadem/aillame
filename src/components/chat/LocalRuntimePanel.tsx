@@ -18,19 +18,21 @@ import {
 export const LocalRuntimePanel: React.FC = () => {
   const { session, loading, refresh } = useRuntimeStatus();
   const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleStartRuntime = async () => {
     setBusy(true);
+    setError(null);
     try {
-      await tauriModelBridge.startRuntime({
-        devicePreference: "auto",
-        startTimeoutMs: 30000,
-        handshakeTimeoutMs: 30000,
-        shutdownTimeoutMs: 10000
+      const response = await tauriModelBridge.startRuntime({
+        devicePreference: "auto"
       });
+      console.info('[LocalRuntime] start request sent:', response);
       await refresh();
     } catch (err) {
-      console.error('Runtime start failed:', err);
+      const msg = err instanceof Error ? err.message : String(err);
+      console.error('Runtime start failed:', msg);
+      setError(msg);
     } finally {
       setBusy(false);
     }
@@ -89,6 +91,11 @@ export const LocalRuntimePanel: React.FC = () => {
         >
           {busy ? 'Başlatılıyor...' : 'Runtime Başlat'}
         </button>
+        {error && (
+          <p className="mt-3 text-[10px] text-rose-500 font-medium leading-tight">
+            {error}
+          </p>
+        )}
       </div>
     );
   }

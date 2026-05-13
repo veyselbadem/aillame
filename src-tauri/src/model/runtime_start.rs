@@ -13,17 +13,46 @@ pub enum RuntimeStartStatus {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct RuntimeStartOptions {
+    #[serde(default = "default_device_preference")]
     pub device_preference: String,
+    #[serde(default = "default_timeout_ms")]
     pub start_timeout_ms: u64,
+    #[serde(default = "default_timeout_ms")]
     pub handshake_timeout_ms: u64,
+    #[serde(default = "default_shutdown_timeout_ms")]
     pub shutdown_timeout_ms: u64,
+}
+
+fn default_device_preference() -> String {
+    "auto".to_string()
+}
+
+fn default_timeout_ms() -> u64 {
+    30000
+}
+
+fn default_shutdown_timeout_ms() -> u64 {
+    10000
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct RuntimeStartRequest {
+    #[serde(default = "default_device_preference")]
     pub device_preference: String,
+    #[serde(default)]
     pub options: RuntimeStartOptions,
+}
+
+impl Default for RuntimeStartOptions {
+    fn default() -> Self {
+        Self {
+            device_preference: default_device_preference(),
+            start_timeout_ms: default_timeout_ms(),
+            handshake_timeout_ms: default_timeout_ms(),
+            shutdown_timeout_ms: default_shutdown_timeout_ms(),
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

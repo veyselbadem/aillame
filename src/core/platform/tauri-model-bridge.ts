@@ -155,11 +155,20 @@ class TauriModelBridge {
     return await invoke<InferenceResponse>("safe_model_cancel_infer_stream");
   }
 
-  async startRuntime(options: RuntimeStartOptions): Promise<RuntimeStartResponse> {
+  async startRuntime(options: Partial<RuntimeStartOptions> = {}): Promise<RuntimeStartResponse> {
+    const defaultOptions: RuntimeStartOptions = {
+      devicePreference: "auto",
+      startTimeoutMs: 30000,
+      handshakeTimeoutMs: 30000,
+      shutdownTimeoutMs: 10000
+    };
+
+    const finalOptions = { ...defaultOptions, ...options };
+
     return await invoke<RuntimeStartResponse>("start_runtime", { 
       request: { 
-        devicePreference: options.devicePreference || "auto",
-        options 
+        devicePreference: finalOptions.devicePreference,
+        options: finalOptions
       } 
     });
   }
