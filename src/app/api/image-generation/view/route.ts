@@ -5,6 +5,8 @@ import { imageAssetStore } from "@/core/runtime/image/assets/image-asset-file-st
 
 export async function GET(req: NextRequest) {
   const assetId = req.nextUrl.searchParams.get("assetId");
+  const isDownload = req.nextUrl.searchParams.get("download") === "true";
+
   if (!assetId) {
     return NextResponse.json({ error: "Missing assetId" }, { status: 400 });
   }
@@ -24,13 +26,18 @@ export async function GET(req: NextRequest) {
     }
 
     const fileBuffer = fs.readFileSync(filePath);
-    
-    return new NextResponse(fileBuffer, {
-      headers: {
-        "Content-Type": asset.mimeType || "image/png",
-        "Cache-Control": "public, max-age=31536000, immutable",
-      },
-    });
+    const mimeType = asset.mimeType || "image/png";
+
+    const headers: Record<string, string> = {
+      "Content-Type": mimeType,
+      "Cache-Control": "public, max-age=31536000, immutable",
+    };
+
+    if (isDownload) {
+      headers["Content-Disposition"] = `attachment; filename="${safeFileName}"`;
+    }
+
+    return new NextResponse(fileBuffer, { headers });
   } catch (error) {
     console.error("View API error:", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });

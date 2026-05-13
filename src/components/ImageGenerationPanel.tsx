@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { FiDownload, FiImage, FiLoader, FiZap } from 'react-icons/fi';
 import { DEFAULT_IMAGE_GENERATION_MODEL_ID, MODEL_REGISTRY } from '@core/models/registry';
 import { IMAGE_SIZE_PRESETS, type ImageSizePreset } from '@core/image-generation/types';
@@ -21,11 +21,62 @@ export default function ImageGenerationPanel() {
   const [preset, setPreset] = useState<ImageSizePreset>('square');
   const [steps, setSteps] = useState(30);
   const [loading, setLoading] = useState(false);
+  const [downloading, setDownloading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [image, setImage] = useState<string | null>(null);
   const [seed, setSeed] = useState<number | null>(null);
   const [jobId, setJobId] = useState<string | null>(null);
   const [jobStatus, setJobStatus] = useState<string | null>(null);
+
+  const handleDownload = useCallback(async () => {
+    if (!image || downloading) return;
+    console.log('[ImageGenerationPanel] Native indirme başladı →', image);
+    setDownloading(true);
+    try {
+      const res = await fetch(image);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const arrayBuffer = await res.arrayBuffer();
+      const uint8Array = new Uint8Array(arrayBuffer);
+
+      const mimeType = res.headers.get('content-type') || 'image/png';
+      const ext = mimeType.split('/')[1]?.split('+')[0] || 'png';
+      const fileName = `aillame-${jobId || Date.now()}.${ext}`;
+
+      if (typeof window !== 'undefined' && (window as any).__TAURI_INTERNALS__) {
+        const { save } = await import('@tauri-apps/plugin-dialog');
+        const { writeFile } = await import('@tauri-apps/plugin-fs');
+
+        const filePath = await save({
+          title: 'Görseli Kaydet',
+          defaultPath: fileName,
+          filters: [{ name: 'Görsel', extensions: [ext] }]
+        });
+
+        if (filePath) {
+          await writeFile(filePath, uint8Array);
+          console.log('[ImageGenerationPanel] Dosya native kaydedildi:', filePath);
+        }
+      } else {
+        const blob = new Blob([uint8Array], { type: mimeType });
+        const dataUrl = await new Promise<string>((resolve) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result as string);
+          reader.readAsDataURL(blob);
+        });
+        const a = document.createElement('a');
+        a.href = dataUrl;
+        a.download = fileName;
+        a.click();
+      }
+    } catch (err) {
+      console.error('[ImageGenerationPanel] İndirme başarısız:', err);
+      alert('Görsel indirilemedi.');
+    } finally {
+      setDownloading(false);
+    }
+  }, [image, jobId, downloading]);
+
+
 
   const generate = async () => {
     if (!prompt.trim()) return;
@@ -183,10 +234,16 @@ export default function ImageGenerationPanel() {
                 </div>
                 <div className="flex items-center justify-between gap-3">
                   <span className="text-[10px] font-mono text-gray-500">Seed: {seed ?? 'auto'}</span>
-                  <a href={image} download="aillame-image.png" className="h-10 px-4 rounded-xl bg-white/5 hover:bg-white/10 text-gray-200 text-xs font-bold uppercase tracking-widest flex items-center gap-2">
-                    <FiDownload size={14} />
+                  <button
+                    type="button"
+                    onClick={handleDownload}
+                    disabled={downloading}
+                    className="h-10 px-4 rounded-xl bg-white/5 hover:bg-white/10 text-gray-200 text-xs font-bold uppercase tracking-widest flex items-center gap-2 disabled:opacity-50 disabled:cursor-wait transition-all active:scale-95"
+                    title="Görseli indir"
+                  >
+                    {downloading ? <FiLoader size={14} className="animate-spin" /> : <FiDownload size={14} />}
                     Dışa Aktar
-                  </a>
+                  </button>
                 </div>
               </div>
             ) : (

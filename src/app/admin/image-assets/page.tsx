@@ -44,30 +44,43 @@ export default function ImageAssetManagerPage() {
     }
   };
   
-  const handleDelete = async (assetId: string) => {
-    if (!confirm('Bu görsel varlığını kalıcı olarak silmek istediğine emin misin?')) return;
-    
+  // Silme: assetId varsa asset store'dan sil; yoksa jobId ile job kaydını temizle
+  const handleDelete = async (jobId: string, assetId?: string) => {
+    if (!confirm('Bu kaydı kalıcı olarak silmek istediğine emin misin?')) return;
+
     try {
-      const res = await adminFetch(`/api/admin/image/assets?assetId=${assetId}`, {
-        method: 'DELETE'
-      });
-      if (res.ok) {
-        setJobs(prev => prev.map(job => {
-          if (job.outputAssetIds?.includes(assetId)) {
-            return {
-              ...job,
-              outputAssetIds: job.outputAssetIds.filter((id: string) => id !== assetId)
-            };
-          }
-          return job;
-        }));
+      let res: Response;
+
+      if (assetId) {
+        // Asset store'da kayıt olabilir — önce asset üzerinden dene
+        res = await adminFetch(`/api/admin/image/assets?assetId=${encodeURIComponent(assetId)}`, {
+          method: 'DELETE',
+        });
       } else {
-        const error = await res.json();
-        alert(`Silme hatası: ${error.error || 'Bilinmeyen hata'}`);
+        // assetId yoksa (başarısız/hayalet job) — job kaydını sil
+        res = await adminFetch(`/api/admin/image/jobs?jobId=${encodeURIComponent(jobId)}`, {
+          method: 'DELETE',
+        });
+      }
+
+      const data = await res.json().catch(() => ({ ok: false, error: 'Geçersiz yanıt' }));
+
+      if (data.ok || data.success) {
+        if (assetId && !data.deleted) {
+          console.warn("[ImageAssets] Hayalet asset temizlendi. Asset store'da yoktu:", assetId);
+        }
+        // Listeyi backend'den yenile (tam senkronizasyon)
+        await loadJobs();
+      } else {
+        const errorMsg = data.error || 'Bilinmeyen hata';
+        console.error('[ImageAssets] Silme başarısız:', errorMsg);
+        alert(`Silme hatası: ${errorMsg}`);
+        await loadJobs();
       }
     } catch (err) {
-      console.error('Delete error:', err);
+      console.error('[ImageAssets] Delete isteği hatası:', err);
       alert('Silme işlemi sırasında teknik bir hata oluştu.');
+      await loadJobs();
     }
   };
 
@@ -186,10 +199,13 @@ export default function ImageAssetManagerPage() {
                     <td className="py-6 px-4">
                       <div className="flex items-center justify-center">
                         <button
-                          onClick={() => job.outputAssetIds?.[0] && handleDelete(job.outputAssetIds[0])}
-                          disabled={!job.outputAssetIds?.[0]}
-                          className="p-2 rounded-xl text-slate-400 hover:text-rose-500 hover:bg-rose-500/10 transition-all disabled:opacity-20 disabled:cursor-not-allowed"
-                          title="Varlığı Sil"
+                          onClick={() => handleDelete(job.jobId, job.outputAssetIds?.[0])}
+                          className="p-2 rounded-xl text-slate-400 hover:text-rose-500 hover:bg-rose-500/10 transition-all active:scale-90"
+                          title={
+                            job.outputAssetIds?.[0]
+                              ? 'Görseli ve kaydı sil'
+                              : 'Kaydı sil'
+                          }
                         >
                           <RiDeleteBinLine size={18} />
                         </button>

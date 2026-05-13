@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+export const dynamic = 'force-dynamic';
 import path from 'path';
 import { imageGenerationService } from '@/core/runtime/image/image-generation-service';
 import { imageJobStore } from '@/core/runtime/image/jobs/image-job-file-store';

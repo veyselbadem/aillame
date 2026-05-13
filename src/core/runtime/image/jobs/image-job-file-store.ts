@@ -58,9 +58,20 @@ export class ImageJobFileStore {
     const lines = content.split('\n').filter(l => l.trim());
     const jobs: ImageJobRecord[] = [];
 
+    const STALE_TIMEOUT_MS = 15 * 60 * 1000; // 15 dakika
+    const now = Date.now();
+
     for (const line of lines) {
       try {
-        const job = JSON.parse(line) as ImageJobRecord;
+        let job = JSON.parse(line) as ImageJobRecord;
+        
+        // [ANALİZ VE DÜZELTME] Stale Job tespiti
+        if (job.status === 'running' && (now - job.createdAt) > STALE_TIMEOUT_MS) {
+          job.status = 'failed';
+          job.errorSummary = 'İşlem zaman aşımına uğradı (stale). Python işçisi çökmüş olabilir.';
+          job.updatedAt = now;
+        }
+        
         jobs.push(job);
       } catch (err) {
         console.warn('Corrupt line in image job history:', err);
@@ -123,6 +134,27 @@ export class ImageJobFileStore {
       await fs.promises.writeFile(this.filePath, updated.map(j => JSON.stringify(j)).join('\n') + '\n', 'utf8');
       this.lastMtime = fs.statSync(this.filePath).mtimeMs;
     }
+  }
+
+  async deleteJob(jobId: string): Promise<boolean> {
+    if (!fs.existsSync(this.filePath)) return false;
+
+    const jobs = await this.listJobs();
+    const exists = jobs.some(j => j.jobId === jobId);
+
+    if (!exists) {
+      console.warn(`[ImageJobFileStore] deleteJob: Job ${jobId} bulunamadı.`);
+      return false;
+    }
+
+    const remaining = jobs.filter(j => j.jobId !== jobId);
+    this.cache = remaining;
+    const content = remaining.length > 0
+      ? remaining.map(j => JSON.stringify(j)).join('\n') + '\n'
+      : '';
+    await fs.promises.writeFile(this.filePath, content, 'utf8');
+    this.lastMtime = fs.statSync(this.filePath).mtimeMs;
+    return true;
   }
 }
 
