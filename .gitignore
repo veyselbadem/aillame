@@ -159,3 +159,6 @@ igm-venv/
 
 igm-venv/
 
+
+# Runtime debug artifacts
+api_response.json
