@@ -115,3 +115,36 @@ Gemma, Qwen, SDXL, Gemini veya Ollama gibi model/araç özel isimleri yalnızca 
 - [RAG Document Library](docs/rag-document-library.md)
 - [Security Hardening](docs/security-hardening.md)
 - [Code Agent Patch Workflow](docs/code-agent-patch-workflow.md)
+
+### Manual Workspace Context
+
+- [Manual Workspace Context Flow](docs/manual-workspace-context.md) - Manuel context akışının mimari özeti; RAG değildir.
+- [Manual Workspace Context Safety Checklist](docs/manual-workspace-context-safety-checklist.md) - Geliştirici güvenlik kontrol listesi.
+- [Manual Workspace Context Release Readiness Summary](docs/manual-workspace-context-release-readiness.md) - Release karar özeti.
+- Nano bu hat üzerinde yalnızca kullanıcının görünür mesajındaki context'i kullanır.
+
+### Workspace Agent Plan/Review (Plan-Only)
+
+- [Workspace Agent Plan/Review Flow](docs/workspace-agent-plan-review.md) - Plan-only akışının mimari özeti; execution ve file write yoktur.
+- [Workspace Agent Plan/Review Safety Checklist](docs/workspace-agent-plan-review-safety-checklist.md) - Geliştirici güvenlik kontrol listesi; ActionExecutor/Command Registry kapalıdır.
+- [Workspace Agent Plan/Review Release Readiness Summary](docs/workspace-agent-plan-review-release-readiness.md) - Plan-only hattı yayın hazırlık değerlendirmesi.
+
+### Workspace Agent Execution Readiness (Readiness-Only)
+
+- [Workspace Agent Execution Readiness Flow](docs/workspace-agent-execution-readiness.md) - Hazır bulunuşluk akışının mimari özeti; execution ve file write yoktur.
+- [Workspace Agent Execution Readiness Safety Checklist](docs/workspace-agent-execution-readiness-safety-checklist.md) - Geliştirici güvenlik kontrol listesi; permission grant yoktur, active grant count 0 kalır.
+- [Workspace Agent Execution Readiness Release Readiness Summary](docs/workspace-agent-execution-readiness-release-readiness.md) - Hazır bulunuşluk hattı yayın hazırlık değerlendirmesi; readiness-only, no-grant ve no-execution sınırları korunur.
+- [Workspace Agent Execution Readiness Final Closure](docs/workspace-agent-execution-readiness-final-closure.md) - Hazır bulunuşluk hattı final kapanış dokümanı; Faz 56-67 özeti ve no-execution sınırı tescili.
+- **Final Regression Smoke:** `npm run smoke:phase65-execution-readiness-final-regression` (Uçtan uca güvenlik ve bütünlük doğrulaması).
+
+### Workspace Agent Execution Gate (Gate-Only)
+
+- [Workspace Agent Safety Architecture Index](docs/workspace-agent-safety-architecture-index.md) - **Tüm güvenlik mimarisinin merkezi indeksi ve katman özeti.**
+- [Workspace Agent Safety Architecture Release Readiness Summary](docs/workspace-agent-safety-architecture-release-readiness.md) - Güvenlik mimarisi hattı yayın hazırlık değerlendirmesi ve no-execution statüsü tescili.
+
+- [Workspace Agent Execution Gate Flow](docs/workspace-agent-execution-gate.md) - Gate-only akışının mimari özeti; execution, permission grant ve file write yoktur.
+- [Workspace Agent Execution Gate Safety Checklist](docs/workspace-agent-execution-gate-safety-checklist.md) - Geliştirici güvenlik kontrol listesi; canExecute=false, issuedCapability=null sınırları korunur.
+- [Workspace Agent Execution Gate Release Readiness Summary](docs/workspace-agent-execution-gate-release-readiness.md) - Gate-only hattı yayın hazırlık değerlendirmesi; no-grant, no-capability ve no-execution sınırları tescil edilir.
+- [Workspace Agent Execution Gate Final Closure](docs/workspace-agent-execution-gate-final-closure.md) - Faz 69-80 kapanış dokümanı; sistemin yürütülemez statüsünün final tescili.
+- **Final Regression Smoke:** `npm run smoke:phase78-execution-gate-final-regression` (Uçtan uca güvenlik ve bütünlük kontrolü).
+- **Security Constraint:** Bu hat üzerinde hiçbir komut çalıştırılmaz ve hiçbir yetki verilmez; sadece güvenlik değerlendirmesi yapılır.
