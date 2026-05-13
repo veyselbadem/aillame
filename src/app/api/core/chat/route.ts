@@ -11,6 +11,7 @@ import {
   getRecommendedMaxTokens,
   improveAssistantAnswer,
   normalizeAssistantAnswer,
+  analyzeComplexity,
 } from '@/core/conversation/conversation-quality';
 import { 
   getQuickResponse, 
@@ -146,9 +147,38 @@ export async function POST(req: NextRequest) {
             }
         }
 
+        // 0.5. Complexity Analysis & Dynamic Routing Intelligence [PHASE 2]
+        const { score: complexityScore, suggestedTier } = analyzeComplexity(prompt);
+        console.log(`[CognitiveRouter] Complexity: ${complexityScore}, Suggested Tier: ${suggestedTier}`);
+
+        // If high complexity and Ollama is available, prefer Gemma [PHASE 2]
+        if (suggestedTier === 'gemma-heavy' && !activeChatModelId) {
+            try {
+                const { generateOllamaResponse } = await import('@/core/inference/ollama');
+                const gemmaAnswer = await generateOllamaResponse({
+                    prompt,
+                    messages,
+                    maxTokens: 512,
+                    temperature: 0.7,
+                    model: 'gemma2:2b', // Yerel ağır siklet modelimiz
+                });
+                return chatJson({
+                    response: gemmaAnswer,
+                    modelId: 'gemma-heavy-auto',
+                    provider: 'ollama',
+                    runtime: 'ollama-gemma',
+                    fallbackUsed: false,
+                    degraded: false,
+                    complexityScore
+                }, buildRuntimeAttribution({ provider: 'ollama', modelId: 'gemma-heavy-auto', runtime: 'gemma-routing', fallbackUsed: false, degraded: false, reason: 'high_complexity_escalation' }));
+            } catch (e) {
+                console.warn('[CognitiveRouter] Gemma escalation failed, falling back to Nano:', e);
+            }
+        }
+
         // 1. Nano Cognitive Layer - Task Classification
         const cognitivePlan = classifyTask(prompt);
-        const intentMeta = cognitivePlan.intentMeta || classifyIntentWithConfidence(prompt);
+        const intentMeta = cognitivePlan.intentMeta || classifyIntentWithConfidence(prompt, messages);
         const taskScore = cognitivePlan.taskScore || { complexity: 0, research: 0, code: 0, creative: 0 };
         const plan = routeRequest(prompt); // Keep orchestration plan for compatibility
         const conversationIntent = detectUserIntent(prompt);
@@ -215,11 +245,15 @@ export async function POST(req: NextRequest) {
                         50,
                         0.3
                     );
-                    if (translateResult?.response && !looksMalformedNanoText(translateResult.response)) {
+                    if (translateResult?.response && !looksMalformedNanoText(translateResult.response) && translateResult.response.length > 3) {
                         finalPrompt = translateResult.response.trim();
+                    } else {
+                        console.warn('[chat] Nano translation output looks invalid, using original prompt');
+                        finalPrompt = basePrompt;
                     }
                 } catch (e) {
                     console.warn('Image prompt translation failed, fallback to original', e);
+                    finalPrompt = basePrompt;
                 }
 
                 const activeImgModel =
@@ -384,10 +418,37 @@ export async function POST(req: NextRequest) {
             temperature
         );
         
-        // 6. Kalite kontrolü ve Fallback
-        const rawImproved = looksMalformedNanoText(rawResponse)
+        // 6. Kalite kontrolü ve Otomatik Düzeltme (Self-Correction) [PHASE 4]
+        let finalResponse = rawResponse;
+        let finalModelId = modelId;
+        let correctionTriggered = false;
+
+        const isMalformed = looksMalformedNanoText(rawResponse) || rawResponse.length < 3;
+        
+        if (isMalformed && !activeChatModelId) {
+            console.log('[SelfCorrection] Nano output looks malformed, escalating to Gemma...');
+            try {
+                const { generateOllamaResponse } = await import('@/core/inference/ollama');
+                const correctedAnswer = await generateOllamaResponse({
+                    prompt,
+                    messages,
+                    maxTokens: 512,
+                    temperature: 0.6,
+                    model: 'gemma2:2b',
+                });
+                if (correctedAnswer && correctedAnswer.length > 5) {
+                    finalResponse = correctedAnswer;
+                    finalModelId = 'gemma-self-correction';
+                    correctionTriggered = true;
+                }
+            } catch (e) {
+                console.warn('[SelfCorrection] Escalation failed:', e);
+            }
+        }
+
+        const rawImproved = looksMalformedNanoText(finalResponse)
             ? improveAssistantAnswer(prompt, safeFallback(prompt, messages), messages)
-            : improveAssistantAnswer(prompt, rawResponse, messages);
+            : improveAssistantAnswer(prompt, finalResponse, messages);
 
         const response = isExplicitIntent(intentMeta.intent) && hasGuardPhrase(rawImproved)
             ? buildExplicitIntentGuardResponse(prompt, messages, intentMeta.intent)
@@ -395,9 +456,16 @@ export async function POST(req: NextRequest) {
 
         return chatJson({
             response, 
-            modelId,
-            plan: { ...plan, cognitivePlan, conversationIntent, taskScore, intentMeta }
-        }, buildRuntimeAttribution({ provider: 'aillame-nano', modelId, runtime: 'nano-versioned-inference', fallbackUsed: looksMalformedNanoText(rawResponse), degraded: looksMalformedNanoText(rawResponse), reason: looksMalformedNanoText(rawResponse) ? 'malformed_nano_text' : undefined }));
+            modelId: finalModelId,
+            plan: { ...plan, cognitivePlan, conversationIntent, taskScore, intentMeta, correctionTriggered }
+        }, buildRuntimeAttribution({ 
+            provider: correctionTriggered ? 'ollama' : 'aillame-nano', 
+            modelId: finalModelId, 
+            runtime: correctionTriggered ? 'gemma-correction' : 'nano-versioned-inference', 
+            fallbackUsed: isMalformed, 
+            degraded: isMalformed && !correctionTriggered,
+            reason: isMalformed ? 'malformed_nano_text_corrected' : undefined 
+        }));
     } catch (error: any) {
         console.error('API Chat Error:', error);
         const intentMeta = classifyIntentWithConfidence(prompt);

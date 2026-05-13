@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+export const dynamic = 'force-dynamic';
 import { RuntimeAcceptanceService } from '@/core/runtime/acceptance/acceptance-service';
 import { LocalServerBootStrategy } from '@/core/desktop-readiness/boot-strategy';
 import { liveHealthAggregator } from '@/core/health/live-aggregator';

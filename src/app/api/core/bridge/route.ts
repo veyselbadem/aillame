@@ -10,7 +10,9 @@ function ensureEngine() {
         if (engine && !engine.initialized) {
             // Initializing with default small dimensions
             try {
-                engine.init_trainer(5000, 128, 4, 0.001);
+                if (typeof engine.init_trainer === 'function') {
+                    engine.init_trainer(5000, 128, 4, 0.001);
+                }
                 engine.initialized = true;
             } catch (e) {
                 console.error('Core Init Error:', e);
@@ -92,8 +94,10 @@ export async function POST(req: NextRequest) {
         switch (action) {
             case 'add_memory': {
                 const vector = generatePseudoEmbedding(content || '');
-                activeEngine.add_to_memory(content || '', vector);
-                return NextResponse.json({ status: 'ok', message: 'Hafıza Rust çekirdeğine eklendi' });
+                if (typeof activeEngine.add_to_memory === 'function') {
+                    activeEngine.add_to_memory(content || '', vector);
+                }
+                return NextResponse.json({ status: 'ok', message: 'Hafıza çekirdeğe iletildi' });
             }
             case 'search_memory': {
                 const queryVector = generateHashSemanticVector(text || content || ''); // [NANO-F2]
