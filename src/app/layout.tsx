@@ -1,6 +1,9 @@
 import '../globals.css';
 import type { Metadata, Viewport } from 'next';
 import { Outfit, JetBrains_Mono } from 'next/font/google';
+import MainLayout from '@components/MainLayout';
+import { ChatProvider } from '@providers/ChatProvider';
+import Bootloader from '@components/Bootloader';
 
 const outfit = Outfit({
   subsets: ['latin'],
@@ -44,22 +47,17 @@ export const viewport: Viewport = {
   initialScale: 1,
 };
 
-import MainLayout from '@components/MainLayout';
-import GemmaWarmupOnBoot from '@components/GemmaWarmupOnBoot';
-import { ChatProvider } from '@providers/ChatProvider';
-import OnboardingPanel from '@components/OnboardingPanel';
-
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="tr" className={`${outfit.variable} ${jetbrainsMono.variable}`}>
       <body className="theme-shell min-h-screen transition-colors duration-500 font-sans antialiased">
-        <GemmaWarmupOnBoot />
-        <OnboardingPanel />
         <ChatProvider>
           <MainLayout>
             {children}
           </MainLayout>
         </ChatProvider>
+        
+        <Bootloader />
       </body>
     </html>
   );

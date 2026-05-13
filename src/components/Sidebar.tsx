@@ -25,7 +25,6 @@ import {
   FiKey,
   FiLogIn,
   FiLogOut,
-  FiThumbsUp,
   FiPackage,
   FiChevronDown,
   FiChevronRight,
@@ -72,7 +71,6 @@ const ADMIN_SETTINGS_GROUPS = [
   },
 ];
 
-
 interface SidebarProps {
   isOpen: boolean;
   setIsOpen: (isOpen: boolean) => void;
@@ -116,7 +114,6 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
   const { conversationId, setConversationId, startNewChat } = useChatState();
 
   useEffect(() => {
-    // Auto-open group if active page is inside it
     const activeGroup = ADMIN_SETTINGS_GROUPS.find(g => 
       g.items.some(item => pathname === item.href)
     );
@@ -126,12 +123,15 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
   }, [pathname]);
 
   useEffect(() => {
-    if (pathname === '/') loadHistory();
-  }, [conversationId, pathname]);
+    if (pathname === '/') {
+      loadHistory();
+    }
+  }, [conversationId]);
 
   useEffect(() => {
-    if (typeof window === 'undefined') return;
-    setIsAdmin(Boolean(localStorage.getItem('aillame_admin_token')));
+    if (typeof window !== 'undefined') {
+      setIsAdmin(Boolean(localStorage.getItem('aillame_admin_token')));
+    }
   }, [pathname]);
 
   const loadHistory = async () => {
@@ -184,14 +184,12 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
             <button
               type="button"
               onClick={() => setIsOpen(!isOpen)}
-              aria-label={isOpen ? 'Menüyü kapat' : 'Menüyü aç'}
               className="ml-auto w-9 h-9 rounded-xl flex items-center justify-center text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all duration-300 shadow-xl active:scale-90"
               style={{
                 background: 'var(--glass-bg)',
                 border: '1px solid var(--glass-border)',
                 backdropFilter: 'blur(12px)',
               }}
-              title={isOpen ? 'Menüyü kapat' : 'Menüyü aç'}
             >
               {isOpen ? <FiChevronLeft size={16} /> : <FiMenu size={16} />}
             </button>
@@ -245,7 +243,6 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
                     type="button"
                     onClick={handleLogout}
                     className="flex w-full items-center gap-3 px-4 py-2.5 rounded-xl text-rose-500/80 hover:text-rose-400 hover:bg-rose-500/10 border border-transparent transition-all duration-200 group"
-                    aria-label="Admin oturumunu kapat"
                   >
                     <FiLogOut size={16} className="group-hover:scale-110 transition-transform" />
                     <span className="text-sm font-semibold tracking-wide">Güvenli Çıkış</span>
@@ -273,55 +270,36 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
                   onClick={startNewChat}
                   className="flex items-center justify-center gap-2 w-full p-3 rounded-xl bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-white/10 transition-all mb-3 group active:scale-95"
                 >
-                  <FiPlus size={15} className="group-hover:rotate-90 transition-transform duration-300" />
+                  <FiPlus size={15} />
                   <span className="font-semibold text-sm">Yeni Sohbet</span>
                 </button>
 
                 <div className="space-y-1">
-                  {history.length === 0 ? (
-                    <div className="text-center py-6 opacity-30">
-                      <p className="text-[9px] text-gray-500 font-bold uppercase tracking-widest">Henüz sohbet yok</p>
-                    </div>
-                  ) : (
-                    history.map((chat) => (
-                      <div
-                        key={chat.id}
-                        onClick={() => setConversationId(chat.id)}
-                        className={`group flex items-center justify-between px-3 py-2.5 rounded-xl cursor-pointer transition-all duration-200 border ${
-                          conversationId === chat.id
-                            ? 'bg-indigo-100 border-indigo-200 text-indigo-700 dark:bg-indigo-500/10 dark:border-indigo-500/20 dark:text-indigo-300'
-                            : 'hover:bg-slate-100 dark:hover:bg-white/5 border-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-                        }`}
-                      >
-                        <div className="flex items-center gap-2 overflow-hidden">
-                          <FiMessageSquare
-                            size={13}
-                            className={`${conversationId === chat.id ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-500 dark:text-slate-500'} shrink-0`}
-                          />
-                          <span className="text-xs font-semibold truncate">{chat.title}</span>
-                        </div>
-                        <button
-                          onClick={(e) => deleteChat(e, chat.id)}
-                          className="opacity-0 group-hover:opacity-100 p-1.5 hover:text-rose-400 transition-all hover:bg-rose-500/10 rounded-lg flex-shrink-0"
-                          title="Sohbeti sil"
-                          aria-label="Sohbeti sil"
-                        >
-                          <FiTrash2 size={12} />
-                        </button>
+                  {history.map((chat) => (
+                    <div
+                      key={chat.id}
+                      onClick={() => setConversationId(chat.id)}
+                      className={`group flex items-center justify-between px-3 py-2.5 rounded-xl cursor-pointer transition-all duration-200 border ${
+                        conversationId === chat.id
+                          ? 'bg-indigo-100 border-indigo-200 text-indigo-700 dark:bg-indigo-500/10 dark:border-indigo-500/20 dark:text-indigo-300'
+                          : 'hover:bg-slate-100 dark:hover:bg-white/5 border-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2 overflow-hidden">
+                        <FiMessageSquare size={13} className="shrink-0" />
+                        <span className="text-xs font-semibold truncate">{chat.title}</span>
                       </div>
-                    ))
-                  )}
+                      <button
+                        onClick={(e) => deleteChat(e, chat.id)}
+                        className="opacity-0 group-hover:opacity-100 p-1.5 hover:text-rose-400 transition-all rounded-lg flex-shrink-0"
+                      >
+                        <FiTrash2 size={12} />
+                      </button>
+                    </div>
+                  ))}
                 </div>
               </div>
             )}
-          </div>
-
-          <div className="px-5 py-4 border-t border-slate-200 dark:border-white/5">
-            <div className="flex items-center gap-2">
-              <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse flex-shrink-0" />
-              <span className="text-[9px] text-slate-600 dark:text-slate-400 font-black uppercase tracking-widest">Local Mode Active</span>
-            </div>
-            <p className="text-[8px] font-black tracking-[0.3em] text-slate-500 dark:text-slate-500 uppercase mt-1">AILLAME PROJECT v1.3</p>
           </div>
         </div>
       </aside>
@@ -329,14 +307,12 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
       {!isOpen && (
         <button
           onClick={() => setIsOpen(true)}
-          aria-label="Menüyü aç"
           className="fixed top-4 left-4 z-[60] w-9 h-9 rounded-xl flex items-center justify-center text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all duration-300 shadow-xl active:scale-90"
           style={{
             background: 'var(--glass-bg)',
             border: '1px solid var(--glass-border)',
             backdropFilter: 'blur(12px)',
           }}
-          title="Menüyü aç"
         >
           <FiMenu size={16} />
         </button>

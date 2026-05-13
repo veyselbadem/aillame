@@ -14,6 +14,10 @@ import type {
   MemoryScopeReference,
 } from '@core/aillame-router/types';
 import type { MessageMetadata } from '@apptypes/message';
+import { tauriModelBridge } from '@core/platform/tauri-model-bridge';
+import { listen } from '@tauri-apps/api/event';
+import { auditChatMessage, checkInjectionPatterns } from '@core/chat/message-audit';
+import { createMessageUiMetadata } from '@core/chat/message-metadata';
 
 const memory = new LocalMemoryStore();
 
@@ -95,6 +99,7 @@ export function useChat(conversationId?: string, runtimeSettings?: UseChatRuntim
   const [activeTools, setActiveTools] = useState<ActiveTool[]>([]);
   const listRef = useRef<HTMLDivElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
+  const streamingAssistantIdRef = useRef<string | null>(null);
   const savedSettings = useSettings();
   const llmMode = runtimeSettings?.llmMode ?? savedSettings.llmMode;
   const tier = runtimeSettings?.tier ?? savedSettings.tier;
@@ -116,11 +121,16 @@ export function useChat(conversationId?: string, runtimeSettings?: UseChatRuntim
   };
 
   const stopGeneration = () => {
+    if (llmMode === 'local') {
+      tauriModelBridge.cancelModelInferenceStream().catch(console.error);
+    }
+
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
-      setLoading(false);
-      setModelLoading(false);
     }
+    setLoading(false);
+    setModelLoading(false);
+    streamingAssistantIdRef.current = null;
   };
 
   const clearMessages = async () => {
@@ -140,12 +150,31 @@ export function useChat(conversationId?: string, runtimeSettings?: UseChatRuntim
     const outgoingAttachments = attachments;
     const outgoingInput = input.trim();
 
+    // Audit visible user message for manual context boundary integrity
+    const auditResult = auditChatMessage({ userVisibleMessage: outgoingInput, conversationId });
+    const injectionWarnings = checkInjectionPatterns(outgoingInput);
+    
+    // Create safe UI metadata from audit result
+    const uiContextMetadata = createMessageUiMetadata(auditResult);
+    
+    // Log audit result safely (no raw message content)
+    const safeLog = auditResult.hasManualContext 
+      ? `[MessageAudit] manual context detected, boundary ${auditResult.isBoundaryIntact ? 'valid' : 'invalid'}`
+      : '[MessageAudit] no manual context';
+    
+    if (auditResult.warnings.length > 0 || injectionWarnings.length > 0) {
+      // Warnings present but message still sends (audit is advisory, not blocking)
+    }
+
     const userMessage: Message = {
       id: Date.now().toString(),
       role: 'user',
       content: outgoingInput || 'Görsel analizi',
       createdAt: Date.now(),
       attachments: outgoingAttachments,
+      metadata: {
+        uiContextMetadata,
+      },
     };
 
     setMessages((prev) => [...prev, userMessage]);
@@ -166,30 +195,29 @@ export function useChat(conversationId?: string, runtimeSettings?: UseChatRuntim
       metadata: assistantMetadata,
     };
     setMessages((prev) => [...prev, placeholder]);
+    streamingAssistantIdRef.current = assistantId;
 
     try {
-      console.info('[Aillame Chat] dispatch', { tier, llmMode, imageCount: outgoingAttachments.length });
       const result = await orchestrateChat(outgoingInput, {
         llmMode,
         tier,
+        nanoProfile: savedSettings.nanoProfile,
         attachments: outgoingAttachments,
-        messages,
+        messages: messages.slice(-10), // Son 10 mesaj bağlam olarak
         signal,
         onToken: (token) => {
           if (signal.aborted) return;
-          updateAssistantContent(assistantId, (current) => current + token);
+          updateAssistantContent(assistantId, (prev) => prev + token);
         },
-        onToolCall: (call: ToolCall) => {
+        onToolCall: (call) => {
           if (signal.aborted) return;
           setActiveTools((prev) => [...prev, { call, status: 'running' }]);
         },
-        onToolResult: (toolResult: ToolResult) => {
+        onToolResult: (result) => {
           if (signal.aborted) return;
           setActiveTools((prev) =>
             prev.map((t) =>
-              t.call.tool === toolResult.tool
-                ? { ...t, result: toolResult, status: toolResult.success ? 'done' : 'error' }
-                : t
+              t.call.tool === result.tool ? { ...t, status: 'done', result } : t
             )
           );
         },
@@ -249,6 +277,7 @@ export function useChat(conversationId?: string, runtimeSettings?: UseChatRuntim
     clearMessages,
     loading: loading || modelLoading,
     modelLoading,
+    isLocalModelReady: llmMode === 'local' ? !loading && !modelLoading : true,
     activeTools,
     listRef,
   };

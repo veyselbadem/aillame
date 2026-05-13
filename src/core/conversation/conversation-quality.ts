@@ -75,6 +75,30 @@ const DEFINITION_TERMS = [
   'anlatir misin', 'anlatır mısın', 'aciklar misin', 'açıklar mısın',
 ] as const;
 
+const COMPLEX_TERMS = ['kod', 'error', 'hata', 'yazılım', 'fonksiyon', 'algoritma', 'analiz', 'felsefe', 'detaylı', 'teknik', 'setup', 'kurulum'];
+const SIMPLE_TERMS = ['selam', 'merhaba', 'naber', 'nasılsın', 'hey', 'günaydın', 'tünaydın', 'sağol', 'teşekkür'];
+
+export type ModelTier = 'nano-v1' | 'nano-v2' | 'gemma-heavy';
+
+export function analyzeComplexity(prompt: string): { score: number; suggestedTier: ModelTier } {
+  const tokens = prompt.toLowerCase().split(/\s+/);
+  let score = 3; // Başlangıç puanı
+
+  // Karmaşıklık sinyalleri
+  if (tokens.length > 15) score += 2;
+  if (COMPLEX_TERMS.some(t => tokens.includes(t))) score += 3;
+  if (SIMPLE_TERMS.some(t => tokens.includes(t))) score -= 2;
+  
+  // Teknik karakterler (kod blokları vb)
+  if (prompt.includes('{') || prompt.includes('=>') || prompt.includes('import')) score += 4;
+
+  let suggestedTier: ModelTier = 'nano-v1';
+  if (score > 4) suggestedTier = 'nano-v2';
+  if (score > 7) suggestedTier = 'gemma-heavy';
+
+  return { score: Math.min(10, Math.max(1, score)), suggestedTier };
+}
+
 const AGENT_TASK_TERMS = [
   'agent', 'ajan', 'kod ajanı', 'code agent', 'dosya', 'patch', 'commit', 'repo', 'proje',
   'workspace', 'refactor', 'test et', 'task',
@@ -138,11 +162,14 @@ function isCloseIntentToken(token: string, target: string): boolean {
 const IMAGE_TOPIC_TERMS = [
   'gorsel', 'resim', 'resmi', 'fotograf', 'foto', 'logo', 'ikon', 'illustrasyon',
   'papatya', 'manzara', 'kedi', 'kopek', 'araba', 'ev', 'doga', 'uzay', 'gemi',
+  'cyberpunk', 'neon', 'portre', 'karakter', 'tablo', 'sahne', 'atmosfer', 'render',
 ] as const;
 
 const IMAGE_ACTION_TERMS = [
-  'olustur', 'olusturur', 'olusturabilir', 'uret', 'yap', 'yapar', 'ciz', 'cizer', 'tasarla', 'hazirla',
+  'olustur', 'olusturur', 'olusturabilir', 'uret', 'yap', 'yapar', 'ciz', 'cizer', 'tasarla', 'hazirla', 'degistir', 'guncelle', 'duzenle',
 ] as const;
+
+const CONTEXT_PRONOUNS = ['o', 'onu', 'onu', 'bunu', 'şunu', 'tekrar', 'yine', 'daha', 'bi daha', 'bi tane daha'];
 
 export function isImageGenerationIntentText(prompt: string): boolean {
   const signals = findImageIntentSignals(prompt);
@@ -167,10 +194,10 @@ function findImageIntentSignals(prompt: string): {
   const tokens = intentTokens(prompt);
   let hasImageTopic = false;
   for (const term of IMAGE_TOPIC_TERMS) {
-    const tokenMatch = tokens.find((token) => token === term || token.startsWith(term));
+    const tokenMatch = tokens.find((token) => isCloseIntentToken(token, term));
     if (tokenMatch) {
       hasImageTopic = true;
-      matchedSignals.push(`image topic:${term}`);
+      matchedSignals.push(tokenMatch === term ? `image topic:${term}` : `image topic typo:${tokenMatch}->${term}`);
       break;
     }
   }
@@ -189,18 +216,44 @@ function findImageIntentSignals(prompt: string): {
     matchedSignals.push('definition cue');
   }
 
-  const isImage = hasImageTopic && hasGenerationAction && !hasDefinitionCue;
-  return { isImage, matchedSignals };
+  // Sadece betimleme girilmişse (Action yok ama güçlü Topic var ve Virgül/İngilizce yapısı var)
+  const isDirectPrompt = hasImageTopic && tokens.length > 2 && prompt.includes(',');
+  const isImage = (hasImageTopic && hasGenerationAction && !hasDefinitionCue) || isDirectPrompt;
+  
+  if (isDirectPrompt && !isImage) {
+    matchedSignals.push('direct image prompt detected');
+  }
+
+  return { isImage: Boolean(isImage), matchedSignals };
 }
 
 function clampConfidence(value: number): number {
   return Math.max(0, Math.min(1, Number(value.toFixed(2))));
 }
 
-export function classifyIntentWithConfidence(prompt: string): IntentClassificationMeta {
+export function classifyIntentWithConfidence(prompt: string, messages: any[] = []): IntentClassificationMeta {
   const text = normalizeText(prompt);
   const normalizedText = normalizeForIntentMatch(prompt);
   const matchedSignals: string[] = [];
+
+  // [PHASE 3] Bağlamsal Analiz (Contextual Continuity)
+  const tokens = prompt.toLowerCase().split(/\s+/);
+  const hasContextPronoun = tokens.some(t => CONTEXT_PRONOUNS.includes(t));
+  
+  if (hasContextPronoun && messages.length >= 2) {
+    const lastAssistantMsg = [...messages].reverse().find(m => m.role === 'assistant');
+    // Eğer son asistan mesajında bir görsel işi (imageJobId) varsa veya son niyet görsel üretimiydiyse
+    if (lastAssistantMsg?.imageJobId || lastAssistantMsg?.content?.includes('Görsel üretim')) {
+      matchedSignals.push('contextual continuity (pronoun)');
+      return {
+        intent: 'image_generation',
+        confidence: 0.9,
+        normalizedText,
+        matchedSignals,
+        routeTarget: 'igm',
+      };
+    }
+  }
 
   if (!text) {
     return {

@@ -138,8 +138,23 @@ const ANALYSIS_TASK_KEYWORDS = [
   'raporla',
 ];
 
+const GAME_DESIGN_KEYWORDS = ['oyun tasarla', 'oyun plan', 'oyun mekanik', 'oyun tasarim', 'game design', 'game mechanics', 'oyun fikir', 'mekanik tasarim', 'oyun konsept'];
+const GAME_SCENE_KEYWORDS = ['oyun sahne', 'level tasarim', 'harita tasarim', 'platform tasarim', 'bolum tasarim', 'environment design', 'game scene', 'map design', 'sahne plan', 'level', 'sahne', 'environment layout', 'scene design'];
+const GAME_ASSET_KEYWORDS = ['sprite ciz', 'karakter ciz', 'dusman ciz', 'oyun obje', 'item sprite', 'arka plan ciz', 'game asset', 'pixel art', 'sprite prompt', 'sprite', 'karakter', 'asset prompt'];
+const GAME_SCRIPT_KEYWORDS = ['oyun kod', 'player movement', 'collision script', 'enemy ai script', 'game logic', 'script yaz', 'oyun script', 'script', 'kodla'];
+const GAME_ERROR_FIX_KEYWORDS = ['engine hata', 'oyun bug', 'sahne calis', 'script patlad', 'fix game', 'error fix', 'hata ayikla', 'collision calis', 'collision', 'bug fix', 'fix a bug', 'error', 'bug'];
+const ENGINE_QUERY_KEYWORDS = ['engine yapis', 'dosya sistem', 'asset pipeline', 'sahne sistem', 'engine api', 'engine nedir'];
+
+// Faz 7: Genel projelerde yanlış pozitif tetiklemeyi önlemek için izole edilecek kelimeler
+const DANGEROUS_GAME_KEYWORDS = [
+  'level', 'sahne', 'sprite', 'karakter', 'script', 'kodla', 'fix', 'error', 'bug', 'kod', 'tasarim', 'design', 'layout',
+  'karakter ciz', 'sprite ciz', 'karakter tasarim', 'sahne tasarim', 'level tasarim', 'collision'
+];
+
 function normalizeText(value: string): string {
-  return value.trim().toLocaleLowerCase('tr-TR');
+  // Faz 5: 'API' -> 'apı' (tr-TR) yerine 'api' (en-US/standard) dönüşümü için 
+  // standard toLowerCase kullanıyoruz. Bu, teknik terimlerin eşleşmesini iyileştirir.
+  return value.trim().toLowerCase();
 }
 
 function escapeRegExp(value: string): string {
@@ -148,10 +163,19 @@ function escapeRegExp(value: string): string {
 
 function findMatches(text: string, keywords: readonly string[]): string[] {
   return keywords.filter((keyword) => {
-    if (!keyword.includes(' ')) {
-      return new RegExp(`(^|[^\\p{L}\\p{N}])${escapeRegExp(keyword)}([^\\p{L}\\p{N}]|$)`, 'u').test(text);
-    }
-    return text.includes(keyword);
+    // Faz 6: Türkçe ekleri (Suffixes) tüm kelimeler için desteklemek üzere regex'i geliştiriyoruz.
+    // Anahtar kelimeyi boşluklardan ayırıp her parça için isteğe bağlı harf ekine izin veriyoruz.
+    const parts = keyword.split(' ').map(part => {
+      const escaped = escapeRegExp(part);
+      // Kısa kelimeler için (örn: 'bug') ek desteğini kapatarak yanlış pozitifleri önlüyoruz.
+      if (part.length > 3) {
+        return `${escaped}(\\p{L}*)?`;
+      }
+      return escaped;
+    });
+
+    const pattern = `(^|[^\\p{L}\\p{N}])${parts.join('\\s+')}([^\\p{L}\\p{N}]|$)`;
+    return new RegExp(pattern, 'u').test(text);
   });
 }
 
@@ -207,12 +231,19 @@ function detectExplicitIntent(
   return undefined;
 }
 
+function isDoomsgameContext(projectId?: string): boolean {
+  if (!projectId) return false;
+  const p = projectId.toLowerCase();
+  return ['doomsgame', 'doomsgame-engine', 'dooms-game', 'game-engine'].includes(p);
+}
+
 function detectIntent(
   text: string,
   selectedModes: AillameMode[],
   imageCount: number,
   taskType?: AillameTaskType,
-  outputType?: AillameOutputType
+  outputType?: AillameOutputType,
+  projectId?: string
 ): { intent: AillameIntent; matchedIntentKeywords: string[] } {
   const explicitIntent = detectExplicitIntent(taskType, outputType);
   if (explicitIntent) return explicitIntent;
@@ -228,6 +259,34 @@ function detectIntent(
   const codeMatches = findMatches(text, CODE_TASK_KEYWORDS);
   const agentMatches = findMatches(text, AGENT_TASK_KEYWORDS);
   const taskAnalysisMatches = findMatches(text, ANALYSIS_TASK_KEYWORDS);
+
+  // Faz 6 & 7: Doomsgame Intentleri (Project Context Duyarlı)
+  const normalized = text;
+  const isDoomsgame = isDoomsgameContext(projectId);
+
+  // Genel projelerde tek başına 'level', 'sahne' gibi kelimelerin oyun intentini tetiklemesini engelliyoruz.
+  const filterGameMatches = (matches: string[]) => {
+    if (isDoomsgame) return matches;
+    return matches.filter(m => !DANGEROUS_GAME_KEYWORDS.includes(m));
+  };
+  
+  const gameErrorMatches = filterGameMatches(findMatches(normalized, GAME_ERROR_FIX_KEYWORDS));
+  if (gameErrorMatches.length > 0) return { intent: 'game_error_fix', matchedIntentKeywords: gameErrorMatches };
+
+  const gameDesignMatches = filterGameMatches(findMatches(normalized, GAME_DESIGN_KEYWORDS));
+  if (gameDesignMatches.length > 0) return { intent: 'game_design', matchedIntentKeywords: gameDesignMatches };
+
+  const engineQueryMatches = filterGameMatches(findMatches(normalized, ENGINE_QUERY_KEYWORDS));
+  if (engineQueryMatches.length > 0) return { intent: 'engine_query', matchedIntentKeywords: engineQueryMatches };
+
+  const gameScriptMatches = filterGameMatches(findMatches(normalized, GAME_SCRIPT_KEYWORDS));
+  if (gameScriptMatches.length > 0) return { intent: 'game_script', matchedIntentKeywords: gameScriptMatches };
+
+  const gameAssetMatches = filterGameMatches(findMatches(normalized, GAME_ASSET_KEYWORDS));
+  if (gameAssetMatches.length > 0) return { intent: 'game_asset', matchedIntentKeywords: gameAssetMatches };
+
+  const gameSceneMatches = filterGameMatches(findMatches(normalized, GAME_SCENE_KEYWORDS));
+  if (gameSceneMatches.length > 0) return { intent: 'game_scene', matchedIntentKeywords: gameSceneMatches };
 
   if (agentMatches.length > 0) {
     return { intent: 'agent', matchedIntentKeywords: agentMatches };
@@ -250,6 +309,7 @@ function detectIntent(
   if (textOutputMatches.length > 0) {
     return { intent: 'text', matchedIntentKeywords: textOutputMatches };
   }
+
 
   if (visualSubjectMatches.length > 0 && text.includes('tasarla')) {
     return {
@@ -347,7 +407,7 @@ function getContractShape(intent: AillameIntent): {
       taskType: 'vision',
       contentType: 'image',
       outputType: 'text',
-      capabilities: ['vision-image-understanding' as any],
+      capabilities: ['text-generation' as any, 'image-understanding' as any],
     };
   }
 
@@ -365,7 +425,7 @@ function getContractShape(intent: AillameIntent): {
       taskType: 'code',
       contentType: 'code',
       outputType: 'text',
-      capabilities: ['text-generation' as any],
+      capabilities: ['text-generation' as any, 'code-generation' as any],
     };
   }
 
@@ -374,7 +434,7 @@ function getContractShape(intent: AillameIntent): {
       taskType: 'agent',
       contentType: 'project',
       outputType: 'report',
-      capabilities: ['text-generation' as any],
+      capabilities: ['text-generation' as any, 'agent-task' as any],
     };
   }
 
@@ -383,7 +443,61 @@ function getContractShape(intent: AillameIntent): {
       taskType: 'analysis',
       contentType: 'text',
       outputType: 'report',
-      capabilities: ['text-generation' as any],
+      capabilities: ['text-generation' as any, 'analysis' as any],
+    };
+  }
+
+  if (intent === 'game_design') {
+    return {
+      taskType: 'game_design' as any,
+      contentType: 'text',
+      outputType: 'text',
+      capabilities: ['text-generation' as any, 'analysis' as any, 'game-design' as any],
+    };
+  }
+
+  if (intent === 'game_scene') {
+    return {
+      taskType: 'game_scene' as any,
+      contentType: 'text',
+      outputType: 'text',
+      capabilities: ['text-generation' as any, 'game-scene-planning' as any],
+    };
+  }
+
+  if (intent === 'game_asset') {
+    return {
+      taskType: 'game_asset' as any,
+      contentType: 'text',
+      outputType: 'image',
+      capabilities: ['text-generation' as any, 'image-generation' as any, 'game-asset-planning' as any],
+    };
+  }
+
+  if (intent === 'game_script') {
+    return {
+      taskType: 'game_script' as any,
+      contentType: 'code',
+      outputType: 'text',
+      capabilities: ['text-generation' as any, 'code-generation' as any, 'game-scripting' as any],
+    };
+  }
+
+  if (intent === 'game_error_fix') {
+    return {
+      taskType: 'game_error_fix' as any,
+      contentType: 'code',
+      outputType: 'text',
+      capabilities: ['text-generation' as any, 'code-generation' as any, 'analysis' as any, 'game-debugging' as any],
+    };
+  }
+
+  if (intent === 'engine_query') {
+    return {
+      taskType: 'engine_query' as any,
+      contentType: 'text',
+      outputType: 'text',
+      capabilities: ['text-generation' as any, 'analysis' as any, 'engine-knowledge' as any],
     };
   }
 
@@ -471,7 +585,8 @@ export function routeAillameRequest(input: AillameRouteInput): AillameRouteDecis
     selectedModes,
     imageCount,
     input.taskType,
-    input.outputType
+    input.outputType,
+    input.projectId
   );
   const contractShape = applyExplicitContract(getContractShape(intent), input);
   const requiredAdapters = getRequiredAdapters(intent);

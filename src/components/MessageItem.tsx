@@ -6,6 +6,7 @@ import FeedbackActions from './FeedbackActions';
 import { FiAlertTriangle, FiCopy, FiCheck } from 'react-icons/fi';
 import { useState } from 'react';
 import ChatImageGenerationCard from './chat/ChatImageGenerationCard';
+import { generateContextMetadataLabel } from '@/core/chat/message-metadata';
 
 interface MessageItemProps {
   message: Message;
@@ -114,9 +115,16 @@ export default function MessageItem({ message, index = 0, conversationId, prompt
             )}
             
             {isUser && (
-              <span className="block text-[10px] font-black uppercase tracking-[0.3em] mb-2.5 text-indigo-200/50">
-                Sen
-              </span>
+              <div className="flex items-center justify-between mb-2.5">
+                <span className="block text-[10px] font-black uppercase tracking-[0.3em] text-indigo-200/50">
+                  Sen
+                </span>
+                {message.metadata?.uiContextMetadata?.hasManualWorkspaceContext && (
+                  <span className="text-[9px] font-semibold text-indigo-300/80 bg-indigo-500/10 px-2 py-1 rounded border border-indigo-500/30 whitespace-nowrap">
+                    📦 {message.metadata.uiContextMetadata.manualContextItemCount || 0} snippet
+                  </span>
+                )}
+              </div>
             )}
 
             {/* Copy Button */}

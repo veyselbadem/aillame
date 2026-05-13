@@ -19,6 +19,12 @@ export type AillameIntent =
   | 'agent'
   | 'economy_analysis'
   | 'education_content'
+  | 'game_design'
+  | 'game_scene'
+  | 'game_asset'
+  | 'game_script'
+  | 'game_error_fix'
+  | 'engine_query'
   | 'unknown';
 
 export type MemoryScopeLayer = 'global' | 'mode' | 'session' | 'task';

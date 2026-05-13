@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useChat } from '@hooks/useChat';
 import { useDragDrop } from '@hooks/useDragDrop';
 import type { ActiveTool } from '@hooks/useChat';
@@ -21,7 +21,17 @@ import {
   FiShield,
   FiChevronDown,
   FiChevronUp,
+  FiPlayCircle,
 } from 'react-icons/fi';
+import { LocalRuntimeStatus } from './chat/LocalRuntimeStatus';
+import { LocalRuntimePanel } from './chat/LocalRuntimePanel';
+import { NanoProfileSelector } from './chat/NanoProfileSelector';
+import { useRuntimeStatus } from '@hooks/useRuntimeStatus';
+import { useSettings } from '@hooks/useSettings';
+import {
+  MANUAL_CONTEXT_ATTACH_EVENT,
+  ManualContextAttachEventDetail,
+} from '@lib/manual-context-attach-events';
 
 interface ChatShellProps {
   conversationId: string;
@@ -59,7 +69,7 @@ function ToolCallBar({ tools }: { tools: ActiveTool[] }) {
   );
 }
 
-function ProjectContextSurface({ modelLabel }: { modelLabel: string }) {
+function ProjectContextSurface() {
   return (
     <div className="border-b px-5 py-2 theme-divider theme-soft-panel flex items-center justify-between">
       <div className="flex items-center gap-4">
@@ -68,14 +78,14 @@ function ProjectContextSurface({ modelLabel }: { modelLabel: string }) {
           <span className="text-[10px] font-black uppercase tracking-widest theme-title">Workspace</span>
         </div>
         <div className="h-3 w-px bg-slate-300 dark:bg-slate-700" />
-        <div className="flex items-center gap-2">
-          <span className="text-[9px] font-bold uppercase tracking-wider theme-muted">Model</span>
-          <span className="text-[10px] font-semibold theme-secondary">{modelLabel}</span>
+        <div className="flex items-center gap-3">
+          <NanoProfileSelector />
+          <LocalRuntimeStatus />
         </div>
       </div>
       <div className="flex items-center gap-2">
         <span className="rounded-full border border-emerald-500/20 bg-emerald-500/5 px-2 py-0.5 text-[8px] font-black uppercase tracking-widest text-emerald-500/80">
-          Local
+          Native Runtime
         </span>
       </div>
     </div>
@@ -88,6 +98,7 @@ export default function ChatShell({ conversationId }: ChatShellProps) {
   const tier: 'nano' = 'nano';
   const chatModel = getChatModelForTier(tier);
   const visionEnabled = modelSupports(chatModel.id, 'vision-image-understanding');
+  const { session } = useRuntimeStatus();
 
   const {
     messages,
@@ -103,6 +114,30 @@ export default function ChatShell({ conversationId }: ChatShellProps) {
     activeTools,
     listRef,
   } = useChat(conversationId, { llmMode, tier });
+
+  useEffect(() => {
+    const onManualContextAttach = (event: Event) => {
+      const customEvent = event as CustomEvent<ManualContextAttachEventDetail>;
+      const attachedText = customEvent.detail?.text?.trim();
+      if (!attachedText) {
+        return;
+      }
+
+      setInput((prev) => {
+        if (!prev.trim()) {
+          return attachedText;
+        }
+        return `${prev}\n\n${attachedText}`;
+      });
+    };
+
+    window.addEventListener(MANUAL_CONTEXT_ATTACH_EVENT, onManualContextAttach);
+    return () => {
+      window.removeEventListener(MANUAL_CONTEXT_ATTACH_EVENT, onManualContextAttach);
+    };
+  }, [setInput]);
+
+  const isModelLoaded = session?.processState === 'loaded';
 
   const { isDragOver, dragHandlers } = useDragDrop({
     onFileProcessed: (file) => {
@@ -162,16 +197,44 @@ export default function ChatShell({ conversationId }: ChatShellProps) {
         </button>
       </div>
 
-      <ProjectContextSurface modelLabel={chatModel.shortLabel ?? chatModel.id} />
+      <ProjectContextSurface />
       <ToolCallBar tools={activeTools} />
 
       <div className="flex-1 overflow-hidden relative flex flex-col">
         <MessageList messages={messages} loading={loading} listRef={listRef} conversationId={conversationId} />
+        
+        {!isModelLoaded && !loading && (
+          <div className="absolute inset-0 z-30 flex flex-col items-center justify-center bg-[var(--bg-surface)]/90 backdrop-blur-md animate-fade-in p-10">
+            <div className="max-w-sm w-full">
+              <div className="text-center mb-8">
+                <div className="w-20 h-20 rounded-[32px] bg-indigo-600/10 flex items-center justify-center mx-auto mb-6 border border-indigo-500/20 shadow-2xl shadow-indigo-500/10">
+                  <FiPlayCircle size={40} className="text-indigo-500" />
+                </div>
+                <h3 className="text-xl font-black theme-title tracking-tight mb-3">Model Hazır Değil</h3>
+                <p className="text-sm theme-muted leading-relaxed">
+                  Yerel çıkarım yapabilmek için önce runtime'ı başlatmalı ve bir GGUF modeli yüklemelisin.
+                </p>
+              </div>
+              
+              <LocalRuntimePanel />
+
+              <div className="mt-8 text-center">
+                <a 
+                  href="/library" 
+                  className="text-xs font-black uppercase tracking-[0.2em] text-indigo-500/60 hover:text-indigo-500 transition-colors"
+                >
+                  Model Kütüphanesine Git →
+                </a>
+              </div>
+            </div>
+          </div>
+        )}
+
         {loading && (
           <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10">
             <button
               onClick={stopGeneration}
-            className="flex items-center gap-2 rounded-full theme-surface px-4 py-2 text-xs font-bold uppercase tracking-widest transition-all hover:border-rose-500/30"
+            className="flex items-center gap-2 rounded-full theme-surface px-4 py-2 text-xs font-bold uppercase tracking-widest transition-all hover:border-rose-500/30 shadow-2xl border border-white/5"
             >
               <FiSquare size={10} className="fill-current text-rose-500" />
               <span>Durdur</span>
@@ -185,7 +248,7 @@ export default function ChatShell({ conversationId }: ChatShellProps) {
           value={input}
           onChange={setInput}
           onSend={sendMessage}
-          disabled={loading}
+          disabled={loading || !isModelLoaded}
           visionEnabled={visionEnabled}
           attachments={attachments}
           onAttachmentsChange={setAttachments}
