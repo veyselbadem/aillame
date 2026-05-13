@@ -9,7 +9,7 @@
       "allow": [
         {
           "args": true,
-          "name": "binaries/aillame-runtime",
+          "name": "aillame-runtime",
           "sidecar": true
         }
       ]

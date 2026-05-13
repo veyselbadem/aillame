@@ -12,6 +12,7 @@
   "app": {
     "windows": [
       {
+        "label": "main",
         "title": "Aillame",
         "width": 1280,
         "height": 800,
@@ -30,7 +31,7 @@
     "targets": "all",
     "icon": [],
     "externalBin": [
-      "binaries/aillame-runtime"
+      "aillame-runtime"
     ]
   }
 }

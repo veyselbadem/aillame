@@ -49,7 +49,7 @@ pub async fn start_runtime<R: Runtime>(
     }
 
     // 2. Sidecar Yapılandırması ve Başlatma
-    let (mut rx, mut child) = match app.shell().sidecar("binaries/aillame-runtime") {
+    let (mut rx, mut child) = match app.shell().sidecar("aillame-runtime") {
         Ok(c) => match c.spawn() {
             Ok(res) => res,
             Err(_e) => {
