@@ -173,7 +173,7 @@
     "api:key:generate": "tsx src/scripts/generate-api-key.ts",
     "desktop:dev": "tauri dev",
     "desktop:build": "tauri build",
-    "build:sidecar": "cargo build --bin aillame-runtime --manifest-path src-tauri/Cargo.toml --release && powershell -Command \"Copy-Item src-tauri/target/release/aillame-runtime.exe src-tauri/aillame-runtime-x86_64-pc-windows-msvc.exe -Force\""
+    "build:sidecar": "cargo build --manifest-path src-tauri/sidecars/aillame-runtime/Cargo.toml --release && powershell -Command \"Copy-Item src-tauri/sidecars/aillame-runtime/target/release/aillame-runtime.exe src-tauri/aillame-runtime-x86_64-pc-windows-msvc.exe -Force\""
   },
   "devDependencies": {
     "@napi-rs/cli": "^2.18.4",
