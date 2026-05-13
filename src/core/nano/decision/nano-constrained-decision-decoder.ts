@@ -54,21 +54,16 @@ export type NanoConstrainedDecisionDecodeResult = {
   };
 };
 
-const TASK_TYPES = ["chat", "text", "code", "analysis", "image", "vision", "agent", "mixed", "unknown"] as const;
-const CONTENT_TYPES = ["text", "image", "code", "project", "mixed"] as const;
-const OUTPUT_TYPES = ["text", "image", "json", "patch", "report", "mixed"] as const;
-const DOMAINS = ["general", "education", "code", "economy"] as const;
-const MEMORY_SCOPES = ["none", "global", "project", "session"] as const;
-const RISK_LEVELS = ["low", "medium", "high"] as const;
-const CAPABILITIES = [
-  "text-generation",
-  "chat",
-  "code-generation",
-  "analysis",
-  "image-generation",
-  "image-understanding",
-  "agent-task",
-] as const;
+import { 
+  TASK_TYPES, 
+  CONTENT_TYPES, 
+  OUTPUT_TYPES, 
+  DOMAINS, 
+  MEMORY_SCOPES, 
+  RISK_LEVELS, 
+  CAPABILITIES,
+  parseNanoDecisionWithSchema
+} from "./nano-decision-schema";
 
 type DecisionObject = NanoConstrainedDecisionDecodeResult["decision"];
 type DecodeSource = NanoConstrainedDecisionDecodeResult["source"];
@@ -204,6 +199,12 @@ function buildDecisionFromObject(
   value: Record<string, unknown>,
   fallback: DecisionObject
 ): { valid: boolean; decision: DecisionObject; repaired: boolean } {
+  // Faz 3: Zod tabanlı şema doğrulaması yardımcı katman olarak eklendi.
+  const schemaValidated = parseNanoDecisionWithSchema({
+    ...fallback,
+    ...value,
+  });
+
   const taskType = pickAllowed(value.taskType, TASK_TYPES, fallback.taskType);
   const contentType = pickAllowed(value.contentType, CONTENT_TYPES, fallback.contentType);
   const outputType = pickAllowed(value.outputType, OUTPUT_TYPES, fallback.outputType);
@@ -225,10 +226,13 @@ function buildDecisionFromObject(
     && typeof value.decision === "string"
   );
 
+  // Schema verisi ile manuel tamir edilmiş veri harmanlanıyor.
+  // Manuel tamir şu an için öncelikli, ancak schema-validated veriler de tutarlılık sağlıyor.
   return {
     valid,
     repaired: !valid,
     decision: {
+      ...schemaValidated, // Schema'dan gelen güvenli varsayılanlar
       taskType,
       contentType,
       outputType,
