@@ -156,6 +156,15 @@ class TauriModelBridge {
   }
 
   async startRuntime(options: Partial<RuntimeStartOptions> = {}): Promise<RuntimeStartResponse> {
+    const isTauri = typeof window !== "undefined" && "__TAURI__" in window;
+    console.info("[tauri-model-bridge] startRuntime called", { options, tauriAvailable: isTauri });
+
+    if (!isTauri) {
+      const error = "Native runtime only available in desktop app (Tauri environment not detected)";
+      console.warn("[tauri-model-bridge]", error);
+      throw new Error(error);
+    }
+
     const defaultOptions: RuntimeStartOptions = {
       devicePreference: "auto",
       startTimeoutMs: 30000,
@@ -164,13 +173,21 @@ class TauriModelBridge {
     };
 
     const finalOptions = { ...defaultOptions, ...options };
+    const request = { 
+      devicePreference: finalOptions.devicePreference,
+      options: finalOptions
+    };
 
-    return await invoke<RuntimeStartResponse>("start_runtime", { 
-      request: { 
-        devicePreference: finalOptions.devicePreference,
-        options: finalOptions
-      } 
-    });
+    console.info("[tauri-model-bridge] invoking start_runtime", request);
+
+    try {
+      const result = await invoke<RuntimeStartResponse>("start_runtime", { request });
+      console.info("[tauri-model-bridge] start_runtime invoke success", result);
+      return result;
+    } catch (err) {
+      console.error("[tauri-model-bridge] start_runtime invoke failed", err);
+      throw err;
+    }
   }
 
   async stopRuntime(): Promise<string> {

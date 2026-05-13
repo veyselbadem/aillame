@@ -11,8 +11,10 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 pub async fn start_runtime<R: Runtime>(
     app: AppHandle<R>,
     state: State<'_, AppState>,
-    _request: RuntimeStartRequest
+    request: RuntimeStartRequest
 ) -> Result<RuntimeStartResponse, String> {
+    eprintln!("[start_runtime] command received");
+    eprintln!("[start_runtime] request: {:?}", request);
     // 1. Durum Kontrolü (Repeated Start Policy)
     {
         let session = state.runtime_session.lock().unwrap();
@@ -51,6 +53,7 @@ pub async fn start_runtime<R: Runtime>(
         Ok(c) => match c.spawn() {
             Ok(res) => res,
             Err(_e) => {
+                eprintln!("[start_runtime] sidecar spawn failed: {:?}", _e);
                 return Ok(RuntimeStartResponse {
                     success: false,
                     session_id: None,
@@ -284,6 +287,7 @@ pub async fn start_runtime<R: Runtime>(
         }
     });
 
+    eprintln!("[start_runtime] runtime start requested successfully (starting session)");
     Ok(RuntimeStartResponse {
         success: true,
         session_id: Some(session_id),
