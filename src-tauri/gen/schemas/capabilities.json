@@ -1,1 +1,1 @@
-{}
+{"default":{"identifier":"default","description":"Default permissions for Aillame","local":true,"windows":["main"],"permissions":["core:default","dialog:default","fs:default","core:event:default","core:webview:default","core:window:default"]}}

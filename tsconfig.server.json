@@ -1,0 +1,13 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "outDir": "dist",
+    "noEmit": false,
+    "module": "CommonJS",
+    "moduleResolution": "node",
+    "target": "ES2021",
+    "lib": ["esnext"]
+  },
+  "include": ["src/server.ts", "src/app.ts", "src/api/**/*", "src/middlewares/**/*", "src/utils/**/*", "src/config/**/*", "src/validators/**/*", "src/types/**/*", "src/services/**/*", "src/scripts/**/*"],
+  "exclude": ["node_modules", "src/components/**/*", "src/app/**/*", "src/hooks/**/*", "src/providers/**/*"]
+}
