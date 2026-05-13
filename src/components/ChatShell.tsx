@@ -220,7 +220,7 @@ export default function ChatShell({ conversationId }: ChatShellProps) {
 
               <div className="mt-8 text-center">
                 <a 
-                  href="/library" 
+                  href="/admin/model-library" 
                   className="text-xs font-black uppercase tracking-[0.2em] text-indigo-500/60 hover:text-indigo-500 transition-colors"
                 >
                   Model Kütüphanesine Git →
