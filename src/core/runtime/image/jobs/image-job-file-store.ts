@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import { resolveProjectRelative } from '@/core/project-root';
+import { resolveProjectRelative } from '../../../project-root';
 
 export type ImageJobStatus = 'queued' | 'running' | 'completed' | 'failed' | 'cancelled' | 'degraded' | 'not-configured';
 

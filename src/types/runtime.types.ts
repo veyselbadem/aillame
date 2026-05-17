@@ -12,7 +12,14 @@ export interface AillameRuntimeInput {
     temperature?: number;
     maxOutputTokens?: number;
     contextWindow?: number;
+    gpuLayers?: number;
+    runtimeProfile?: 'low' | 'balanced' | 'high';
   };
+  attachments?: Array<{
+    type: 'image';
+    data: Buffer | string; // Buffer or base64
+    mimeType?: string;
+  }>;
 }
 
 export interface AillameRuntimeOutput {

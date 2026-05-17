@@ -22,6 +22,7 @@ pub struct ModelLoadOptions {
 #[serde(rename_all = "camelCase")]
 pub struct ModelLoadRequest {
     pub model_id: String,
+    pub model_path: Option<String>,
     pub runtime_session_id: Option<String>,
     pub request_id: String,
     pub options: ModelLoadOptions,

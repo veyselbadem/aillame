@@ -78,7 +78,7 @@ export type AillameToolDefinition = {
   id: string;
   name: string;
   description: string;
-  category: 'memory' | 'system' | 'project' | 'health' | 'ai';
+  category: 'memory' | 'system' | 'project' | 'health' | 'ai' | 'distillation';
   riskLevel: AillameToolRiskLevel;
   requiresUserConfirmation: boolean;
   inputSchema: unknown;

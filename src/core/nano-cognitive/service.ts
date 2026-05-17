@@ -833,6 +833,38 @@ export function routeCognitiveRequest(prompt: string, hasAttachment: boolean): N
     };
   }
 
+  // Workspace / Project Context Tools
+  if (/proje bağlam|proje baglam|projelerimi|aktif projem|proje listesi|projeleri listele/i.test(p) || p.includes('aktif proje nedir') || p.includes('aktif projeyi göster')) {
+    if (/aktif/i.test(p)) {
+      return {
+        intent: 'tool_use',
+        target: 'aillame_tools',
+        confidence: 0.98,
+        reason: 'Aktif proje sorgulama talebi. Yerel araç "project.active" tetikleniyor.',
+        shouldAskClarifyingQuestion: false,
+        selectedToolId: 'project.active'
+      };
+    }
+    if (/ara|bul|sorgula/i.test(p)) {
+      return {
+        intent: 'tool_use',
+        target: 'aillame_tools',
+        confidence: 0.95,
+        reason: 'Proje arama sorgusu algılandı. Yerel araç "project.search" tetikleniyor.',
+        shouldAskClarifyingQuestion: false,
+        selectedToolId: 'project.search'
+      };
+    }
+    return {
+      intent: 'tool_use',
+      target: 'aillame_tools',
+      confidence: 0.95,
+      reason: 'Proje listeleme talebi algılandı. Yerel araç "project.list" tetikleniyor.',
+      shouldAskClarifyingQuestion: false,
+      selectedToolId: 'project.list'
+    };
+  }
+
   // 2. Health and Diagnostics (health_check)
   const healthSignals = [
     'vision health', 'sağlık kontrol', 'görsel model sağlığı', 'mini görsel testi',

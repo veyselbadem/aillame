@@ -2,9 +2,8 @@ import { useState, useRef, useEffect } from 'react';
 import { Message } from '@apptypes/message';
 import { LocalMemoryStore } from '@providers/memory/local';
 import { useSettings } from '@hooks/useSettings';
-import { orchestrateChat } from '@core/orchestrator';
-import { routeAillameRequest } from '@core/aillame-router/router';
-import { liveLearning } from '@core/orchestrator/live-learning';
+import { aillameFetch } from '@/lib/aillame-api-client';
+import { safeConfirm } from '@/lib/confirm';
 import type { ToolCall, ToolResult } from '@core/orchestrator/tools';
 import type { ImageAttachment } from '@apptypes/attachments';
 import type { AillameTier, LLMMode } from '@apptypes/settings';
@@ -14,8 +13,6 @@ import type {
   MemoryScopeReference,
 } from '@core/aillame-router/types';
 import type { MessageMetadata } from '@apptypes/message';
-import { tauriModelBridge } from '@core/platform/tauri-model-bridge';
-import { listen } from '@tauri-apps/api/event';
 import { auditChatMessage, checkInjectionPatterns } from '@core/chat/message-audit';
 import { createMessageUiMetadata } from '@core/chat/message-metadata';
 
@@ -72,22 +69,21 @@ function toMessageRoutingMetadata(decision: AillameRouteDecision): MessageMetada
 }
 
 function createAssistantMetadata(prompt: string, imageCount: number): MessageMetadata {
-  try {
-    return toMessageRoutingMetadata(
-      routeAillameRequest({
-        prompt,
-        imageCount,
-      })
-    );
-  } catch (error) {
-    console.error('[Aillame Router] metadata decision failed:', error);
-    return {
-      routingError: {
-        code: 'ROUTER_FAILED',
-        message: 'Router metadata could not be prepared.',
-      },
-    };
-  }
+  return {
+    routing: {
+      intent: 'text',
+      primaryMode: 'general',
+      selectedModes: ['general'],
+      requiredAdapters: [],
+      memoryScopes: [],
+      safetyFlags: {
+        requiresFinancialDisclaimer: false,
+        containsImageInput: imageCount > 0,
+        mayGenerateImage: false,
+        allowAutomaticMemoryWrite: true
+      }
+    }
+  };
 }
 
 export function useChat(conversationId?: string, runtimeSettings?: UseChatRuntimeSettings) {
@@ -121,10 +117,6 @@ export function useChat(conversationId?: string, runtimeSettings?: UseChatRuntim
   };
 
   const stopGeneration = () => {
-    if (llmMode === 'local') {
-      tauriModelBridge.cancelModelInferenceStream().catch(console.error);
-    }
-
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
     }
@@ -134,7 +126,7 @@ export function useChat(conversationId?: string, runtimeSettings?: UseChatRuntim
   };
 
   const clearMessages = async () => {
-    if (conversationId && confirm('Bu sohbetteki tüm mesajları silmek istediğine emin misin?')) {
+    if (conversationId && await safeConfirm('Bu sohbetteki tüm mesajları silmek istediğine emin misin?', { title: 'Sohbeti Temizle' })) {
       await memory.deleteConversation(conversationId);
       setMessages([]);
       setActiveTools([]);
@@ -198,51 +190,118 @@ export function useChat(conversationId?: string, runtimeSettings?: UseChatRuntim
     streamingAssistantIdRef.current = assistantId;
 
     try {
-      const result = await orchestrateChat(outgoingInput, {
-        llmMode,
-        tier,
-        nanoProfile: savedSettings.nanoProfile,
-        attachments: outgoingAttachments,
-        messages: messages.slice(-10), // Son 10 mesaj bağlam olarak
-        signal,
-        onToken: (token) => {
-          if (signal.aborted) return;
-          updateAssistantContent(assistantId, (prev) => prev + token);
-        },
-        onToolCall: (call) => {
-          if (signal.aborted) return;
-          setActiveTools((prev) => [...prev, { call, status: 'running' }]);
-        },
-        onToolResult: (result) => {
-          if (signal.aborted) return;
-          setActiveTools((prev) =>
-            prev.map((t) =>
-              t.call.tool === result.tool ? { ...t, status: 'done', result } : t
-            )
-          );
-        },
+      const hasImage = outgoingAttachments.length > 0;
+      const payload: any = {
+        message: outgoingInput,
+        projectId: "doomsgame-engine", // MVP Default
+        mode: "general",
+        context: {
+          llmMode,
+          tier,
+          nanoProfile: savedSettings.nanoProfile,
+          conversationId
+        }
+      };
+
+      if (hasImage) {
+        payload.imageBase64 = outgoingAttachments[0].dataUrl || outgoingAttachments[0].data;
+        payload.mimeType = outgoingAttachments[0].mimeType;
+        payload.modelId = 'qwen3-vl-4b-instruct-q4-k-m';
+        payload.multimodal = true;
+      }
+
+      const result = await aillameFetch('/api/core/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...payload,
+          // core/chat reads 'prompt', not 'message'
+          prompt: payload.message
+        }),
+        signal
       });
 
       if (signal.aborted) return;
 
-      let replyContent = '';
-      let extraData: any = {};
+      let replyContent = result.response || result.answer || result.text || '';
+      
+      const modelIdentifier = result.modelId || result.model || 'aillame-nano-v1';
+      let modelMetadata = {
+        provider: 'aillame-nano',
+        name: 'Aillame Nano',
+        runtime: 'nano-rust'
+      };
 
-      if (typeof result === 'string') {
-        replyContent = result;
-      } else if (result && typeof result === 'object') {
-        replyContent = result.response || result.answer || JSON.stringify(result, null, 2);
-        extraData = {
-          imageJobId: result.imageJobId,
-          imagePrompt: result.imagePrompt,
-          imageEnglishPrompt: result.imageEnglishPrompt
-        };
+      if (typeof modelIdentifier === 'string') {
+        if (modelIdentifier.includes('qwen3-vl') || modelIdentifier.includes('vision') || result.executionMode === 'vision_inference') {
+          modelMetadata = {
+            provider: 'qwen',
+            name: 'Qwen3-VL 4B Vision',
+            runtime: 'vlm-inference'
+          };
+        } else if (modelIdentifier.includes('sdxl') || modelIdentifier.includes('igm')) {
+          modelMetadata = {
+            provider: 'sdxl',
+            name: 'SDXL Turbo',
+            runtime: 'igm-queue'
+          };
+        } else if (modelIdentifier.includes('router-health')) {
+          modelMetadata = {
+            provider: 'aillame-nano',
+            name: 'Aillame Nano (Teşhis)',
+            runtime: 'nano-cognitive-router'
+          };
+        } else if (modelIdentifier.includes('router-clarify')) {
+          modelMetadata = {
+            provider: 'aillame-nano',
+            name: 'Aillame Nano (Netleştirici)',
+            runtime: 'nano-cognitive-router'
+          };
+        } else if (modelIdentifier.includes('v2')) {
+          modelMetadata = {
+            provider: 'aillame-nano',
+            name: 'Aillame Nano V2',
+            runtime: 'nano-versioned-inference'
+          };
+        } else if (modelIdentifier.includes('gemma')) {
+          modelMetadata = {
+            provider: 'ollama',
+            name: 'Gemma 2B',
+            runtime: 'ollama-inference'
+          };
+        }
+      } else if (modelIdentifier && typeof modelIdentifier === 'object') {
+        modelMetadata = modelIdentifier;
+      }
+
+      const responseMetadata: MessageMetadata = {
+        ...assistantMetadata,
+        runtime: result.meta?.runtime,
+        model: modelMetadata,
+        degraded: result.degraded,
+        errorCode: result.error?.code,
+        latencyMs: result.meta?.latencyMs || result.meta?.durationMs,
+        toolExecuted: result.meta?.toolExecuted,
+        toolRiskLevel: result.meta?.riskLevel,
+        toolOk: result.meta?.toolOk
+      };
+
+      // Simulate streaming for UI consistency
+      if (replyContent) {
+        const words = replyContent.split(' ');
+        let currentText = '';
+        for (const word of words) {
+          if (signal.aborted) break;
+          currentText += word + ' ';
+          updateAssistantContent(assistantId, () => currentText);
+          await new Promise(r => setTimeout(r, 15));
+        }
       }
 
       const finalAssistantMessage: Message = { 
         ...placeholder, 
         content: replyContent,
-        ...extraData
+        metadata: responseMetadata
       };
 
       updateAssistantContent(assistantId, () => replyContent);
@@ -250,14 +309,20 @@ export function useChat(conversationId?: string, runtimeSettings?: UseChatRuntim
       
       await memory.addMessage(conversationId, finalAssistantMessage);
 
-      liveLearning.learnFromConversation(outgoingInput, replyContent)
-        .catch(err => console.error('[LiveLearning] Senkronizasyon hatası:', err));
+    } catch (error: any) {
+      if (error.name === 'AbortError') return;
+      
+      const errorMessage = error.message || 'Cevap alınamadı.';
+      const errorMetadata: MessageMetadata = {
+        ...assistantMetadata,
+        degraded: true,
+        errorCode: error.code || 'GENERATION_FAILED'
+      };
 
-    } catch (error: unknown) {
-      if (error instanceof Error && error.name === 'AbortError') return;
-      const errorMessage = 'Cevap alınamadı.';
       updateAssistantContent(assistantId, () => errorMessage);
-      await memory.addMessage(conversationId, { ...placeholder, content: errorMessage });
+      const finalErrorMessage = { ...placeholder, content: errorMessage, metadata: errorMetadata };
+      setMessages(prev => prev.map(m => m.id === assistantId ? finalErrorMessage : m));
+      await memory.addMessage(conversationId, finalErrorMessage);
     } finally {
       setLoading(false);
       setModelLoading(false);

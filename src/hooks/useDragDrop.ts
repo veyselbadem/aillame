@@ -3,7 +3,7 @@
 import { useState, useCallback, useRef } from 'react';
 import { liveLearning } from '@core/orchestrator/live-learning';
 import type { ImageAttachment } from '@apptypes/attachments';
-import { createImageAttachment } from '@/lib/image-attachments';
+import { createImageAttachment, validateImageFile } from '@/lib/image-attachments';
 
 export type DroppedFileType = 'txt' | 'docx' | 'pdf' | 'epub' | 'image' | 'unknown';
 
@@ -60,6 +60,12 @@ export function useDragDrop({ onFileProcessed, onMessage }: UseDragDropOptions =
       } else if (type === 'epub') {
         content = `[EPUB: ${file.name} - /library sayfasından yükleyin]`;
       } else if (type === 'image') {
+        // Validate against shared rules (same as ChatInput)
+        const validationError = validateImageFile(file);
+        if (validationError) {
+          onMessage?.(validationError);
+          return null;
+        }
         attachment = await createImageAttachment(file);
         content = `[Görsel dosya: ${file.name}]`;
       } else {
@@ -122,8 +128,21 @@ export function useDragDrop({ onFileProcessed, onMessage }: UseDragDropOptions =
     const files = Array.from(e.dataTransfer.files);
     if (files.length === 0) return;
 
-    await processFile(files[0]);
-  }, [processFile]);
+    // Single-file rule: mirror ChatInput behaviour
+    if (files.length > 1) {
+      onMessage?.('Aynı anda yalnızca bir görsel ekleyebilirsiniz.');
+      return;
+    }
+
+    // Unsupported non-image file type shortcut message
+    const file = files[0];
+    if (!file.type.startsWith('image/') && detectType(file) === 'unknown') {
+      onMessage?.('Sadece PNG, JPEG veya WebP görseller desteklenir.');
+      return;
+    }
+
+    await processFile(file);
+  }, [processFile, onMessage]);
 
   return {
     isDragOver,

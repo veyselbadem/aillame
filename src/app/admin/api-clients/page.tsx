@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { FiPlus, FiRefreshCw, FiCopy, FiAlertTriangle, FiKey, FiCode, FiShield } from 'react-icons/fi';
 import StatusBadge from '@components/ui/StatusBadge';
+import { safeConfirm } from '@/lib/confirm';
 import type { AillameApiKey, ApiKeyPermission, ApiKeyStatus, SecurityDiagnostics } from '@core/security/models';
 
 const PROJECT_PRESETS = ['general', 'aillame', 'boss-ai', 'doomsgame-engine', 'badem-akademi'] as const;
@@ -118,7 +119,7 @@ export default function AdminApiClientsPage() {
   };
 
   const handleRevoke = async (keyId: string) => {
-    if (!confirm('Bu anahtarı iptal etmek istediğinize emin misiniz?')) return;
+    if (!await safeConfirm('Bu anahtarı iptal etmek istediğinize emin misiniz?', { title: 'Anahtarı İptal Et' })) return;
     
     setError('');
     setMessage('');

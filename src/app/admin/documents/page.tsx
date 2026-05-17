@@ -41,12 +41,12 @@ export default function DocumentLibraryPage() {
         <div>
           <h1 className="flex items-center text-3xl font-bold tracking-tight theme-title">
             <RiFileList3Line className="mr-4 text-emerald-600 dark:text-emerald-300" />
-            Document Library / RAG
+            Belge Kütüphanesi / RAG
           </h1>
-          <p className="mt-2 text-sm theme-muted">Persistent RAG memory, document ingestion and project-based isolation.</p>
+          <p className="mt-2 text-sm theme-muted">Kalıcı RAG belleği, belge içe aktarma ve proje bazlı izolasyon.</p>
         </div>
         <button className="flex items-center gap-2 rounded-lg theme-elevated px-4 py-2 text-xs font-semibold transition-colors hover:border-indigo-500/35">
-          <RiUploadCloud2Line /> Ingest Document
+          <RiUploadCloud2Line /> Belge İçe Aktar
         </button>
       </div>
 
@@ -58,10 +58,10 @@ export default function DocumentLibraryPage() {
 
       <section className="mb-8 grid gap-4 md:grid-cols-4">
         {[
-          ['Total Docs', documents.length.toString()],
-          ['Active', documents.filter((d) => d.status === 'active').length.toString()],
-          ['Chunks', documents.reduce((acc, d) => acc + (d.chunkCount || 0), 0).toString()],
-          ['Storage', 'JSONL Persistent'],
+          ['Toplam Belge', documents.length.toString()],
+          ['Aktif', documents.filter((d) => d.status === 'active').length.toString()],
+          ['Parçalar', documents.reduce((acc, d) => acc + (d.chunkCount || 0), 0).toString()],
+          ['Depolama', 'Kalıcı JSONL'],
         ].map(([label, value]) => (
           <div key={label} className="theme-surface rounded-2xl p-5">
             <p className="text-[10px] font-bold uppercase tracking-[0.24em] theme-muted">{label}</p>
@@ -73,11 +73,11 @@ export default function DocumentLibraryPage() {
       <div className="theme-surface rounded-2xl p-6">
         <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <h3 className="flex items-center text-sm font-semibold uppercase tracking-wider theme-secondary">
-            <RiHistoryLine className="mr-2" /> Document Repository
+            <RiHistoryLine className="mr-2" /> Belge Deposu
           </h3>
           <div className="relative">
             <RiSearch2Line className="absolute left-3 top-1/2 -translate-y-1/2 theme-muted" />
-            <input type="text" placeholder="Search library..." className="theme-input rounded-lg py-1.5 pl-9 pr-4 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500/20" />
+            <input type="text" placeholder="Kütüphanede ara..." className="theme-input rounded-lg py-1.5 pl-9 pr-4 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500/20" />
           </div>
         </div>
 
@@ -85,12 +85,12 @@ export default function DocumentLibraryPage() {
           <table className="w-full text-left text-xs theme-secondary">
             <thead className="border-b text-[10px] uppercase tracking-widest theme-divider theme-muted">
               <tr>
-                <th className="pb-3 pl-4">Document</th>
-                <th className="pb-3">Project</th>
-                <th className="pb-3">Type</th>
-                <th className="pb-3">Chunks</th>
-                <th className="pb-3">Status</th>
-                <th className="pb-3 pr-4">Created</th>
+                <th className="pb-3 pl-4">Belge</th>
+                <th className="pb-3">Proje</th>
+                <th className="pb-3">Tür</th>
+                <th className="pb-3">Parça</th>
+                <th className="pb-3">Durum</th>
+                <th className="pb-3 pr-4">Oluşturulma</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200 dark:divide-slate-800">

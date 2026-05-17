@@ -50,10 +50,10 @@ export type NanoTaskAnalysis = {
 
 export type NanoKnowledgeHit = {
   id: string;
-  title: string;
-  domain: string;
-  content: string;
-  score: number;
+  title?: string;
+  domain?: string;
+  content?: string;
+  score?: number;
 };
 
 export type NanoGenerationSettings = NanoGenerationConfig;

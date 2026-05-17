@@ -208,5 +208,174 @@ export const TOOL_REGISTRY: Record<string, AillameToolDefinition> = {
         return { ok: false, errors: [err.message] };
       }
     }
+  },
+
+  'project.list': {
+    id: 'project.list',
+    name: 'Proje Listesi',
+    description: 'Aillame üzerinde kayıtlı tüm yerel proje bağlamlarını listeler.',
+    category: 'project',
+    riskLevel: 'safe',
+    requiresUserConfirmation: false,
+    inputSchema: { type: 'object', properties: {} },
+    async execute(input: any, context: AillameToolContext): Promise<AillameToolResult> {
+      try {
+        const { AillameProjectContextService } = await import('../projects/project-context.service');
+        const list = AillameProjectContextService.listProjects();
+        return {
+          ok: true,
+          data: list.map(p => ({
+            id: p.id,
+            name: p.name,
+            description: p.description,
+            category: p.category,
+            goals: p.goals
+          })),
+          message: `Toplam ${list.length} adet proje bağlamı bulundu.`
+        };
+      } catch (err: any) {
+        return { ok: false, errors: [err.message] };
+      }
+    }
+  },
+
+  'project.active': {
+    id: 'project.active',
+    name: 'Aktif Proje',
+    description: 'Şu anda aktif olan proje bağlamının özetini getirir.',
+    category: 'project',
+    riskLevel: 'safe',
+    requiresUserConfirmation: false,
+    inputSchema: { type: 'object', properties: {} },
+    async execute(input: any, context: AillameToolContext): Promise<AillameToolResult> {
+      try {
+        const { AillameProjectContextService } = await import('../projects/project-context.service');
+        const active = AillameProjectContextService.getActiveProject();
+        return {
+          ok: true,
+          data: active,
+          message: active ? `Aktif proje: "${active.name}"` : 'Aktif bir proje bağlamı seçilmemiş.'
+        };
+      } catch (err: any) {
+        return { ok: false, errors: [err.message] };
+      }
+    }
+  },
+
+  'project.search': {
+    id: 'project.search',
+    name: 'Proje Arama',
+    description: 'Proje bağlamlarında anahtar kelimeye göre arama yapar.',
+    category: 'project',
+    riskLevel: 'safe',
+    requiresUserConfirmation: false,
+    inputSchema: {
+      type: 'object',
+      properties: {
+        query: { type: 'string', description: 'Aranacak kelime' }
+      },
+      required: ['query']
+    },
+    async execute(input: any, context: AillameToolContext): Promise<AillameToolResult> {
+      try {
+        const query = typeof input === 'object' && input !== null ? input.query : String(input || '');
+        if (!query) {
+          return { ok: false, errors: ['Arama kelimesi boş olamaz.'] };
+        }
+        const { AillameProjectContextService } = await import('../projects/project-context.service');
+        const list = AillameProjectContextService.listProjects();
+        const filtered = list.filter(p => 
+          p.name.toLowerCase().includes(query.toLowerCase()) ||
+          (p.description && p.description.toLowerCase().includes(query.toLowerCase())) ||
+          p.category.toLowerCase().includes(query.toLowerCase())
+        );
+        return {
+          ok: true,
+          data: filtered,
+          message: `Proje arama sonucunda ${filtered.length} adet eşleşen proje bulundu.`
+        };
+      } catch (err: any) {
+        return { ok: false, errors: [err.message] };
+      }
+    }
+  },
+
+  'distillation.stats': {
+    id: 'distillation.stats',
+    name: 'Öğrenme Verisi İstatistikleri',
+    description: 'Aillame local distillation dataset örnek sayılarını kategorize şekilde listeler.',
+    category: 'distillation',
+    riskLevel: 'safe',
+    requiresUserConfirmation: false,
+    inputSchema: { type: 'object', properties: {} },
+    async execute(input: any, context: any): Promise<any> {
+      try {
+        const { AillameDistillationDatasetService } = await import('../distillation/distillation-dataset.service');
+        const stats = AillameDistillationDatasetService.getStats();
+        return {
+          ok: true,
+          data: stats,
+          message: `Toplam ${stats.total} adet öğrenme verisi kaydı mevcut.`
+        };
+      } catch (err: any) {
+        return { ok: false, errors: [err.message] };
+      }
+    }
+  },
+
+  'distillation.search': {
+    id: 'distillation.search',
+    name: 'Öğrenme Verisi Arama',
+    description: 'Aillame local distillation dataset içinde arama yapar.',
+    category: 'distillation',
+    riskLevel: 'safe',
+    requiresUserConfirmation: false,
+    inputSchema: {
+      type: 'object',
+      properties: {
+        query: { type: 'string', description: 'Aranacak kelime' }
+      },
+      required: ['query']
+    },
+    async execute(input: any, context: any): Promise<any> {
+      try {
+        const query = typeof input === 'object' && input !== null ? input.query : String(input || '');
+        if (!query) {
+          return { ok: false, errors: ['Arama kelimesi boş olamaz.'] };
+        }
+        const { AillameDistillationDatasetService } = await import('../distillation/distillation-dataset.service');
+        const results = AillameDistillationDatasetService.searchSamples(query);
+        return {
+          ok: true,
+          data: results,
+          message: `Öğrenme verisi aramasında ${results.length} adet eşleşen kayıt bulundu.`
+        };
+      } catch (err: any) {
+        return { ok: false, errors: [err.message] };
+      }
+    }
+  },
+
+  'distillation.list': {
+    id: 'distillation.list',
+    name: 'Öğrenme Verisi Listesi',
+    description: 'Aillame local distillation dataset örneklerini listeler.',
+    category: 'distillation',
+    riskLevel: 'safe',
+    requiresUserConfirmation: false,
+    inputSchema: { type: 'object', properties: {} },
+    async execute(input: any, context: any): Promise<any> {
+      try {
+        const { AillameDistillationDatasetService } = await import('../distillation/distillation-dataset.service');
+        const list = AillameDistillationDatasetService.listSamples();
+        return {
+          ok: true,
+          data: list,
+          message: `Öğrenme verisinde kayıtlı ${list.length} adet veri örneği listelendi.`
+        };
+      } catch (err: any) {
+        return { ok: false, errors: [err.message] };
+      }
+    }
   }
 };

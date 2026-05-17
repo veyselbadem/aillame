@@ -7,6 +7,7 @@ import { buildNanoModelPrompt, buildNanoSystemPrompt } from "./system-prompt";
 import type { NanoAnswer, NanoControlPlan, NanoGenerationSettings, NanoUserInput } from "./types";
 
 import { buildNanoGenerationConfig, NANO_PROFILES } from "./nano-generation-config";
+import { RagRetrieverService } from "@/services/rag/rag-retriever.service";
 
 function getSettings(input: NanoUserInput, plan: Pick<NanoControlPlan, "analysis">): NanoGenerationSettings {
   const profile = input.profile ? NANO_PROFILES[input.profile] : NANO_PROFILES.balanced;
@@ -74,8 +75,24 @@ export class AillameNanoController {
   }
 
   async answer(input: NanoUserInput): Promise<NanoAnswer> {
+    console.log(`[NanoController] answer() called with prompt: "${input.prompt.substring(0, 50)}..."`);
     const plan = this.createPlan(input);
     const warnings: string[] = [];
+
+    // Phase 2.2: RAG Context Injection (Always run for context-awareness)
+    try {
+      console.log(`[NanoController] Fetching RAG context for: "${input.prompt}"`);
+      const contextDocs = await RagRetrieverService.retrieveContext(input.prompt);
+      console.log(`[NanoController] Found ${contextDocs.length} context docs`);
+      if (contextDocs.length > 0) {
+        const formattedContext = RagRetrieverService.formatContext(contextDocs);
+        console.log(`[NanoController] Injecting RAG context into system prompt`);
+        plan.systemPrompt = `${formattedContext}${plan.systemPrompt}`;
+        plan.knowledge = contextDocs.map(d => ({ id: d.id, text: d.text, score: d.score }));
+      }
+    } catch (ragError) {
+      console.error("[NanoController] RAG Retrieval failed:", ragError);
+    }
 
     try {
       const status = await nativeLocalProvider.getStatus?.();
@@ -107,13 +124,19 @@ export class AillameNanoController {
          };
       }
 
-      const fullPrompt = `${plan.systemPrompt}\n\n${plan.modelPrompt}`;
-      
       // Phase 18: Non-streaming generation via Provider
-      const rawContent = await nativeLocalProvider.generate(fullPrompt, input.onToken, input.signal);
+      console.log(`[NanoController] Sending prompt to provider: "${plan.modelPrompt.substring(0, 100)}..."`);
+      const rawContent = await nativeLocalProvider.generate(plan.modelPrompt, input.onToken, input.signal, {
+        maxTokens: plan.settings.maxNewTokens,
+        temperature: plan.settings.temperature,
+        topP: plan.settings.topP,
+        systemPrompt: plan.systemPrompt
+      } as any);
+      
+      console.log(`[NanoController] Raw content received: "${rawContent.substring(0, 100)}..."`);
       
       const cleanup = cleanupNanoOutput(rawContent, plan.settings);
-      const content = cleanup.useful ? cleanup.content : rawContent;
+      const content = cleanup.content || (cleanup.useful ? rawContent : "Aillame Nano geçerli bir yanıt üretemedi.");
 
       return {
         content,
@@ -124,7 +147,7 @@ export class AillameNanoController {
         engineDebug: {
           nativeEngineAvailable: true,
           checkpointLoaded: true,
-          generatedTokenCount: rawContent.length, // Basit tahmin
+          generatedTokenCount: rawContent.length, 
           decodedLength: content.length,
           usefulOutput: cleanup.useful,
           reason: undefined,

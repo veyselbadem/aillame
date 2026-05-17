@@ -25,6 +25,8 @@ function trimStopSequences(content: string, stopSequences: readonly string[]): s
 
 function stripPromptMarkers(content: string): string {
   return content
+    .replace(/Senin adın Aillame Nano\. Yerel çalışan, gizlilik dostu, Türkçe dili konusunda yetkin, mantık ve görev analizi odaklı bir yapay zeka asistanısın\./gi, "")
+    .replace(/Sen Aillame Nano'sun: yerel çalışan, gizlilik dostu, Türkçe güçlü, mantık ve görev analizi odaklı bir yardımcı model\./gi, "")
     .replace(/<[^>\n]{1,40}>/g, " ")
     .replace(/^(Yanıt|Yanit|Assistant|Asistan)\s*:\s*/i, "");
 }

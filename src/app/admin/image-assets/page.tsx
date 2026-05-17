@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { adminFetch, requireAdminTokenOrRedirect } from '@lib/admin-fetch';
+import { safeConfirm } from '@/lib/confirm';
 import { RiImageLine, RiHistoryLine, RiPulseLine, RiCheckboxCircleLine, RiErrorWarningLine, RiDeleteBinLine } from 'react-icons/ri';
 import StatusBadge from '@components/ui/StatusBadge';
 
@@ -46,7 +47,7 @@ export default function ImageAssetManagerPage() {
   
   // Silme: assetId varsa asset store'dan sil; yoksa jobId ile job kaydını temizle
   const handleDelete = async (jobId: string, assetId?: string) => {
-    if (!confirm('Bu kaydı kalıcı olarak silmek istediğine emin misin?')) return;
+    if (!await safeConfirm('Bu kaydı kalıcı olarak silmek istediğine emin misin?', { title: 'Kaydı Sil' })) return;
 
     try {
       let res: Response;

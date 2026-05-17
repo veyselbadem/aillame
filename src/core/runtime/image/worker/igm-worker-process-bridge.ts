@@ -42,12 +42,37 @@ export class IGMWorkerProcessBridge implements IGMWorker {
 
       const handleResult = (code: number | null) => {
         cleanup();
+        
+        // Detect specialized errors in stderr
+        const isCudaError = stderr.toLowerCase().includes('cuda') || stderr.toLowerCase().includes('nvidia');
+        const isOomError = stderr.toLowerCase().includes('out of memory') || stderr.toLowerCase().includes('allocation failed');
+        const isModuleMissing = stderr.toLowerCase().includes('modulenotfounderror');
+
         if (code !== 0) {
+          let errorType = 'IMAGE_WORKER_PROCESS_CRASHED';
+          let errorMessage = `Worker process exited with code ${code}.`;
+          
+          if (isCudaError) {
+            errorType = 'IMAGE_HARDWARE_CUDA_ERROR';
+            errorMessage = 'GPU (CUDA) error detected. Please check your drivers or VRAM availability.';
+          } else if (isOomError) {
+            errorType = 'IMAGE_OUT_OF_MEMORY';
+            errorMessage = 'System or GPU out of memory during generation.';
+          } else if (isModuleMissing) {
+            errorType = 'IMAGE_WORKER_DEPENDENCY_MISSING';
+            errorMessage = 'Required Python modules are missing in the IGM environment.';
+          }
+
           return resolve({
             success: false,
             jobId: 'na',
             status: 'failed',
-            error: `IGM process exited with code ${code}. STDERR: ${stderr.slice(0, 300)}`
+            error: errorMessage,
+            diagnostics: {
+              exitCode: code,
+              errorType,
+              stderrSnippet: stderr.slice(-500) // Last 500 chars often contain the traceback
+            }
           });
         }
 
@@ -57,7 +82,7 @@ export class IGMWorkerProcessBridge implements IGMWorker {
             responseData = JSON.parse(fs.readFileSync(responsePath, 'utf8'));
           } else {
             const jsonMatch = stdout.match(/\{[\s\S]*\}/);
-            if (!jsonMatch) throw new Error(`Worker produced no valid JSON output. STDOUT: ${stdout.slice(0, 300)}`);
+            if (!jsonMatch) throw new Error(`Worker produced no valid JSON output.`);
             responseData = JSON.parse(jsonMatch[0]);
           }
 
@@ -84,7 +109,11 @@ export class IGMWorkerProcessBridge implements IGMWorker {
             success: false,
             jobId: 'na',
             status: 'failed',
-            error: `IGM bridge processing error: ${err.message}. Output: ${stdout.slice(0, 500)}`
+            error: `Bridge processing error: ${err.message}`,
+            diagnostics: {
+              stdoutSnippet: stdout.slice(0, 300),
+              stderrSnippet: stderr.slice(0, 300)
+            }
           });
         }
       };

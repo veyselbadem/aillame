@@ -45,8 +45,7 @@ router.post('/test', apiKeyMiddleware, projectModeMiddleware, validateChatReques
 
   // 2. Select Model
   const selection = ModelRegistryService.selectModelForRequest({
-    mode: project.mode,
-    taskType: context?.taskType
+    mode: project.mode
   });
 
   if (!selection) {

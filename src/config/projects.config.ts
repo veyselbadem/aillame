@@ -17,5 +17,17 @@ export const PROJECT_CONFIGS: AillameProjectConfig[] = [
     ],
     createdAt: new Date("2026-05-10").toISOString(),
     isActive: true
+  },
+  {
+    id: "aillame-admin",
+    name: "Aillame Admin",
+    description: "Sistem yönetimi ve test projesi.",
+    defaultMode: "general",
+    allowedModes: ["general", "code", "image_generation"],
+    memoryEnabled: true,
+    autoApplyAllowed: true,
+    allowedTools: ["all"],
+    createdAt: new Date("2026-05-14").toISOString(),
+    isActive: true
   }
 ];

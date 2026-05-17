@@ -72,68 +72,14 @@ export function buildNanoSystemPrompt(
     userPrompt?: string;
   }
 ): string {
-  const riskRule = plan.analysis.riskLevel === "high"
-    ? "Yüksek riskli konularda kesin talimat verme; güvenli, genel ve doğrulanabilir bilgi sun."
-    : "Normal riskli konularda pratik ve uygulanabilir cevap ver.";
+  const rules = [
+    "Kimlik: Aillame Nano (Yerel Yapay Zeka).",
+    "Dil: Daima Türkçe.",
+    "Kural: Kısa, öz ve yardımcı ol. Gereksiz giriş yapma.",
+    plan.analysis.riskLevel === "high" ? "Uyarı: Güvenli ve genel tavsiyeler ver." : "",
+  ].filter(Boolean);
 
-  const currentInfoRule = plan.analysis.needsCurrentInformation
-    ? "Güncel bilgi gerektiren sorularda yerel modelin bilgisinin eski kalabileceğini belirt ve doğrulama ihtiyacını söyle."
-    : "Zamandan bağımsız bilgide gereksiz uyarı ekleme.";
-
-  const knowledgeBlock = plan.knowledge.length > 0
-    ? plan.knowledge.map((hit) => `- ${hit.title}: ${hit.content}`).join("\n")
-    : "- Uygun yerel bilgi kartı bulunamadı; genel akıl yürütme ilkelerini kullan.";
-
-  const memoryBlock = plan.memoryContext && plan.memoryContext.length > 0
-    ? plan.memoryContext.join("\n")
-    : "- Aktif hafıza kaydı bulunamadı.";
-
-  const visibleContextRule = getVisibleContextResponseGuidance(plan.userPrompt ?? "");
-  const manualContextPolicyGuardRule = getManualContextPolicyGuardSummary(
-    plan.userPrompt ?? "",
-    plan.profile
-  );
-  const groundedStyleRule = getGroundedResponseStyleGuidance({
-    message: plan.userPrompt ?? "",
-    analysis: plan.analysis,
-  });
-  const visibleReferenceRule = getVisibleReferenceResponseGuidance(plan.userPrompt ?? "");
-  const insufficientContextRule = getInsufficientContextResponseGuidance(plan.userPrompt ?? "");
-  const manualContextConflictRule = getManualContextConflictGuidance(plan.userPrompt ?? "");
-  const manualContextAnswerStructureRule = getManualContextAnswerStructureGuidance(plan.userPrompt ?? "");
-  const profileAwareManualContextRule = getProfileAwareManualContextGuidance(
-    plan.userPrompt ?? "",
-    plan.profile
-  );
-
-  const policyRules = [
-    "Sen Aillame Nano'sun: yerel çalışan, gizlilik dostu, Türkçe güçlü, mantık ve görev analizi odaklı bir yardımcı model.",
-    languageInstruction(plan.analysis.language),
-    reasoningInstruction(plan.analysis),
-    behaviorPolicy(plan.analysis, plan.profile),
-    riskRule,
-    currentInfoRule,
-    visibleContextRule,
-    manualContextPolicyGuardRule,
-    groundedStyleRule,
-    visibleReferenceRule,
-    insufficientContextRule,
-    manualContextConflictRule,
-    manualContextAnswerStructureRule,
-    profileAwareManualContextRule,
-    "Halüsinasyon yapma; emin olmadığın yerde bunu açıkça söyle.",
-    "Yanıtı kullanıcının hedefini ilerletecek şekilde yapılandır.",
-  ].filter((line) => Boolean(line && line.trim().length > 0));
-
-  return [
-    ...policyRules,
-    "",
-    "Yerel bilgi bağlamı:",
-    knowledgeBlock,
-    "",
-    "Kısa süreli hafıza bağlamı:",
-    memoryBlock,
-  ].join("\n");
+  return rules.join("\n");
 }
 
 export function buildNanoModelPrompt(userPrompt: string, plan: Pick<NanoControlPlan, "route" | "analysis">): string {
@@ -146,10 +92,6 @@ export function buildNanoModelPrompt(userPrompt: string, plan: Pick<NanoControlP
     `risk=${plan.analysis.riskLevel}`,
     "</system_task>",
     "",
-    "<user_prompt>",
     userPrompt.trim(),
-    "</user_prompt>",
-    "",
-    "Yanıt:",
   ].join("\n");
 }

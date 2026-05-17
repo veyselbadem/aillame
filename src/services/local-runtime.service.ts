@@ -26,15 +26,15 @@ export class LocalRuntimeService {
     const { modelId } = input;
 
     // 1. Get model details to find the runtime
-    const model = ModelRegistryService.getModelById(modelId);
+    const model = await ModelRegistryService.getModelById(modelId);
     if (!model) {
       return createRuntimeError("MODEL_NOT_FOUND", "Belirtilen model bulunamadı.", { modelId });
     }
 
     // 2. Get the appropriate adapter
-    const adapter = this.getRuntimeAdapter(model.runtime);
+    const adapter = this.getRuntimeAdapter((model as any).runtime);
     if (!adapter) {
-      return createRuntimeError("UNSUPPORTED_RUNTIME", `Runtime desteği bulunamadı: ${model.runtime}`, { modelId, runtime: model.runtime });
+      return createRuntimeError("UNSUPPORTED_RUNTIME", `Runtime desteği bulunamadı: ${(model as any).runtime}`, { modelId, runtime: (model as any).runtime });
     }
 
     // 3. Generate using the adapter

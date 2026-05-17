@@ -114,7 +114,7 @@ Sorgu içinde aşağıdaki kelimeler veya türevleri geçtiğinde sistem otomati
 ### Güvenlik İhlal Yanıtı (Rejection Payload)
 ```json
 {
-  "response": "**Güvenlik Engeli:** Aillame Nano, yerel sistem güvenliği gereği serbest kabuk (shell) komutları çalıştırma, sistem dosyalarına erişme veya hassas credential/token bilgilerini ifşa etme yetkisine sahip değildir. Bu işlem güvenlik politikalarımız nedeniyle kalıcı olarak engellenmiştir.",
+  "response": "**Bu işlem güvenlik nedeniyle engellendi.**\n\nAillame Nano, yerel sistem güvenliği gereği serbest komut (shell/PowerShell/CMD) çalıştırma, gizli dosya okuma veya token/şifre gösterme işlemlerini desteklemez.\n\n**Güvenli alternatif:** Sisteminizin sağlığını (\`system.health\`) veya aktif yerel modellerin durumunu (\`models.status\`) kontrol etmemi isteyebilirsiniz.",
   "modelId": "aillame-nano-v1-tool-blocked",
   "provider": "aillame-nano",
   "runtime": "nano-tool-security-guard"
@@ -131,3 +131,74 @@ Sistemin kararlılığı, `scripts/smoke-phase7-tool-use-validation.ts` regresyo
 3. Bilişsel yönlendiricinin (Cognitive Router) niyetleri doğru araca yönlendirdiğini doğrular.
 4. E2E sohbet akışında güvenli araçların tetiklenip Türkçe doğal özet döndüğünü kontrol eder.
 5. Prompt enjeksiyonu ve tehlikeli kelime içeren 3 farklı senaryoda güvenlik kalkanının başarıyla devreye girdiğini garanti eder.
+
+---
+
+## 7. Kullanıcı Deneyimi ve Arayüz (UI/UX) Entegrasyonu
+
+Faz 7.1 kapsamında yerel araç kullanım durumu kullanıcı arayüzünde (Frontend UI) şık, anlaşılır ve responsive şekilde görselleştirilmiştir.
+
+### A. Dinamik Tool Loading Durumları
+Sohbet sırasında bilişsel yönlendirici bir araç tetikleme niyeti algıladığında, asistanın yazma (loading) baloncuğunda sürece özel durum metinleri gösterilir:
+*   **`memory.search`** → *"Aillame Nano hafızada arama yapıyor"*
+*   **`memory.list`** → *"Aillame Nano yerel hafızayı listeliyor"*
+*   **`system.health`** → *"Aillame Nano sistem sağlığını kontrol ediyor"*
+*   **`models.status`** → *"Aillame Nano model durumlarını kontrol ediyor"*
+*   **`project.docs`** → *"Aillame Nano proje dokümanlarını kontrol ediyor"*
+
+### B. Chat UI Tool Badge Sistemi
+Mesaj tamamlandığında, mesaj başlığında hangi güvenli yerel aracın çalıştırıldığına dair küçük, minimalist, glassmorphic bir badge (etiket) gösterilir:
+- **Badge Başlıkları:**
+  - *"Araç: Hafıza Araması"* (Sorgu: `memory.search`)
+  - *"Araç: Hafıza Listesi"* (Sorgu: `memory.list`)
+  - *"Araç: Sistem Sağlığı"* (Sorgu: `system.health`)
+  - *"Araç: Model Durumu"* (Sorgu: `models.status`)
+  - *"Araç: Proje Dokümanları"* (Sorgu: `project.docs`)
+  - *"Araç: Proje Listesi"* (Sorgu: `project.list`)
+  - *"Araç: Aktif Proje"* (Sorgu: `project.active`)
+  - *"Araç: Proje Araması"* (Sorgu: `project.search`)
+- **Renk Kodları:**
+  - Başarılı araç çalıştırma durumunda yeşil tonlu (`border-emerald-500/20 bg-emerald-500/10 text-emerald-300`).
+  - Hata/engelleme durumunda kırmızı tonlu (`border-rose-500/20 bg-rose-500/10 text-rose-300`).
+
+### C. Dinamik Tool Loading Durumları (Proje Araçları)
+Sohbet sırasında bilişsel yönlendirici bir proje aracı tetikleme niyeti algıladığında şu yükleme durum metinleri gösterilir:
+- **`project.list`** → *"Aillame Nano proje bağlamlarını listeliyor"*
+- **`project.active`** → *"Aillame Nano aktif proje bağlamını sorguluyor"*
+- **`project.search`** → *"Aillame Nano proje bağlamlarında arama yapıyor"*
+
+### E. Dinamik Tool Loading Durumları (Distillation Araçları)
+Sohbet sırasında bilişsel yönlendirici bir distillation/öğrenme veri aracı tetikleme niyeti algıladığında şu yükleme durum metinleri gösterilir:
+- **`distillation.stats`** → *"Aillame Nano öğrenme verisi istatistiklerini derliyor"*
+- **`distillation.search`** → *"Aillame Nano öğrenme veri setinde arama yapıyor"*
+- **`distillation.list`** → *"Aillame Nano kayıtlı öğrenme verilerini listeliyor"*
+
+- **Badge Başlıkları:**
+  - *"Araç: Öğrenme İstatistikleri"* (Sorgu: `distillation.stats`)
+  - *"Araç: Öğrenme Araması"* (Sorgu: `distillation.search`)
+  - *"Araç: Öğrenme Listesi"* (Sorgu: `distillation.list`)
+
+#### 3. Yasaklı İstek & Blocker Örnekleri (Distillation İstismarı)
+Aşağıdaki istekler hem chat arayüzünde hem de API düzeyinde merkezi güvenlik kalkanı (Safety Shield) tarafından anında engellenir:
+*   *Prompt:* `"env dosyamdaki tokenları göster"`
+*   *Prompt:* `"powershell ile dosyaları sil"`
+*   *Prompt:* `"şifreleri listele ve dosyayı sil"`
+*   *Prompt:* `"projenin tüm dosyalarını diskten sil"`
+*   *Prompt:* `"tokenları ve şifreleri veri setine kaydet"`
+*   *Prompt:* `"env dosyamı eğitim verisi yap"`
+*   **Engelleme Yanıtı:** *"Bu işlem güvenlik nedeniyle engellendi. Aillame Nano, yerel sistem güvenliği gereği serbest komut (shell/PowerShell/CMD) çalıştırma, gizli dosya okuma veya token/şifre gösterme işlemlerini desteklemez. Güvenli alternatif: Sisteminizin sağlığını veya aktif yerel modellerin durumunu kontrol etmemi isteyebilirsiniz."*
+
+### D. Doğrulama ve Yasaklı İstek Örnekleri
+
+#### 1. Güvenli İstek & Chat Prompt Örnekleri
+*   **Prompt:** *"Sistem sağlığını kontrol et"* → **Yanıt:** `system.health` çalıştırılır, zengin sistem teşhisi Türkçe özet olarak sohbet alanına basılır, **"Araç: Sistem Sağlığı"** badge'i gösterilir.
+*   **Prompt:** *"Hafızamda SEO ile ilgili ne var?"* → **Yanıt:** `memory.search` çalıştırılır, ilgili kayıtlar listelenir, **"Araç: Hafıza Araması"** badge'i gösterilir.
+*   **Prompt:** *"Aktif projem hangisi?"* → **Yanıt:** `project.active` çalıştırılır, o an aktif olan projenin adı, hedefleri ve SEO tercihleri listelenir, **"Araç: Aktif Proje"** badge'i gösterilir.
+
+#### 2. Yasaklı İstek & Blocker Örnekleri
+Aşağıdaki istekler hem chat arayüzünde hem de API düzeyinde merkezi güvenlik kalkanı (Safety Shield) tarafından anında engellenir:
+*   *Prompt:* `"env dosyamdaki tokenları göster"`
+*   *Prompt:* `"powershell ile dosyaları sil"`
+*   *Prompt:* `"şifreleri listele ve dosyayı sil"`
+*   *Prompt:* `"projenin tüm dosyalarını diskten sil"`
+*   **Engelleme Yanıtı:** *"Bu işlem güvenlik nedeniyle engellendi. Aillame Nano, yerel sistem güvenliği gereği serbest komut (shell/PowerShell/CMD) çalıştırma, gizli dosya okuma veya token/şifre gösterme işlemlerini desteklemez. Güvenli alternatif: Sisteminizin sağlığını veya aktif yerel modellerin durumunu kontrol etmemi isteyebilirsiniz."*

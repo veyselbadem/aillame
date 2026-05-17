@@ -16,6 +16,7 @@ import {
   type DefaultModelPreferencesUi,
   type DefaultModelCapabilityUi,
 } from '@/lib/model-library-client';
+import { safeConfirm } from '@/lib/confirm';
 
 // ── Helpers ───────────────────────────────────────────────────────────────
 
@@ -323,7 +324,7 @@ export default function ModelLibraryPanel() {
   };
 
   const handleRemove = async (modelId: string) => {
-    if (!window.confirm(`Bu modeli tamamen kaldırmak istediğinize emin misiniz?\nModel ID: ${modelId}\n\nNot: Bu işlem geri alınamaz.`)) {
+    if (!await safeConfirm(`Bu modeli tamamen kaldırmak istediğinize emin misiniz?\nModel ID: ${modelId}\n\nNot: Bu işlem geri alınamaz.`, { title: 'Modeli Kaldır' })) {
       return;
     }
     setActionBusy(true);

@@ -17,5 +17,14 @@ export const API_KEY_RECORDS: AillameApiKeyRecord[] = [
     ],
     "isActive": true,
     "createdAt": "2026-05-10T18:29:02.793Z"
+  },
+  {
+    "id": "key_admin_default",
+    "name": "Default Admin Key",
+    "keyHash": "6ed793b14c6c05ea6b9a5a9382e980e44f3e6d6eec6e12848f8c10d3b70db080",
+    "projectId": "aillame-admin",
+    "allowedModes": ["all"],
+    "isActive": true,
+    "createdAt": "2026-05-14T13:27:00.000Z"
   }
 ];

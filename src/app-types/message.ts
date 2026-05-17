@@ -25,6 +25,24 @@ export type MessageMetadata = {
   routing?: MessageRoutingMetadata;
   routingError?: MessageRoutingErrorMetadata;
   uiContextMetadata?: ChatMessageUiMetadata;
+  degraded?: boolean;
+  errorCode?: string;
+  latencyMs?: number;
+  model?: {
+    provider: string;
+    name: string;
+    runtime?: string;
+    localFirst?: boolean;
+  };
+  runtime?: {
+    used: boolean;
+    runtime?: string;
+    errorCode?: string;
+    unsupportedReason?: string;
+  };
+  toolExecuted?: string;
+  toolRiskLevel?: string;
+  toolOk?: boolean;
 };
 
 export type Message = {

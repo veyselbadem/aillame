@@ -1,6 +1,6 @@
 import { readFile, writeFile } from 'fs/promises';
 import path from 'path';
-import { resolveProjectRelative } from '@/core/project-root';
+import { resolveProjectRelative } from '../project-root';
 import type { FeedbackListOptions, FeedbackRecord, FeedbackStore, FeedbackPayload } from './types';
 import { normalizeFeedbackPayload } from './mappers';
 

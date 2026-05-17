@@ -1,6 +1,6 @@
 import { readFile, writeFile } from 'fs/promises';
 import path from 'path';
-import { resolveProjectRelative } from '@/core/project-root';
+import { resolveProjectRelative } from '../project-root';
 import type { ApiClient } from './types';
 
 const API_CLIENTS_STORE_PATH = resolveProjectRelative('.aillame-data/stores/api-clients-store.json');

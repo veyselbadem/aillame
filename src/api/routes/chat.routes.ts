@@ -18,17 +18,19 @@ router.post(
   async (req: Request, res: Response) => {
     // Project and Auth context are guaranteed here
     const project = req.aillameProject!;
-    const { message, context } = req.body;
+    const { message, context, modelId, attachments } = req.body;
 
     let response;
     if (RUNTIME_CONFIG.chatUseRuntime) {
       response = await ChatService.createRuntimeChatResponse({
         message,
+        attachments,
         context,
-        project
+        project,
+        modelId
       });
     } else {
-      response = ChatService.createMockChatResponse({
+      response = await ChatService.createMockChatResponse({
         message,
         context,
         project

@@ -7,6 +7,7 @@ import { RiComputerLine, RiServerLine, RiFileTextLine, RiImageLine, RiShieldChec
 import StatusBadge from '@components/ui/StatusBadge';
 
 export default function DesktopReadinessPage() {
+  // Diagnostic ID for smoke test: Desktop Readiness
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [authorized, setAuthorized] = useState(false);

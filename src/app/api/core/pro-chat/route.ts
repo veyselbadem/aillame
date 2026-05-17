@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PRO_CHAT_MODEL_ID, getModel } from '@core/models/registry';
-import { getAllModelInstallStatuses, getGeminiReadiness } from '@core/model-management/status';
+import { getAllModelInstallStatuses, getGeminiReadiness, getQwenReadiness } from '@core/model-management/status';
 import { checkGeminiConfig, generateGeminiResponse } from '@core/inference/gemini';
 import { generateProMultimodalResponse } from '@core/inference/pro-multimodal';
 import { enrichPromptForConversation, normalizeAssistantAnswer } from '@core/conversation/conversation-quality';
@@ -14,19 +14,20 @@ function getRequestedProvider(): ProProvider | undefined {
   return undefined;
 }
 
-function isQwenEnabled(): boolean {
-  return process.env.AILLAME_QWEN_ENABLED === 'true';
+async function isQwenEnabled(): Promise<boolean> {
+  const readiness = await getQwenReadiness();
+  return readiness.isReady;
 }
 
-function chooseProProvider(): {
+async function chooseProProvider(): Promise<{
   provider?: ProProvider;
   requestedProvider?: ProProvider;
   fallbackFrom?: ProProvider;
   reason?: string;
-} {
+}> {
   const requestedProvider = getRequestedProvider();
   const gemini = checkGeminiConfig();
-  const qwenEnabled = isQwenEnabled();
+  const qwenEnabled = await isQwenEnabled();
   const legacyProvidersEnabled = isLegacyProvidersEnabled();
 
   if (requestedProvider === 'gemini') {
@@ -64,7 +65,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { prompt = '', action, images = [], maxTokens = 1024, temperature = 0.7 } = body;
     const qwenModel = getModel(PRO_CHAT_MODEL_ID);
-    const providerChoice = chooseProProvider();
+    const providerChoice = await chooseProProvider();
     const geminiConfig = checkGeminiConfig();
 
     if (action === 'load') {
@@ -72,7 +73,7 @@ export async function POST(req: NextRequest) {
       const routeReady = providerChoice.provider === 'gemini'
         ? geminiStatus.isReady
         : providerChoice.provider === 'qwen'
-        ? isQwenEnabled()
+        ? await isQwenEnabled()
         : false;
       return NextResponse.json({
         status: routeReady ? 'ready' : 'unavailable',
@@ -86,7 +87,7 @@ export async function POST(req: NextRequest) {
           : qwenModel.capabilities,
         gemini: geminiStatus,
         qwen: {
-          enabled: isQwenEnabled(),
+          enabled: await isQwenEnabled(),
           modelId: qwenModel.id,
           repoId: qwenModel.repoId,
           install: (await getAllModelInstallStatuses()).find((s: any) => s.modelId === qwenModel.id),
@@ -129,7 +130,7 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    if (providerChoice.provider === 'qwen' && !isQwenEnabled()) {
+    if (providerChoice.provider === 'qwen' && !(await isQwenEnabled())) {
       return NextResponse.json(
         {
           success: false,

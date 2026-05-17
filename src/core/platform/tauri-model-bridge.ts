@@ -1,4 +1,14 @@
-import { invoke } from "@tauri-apps/api/core";
+// SSR safe tauri invoke
+async function getInvoke() {
+  if (typeof window === 'undefined') return null;
+  try {
+    const { invoke } = await import('@tauri-apps/api/core');
+    return invoke;
+  } catch (err) {
+    console.error('[tauri-model-bridge] Failed to import @tauri-apps/api/core', err);
+    return null;
+  }
+}
 
 export interface SafeModelLoadResponse {
   id: string;
@@ -79,6 +89,8 @@ class TauriModelBridge {
   }
 
   async getSafeRuntimeSession(): Promise<RuntimeSessionState | null> {
+    const invoke = await getInvoke();
+    if (!invoke) return null;
     return await invoke<RuntimeSessionState | null>("get_safe_runtime_session");
   }
 
@@ -93,7 +105,8 @@ class TauriModelBridge {
   async safeModelLoad(
     modelId: string, 
     confirm: boolean = false, 
-    options?: RuntimeStartOptions
+    options?: RuntimeStartOptions,
+    modelPath?: string
   ): Promise<SafeModelLoadResponse> {
     const defaultOptions: RuntimeStartOptions = {
       devicePreference: "auto",
@@ -102,9 +115,13 @@ class TauriModelBridge {
       shutdownTimeoutMs: 10000
     };
 
+    const invoke = await getInvoke();
+    if (!invoke) throw new Error("Tauri invoke not available");
+
     return await invoke<SafeModelLoadResponse>("safe_model_load", { 
       request: { 
         modelId, 
+        modelPath: modelPath || null,
         confirm, 
         options: options || defaultOptions,
         requestId: Math.random().toString(36).substring(7),
@@ -114,10 +131,14 @@ class TauriModelBridge {
   }
 
   async safeModelUnload(): Promise<SafeModelLoadResponse> {
+    const invoke = await getInvoke();
+    if (!invoke) throw new Error("Tauri invoke not available");
     return await invoke<SafeModelLoadResponse>("safe_model_unload");
   }
 
   async safeModelCancelLoad(): Promise<SafeModelLoadResponse> {
+    const invoke = await getInvoke();
+    if (!invoke) throw new Error("Tauri invoke not available");
     return await invoke<SafeModelLoadResponse>("safe_model_cancel_load");
   }
 
@@ -126,6 +147,8 @@ class TauriModelBridge {
     modelId: string,
     options?: InferenceOptions
   ): Promise<InferenceResponse> {
+    const invoke = await getInvoke();
+    if (!invoke) throw new Error("Tauri invoke not available");
     return await invoke<InferenceResponse>("safe_model_infer", {
       request: {
         prompt,
@@ -141,6 +164,8 @@ class TauriModelBridge {
     modelId: string,
     options?: InferenceOptions
   ): Promise<InferenceResponse> {
+    const invoke = await getInvoke();
+    if (!invoke) throw new Error("Tauri invoke not available");
     return await invoke<InferenceResponse>("safe_model_infer_stream", {
       request: {
         prompt,
@@ -152,6 +177,8 @@ class TauriModelBridge {
   }
 
   async cancelModelInferenceStream(): Promise<InferenceResponse> {
+    const invoke = await getInvoke();
+    if (!invoke) throw new Error("Tauri invoke not available");
     return await invoke<InferenceResponse>("safe_model_cancel_infer_stream");
   }
 
@@ -175,6 +202,8 @@ class TauriModelBridge {
     console.info("[tauri-model-bridge] invoking start_runtime", request);
 
     try {
+      const invoke = await getInvoke();
+      if (!invoke) throw new Error("Tauri invoke not available");
       const result = await invoke<RuntimeStartResponse>("start_runtime", { request });
       console.info("[tauri-model-bridge] start_runtime success", result);
       return result;
@@ -186,6 +215,8 @@ class TauriModelBridge {
   }
 
   async stopRuntime(): Promise<string> {
+    const invoke = await getInvoke();
+    if (!invoke) throw new Error("Tauri invoke not available");
     return await invoke<string>("stop_runtime");
   }
 }

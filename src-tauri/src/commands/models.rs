@@ -1,7 +1,7 @@
 use tauri::{command, AppHandle, Runtime, State};
 use crate::AppState;
 use crate::model::load_state::{LoadStatus, LoadErrorCode, SafeModelLoadResponse};
-use crate::model::model_load_contract::{ModelLoadRequest, ModelLoadOptions};
+use crate::model::model_load_contract::ModelLoadRequest;
 use crate::model::runtime_policy::{RuntimeProcessState, MainToSidecarMessage, RuntimeSessionState};
 use crate::model::inference_contract::{InferenceRequest, InferenceResponse};
 use std::path::PathBuf;
@@ -88,10 +88,10 @@ pub async fn safe_model_load<R: Runtime>(
         });
     }
 
-    // 2. Model Guard / Path Resolution (Internal only)
-    let _internal_path = match resolve_model_path(&request.model_id) {
-        Ok(p) => p,
-        Err(e) => {
+    // 2. Model Guard / Path Resolution
+    let _internal_path = if let Some(path_str) = &request.model_path {
+        let p = PathBuf::from(path_str);
+        if !p.exists() {
             return Ok(SafeModelLoadResponse {
                 id: request.model_id,
                 display_name: "Model".to_string(),
@@ -100,10 +100,44 @@ pub async fn safe_model_load<R: Runtime>(
                 runtime_label: "Aillame Sidecar".to_string(),
                 memory_estimate: None,
                 warnings: vec![],
-                error_code: Some(e),
+                error_code: Some(LoadErrorCode::ModelLoadModelNotFound),
                 can_proceed: false,
                 runtime_session_id: session_id,
             });
+        }
+        // Basic check: must be a file and preferably .gguf
+        if !p.is_file() {
+             return Ok(SafeModelLoadResponse {
+                id: request.model_id,
+                display_name: "Model".to_string(),
+                root_label: "Local".to_string(),
+                load_status: LoadStatus::LoadFailed,
+                runtime_label: "Aillame Sidecar".to_string(),
+                memory_estimate: None,
+                warnings: vec![],
+                error_code: Some(LoadErrorCode::ModelLoadAccessDenied),
+                can_proceed: false,
+                runtime_session_id: session_id,
+            });
+        }
+        p
+    } else {
+        match resolve_model_path(&request.model_id) {
+            Ok(p) => p,
+            Err(e) => {
+                return Ok(SafeModelLoadResponse {
+                    id: request.model_id,
+                    display_name: "Model".to_string(),
+                    root_label: "Local".to_string(),
+                    load_status: LoadStatus::LoadFailed,
+                    runtime_label: "Aillame Sidecar".to_string(),
+                    memory_estimate: None,
+                    warnings: vec![],
+                    error_code: Some(e),
+                    can_proceed: false,
+                    runtime_session_id: session_id,
+                });
+            }
         }
     };
 

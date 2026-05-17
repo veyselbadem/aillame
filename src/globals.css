@@ -17,10 +17,17 @@
   --bg-surface:     #fffdf7;
   --bg-elevated:    #eee7d8;
   --bg-soft:        #f1eadc;
+  --bg-primary:     var(--bg-main);
+  --bg-secondary:   var(--bg-surface);
   --text-main:      #171717;
   --text-secondary: #2f2a22;
   --text-muted:     #5f574b;
+  --text-primary:   var(--text-main);
   --border:         #d8cdbb;
+  --border-color:   var(--border);
+  --card-bg:        var(--bg-surface);
+  --input-bg:       #fffef9;
+  --sidebar-bg:     rgba(255,253,247,0.92);
   --focus-ring:     rgba(79, 70, 229, 0.28);
 
   /* Semantic (Light) */
@@ -42,34 +49,35 @@
 
 .dark {
   /* Brand */
-  --primary:        #818cf8;
-  --primary-light:  #a5b4fc;
-  --primary-glow:   rgba(129,140,248,0.35);
-  --accent:         #c084fc;
-  --accent-glow:    rgba(192,132,252,0.25);
+  --primary:        #a855f7;
+  --primary-light:  #c084fc;
+  --primary-glow:   rgba(168, 85, 247, 0.35);
+  --accent:         #60a5fa;
+  --accent-glow:    rgba(96, 165, 250, 0.25);
 
-  /* Surface (Crystal Dark) */
-  --bg-main:        #05050a;
-  --bg-surface:     #0b0b14;
+  /* Surface (Modern Dark) */
+  --bg-main:        #080b14;
+  --bg-surface:     #0b1020;
   --bg-elevated:    #111827;
-  --bg-soft:        #15172a;
+  --bg-soft:        #1e293b;
+  --bg-primary:     var(--bg-main);
+  --bg-secondary:   var(--bg-surface);
   --text-main:      #f8fafc;
-  --text-secondary: #cbd5e1;
-  --text-muted:     #94a3b8;
-  --border:         rgba(148,163,184,0.22);
-  --focus-ring:     rgba(129, 140, 248, 0.28);
+  --text-secondary: #94a3b8;
+  --text-muted:     #64748b;
+  --text-primary:   var(--text-main);
+  --border:         rgba(255, 255, 255, 0.08);
+  --border-color:   var(--border);
+  --card-bg:        var(--bg-surface);
+  --input-bg:       rgba(15, 23, 42, 0.72);
+  --sidebar-bg:     rgba(255,255,255,0.03);
+  --focus-ring:     rgba(168, 85, 247, 0.28);
 
-  /* Semantic (Dark) */
-  --status-warning-bg:   rgba(245, 158, 11, 0.15);
-  --status-warning-text: #fcd34d;
-  --status-info-bg:      rgba(129, 140, 248, 0.15);
-  --status-info-text:    #a5b4fc;
-
-  /* Glass (Crystal Dark) */
-  --glass-bg:       rgba(11,11,20,0.65);
-  --glass-border:   rgba(255,255,255,0.06);
-  --card-shadow:    0 0 0 1px rgba(255,255,255,0.03),
-                    0 20px 50px rgba(0,0,0,0.7);
+  /* Glass (Modern Dark) */
+  --glass-bg:       rgba(17, 24, 39, 0.55);
+  --glass-border:   rgba(255, 255, 255, 0.08);
+  --card-shadow:    0 0 0 1px rgba(255, 255, 255, 0.03),
+                    0 20px 50px rgba(0, 0, 0, 0.5);
 }
 
 /* ═══ BASE ═══ */
@@ -91,6 +99,76 @@ body {
 .theme-shell {
   background: var(--bg-main);
   color: var(--text-main);
+}
+
+.app-main-shell,
+.chat-shell,
+.chat-landing,
+.chat-thread {
+  background: var(--bg-main);
+  color: var(--text-main);
+}
+
+.chat-shell,
+.chat-landing,
+.chat-thread,
+.chat-input-dock {
+  transition: background-color var(--transition-slow), color var(--transition-slow), border-color var(--transition-slow);
+}
+
+.chat-ambient {
+  background:
+    radial-gradient(circle at 50% 12%, rgba(79, 70, 229, 0.10), transparent 36%),
+    radial-gradient(circle at 82% 78%, rgba(15, 118, 110, 0.08), transparent 32%);
+}
+
+.dark .chat-ambient {
+  background:
+    radial-gradient(circle at 50% 12%, rgba(168, 85, 247, 0.20), transparent 36%),
+    radial-gradient(circle at 82% 78%, rgba(96, 165, 250, 0.12), transparent 32%);
+}
+
+.chat-input-dock {
+  background: color-mix(in srgb, var(--bg-main) 90%, transparent);
+  border-color: var(--border);
+}
+
+.chat-composer-shell {
+  background: linear-gradient(135deg, rgba(124, 58, 237, 0.68), rgba(79, 70, 229, 0.44), rgba(14, 165, 233, 0.64));
+}
+
+.chat-composer {
+  background: var(--input-bg);
+  color: var(--text-main);
+  border: 1px solid var(--border);
+  box-shadow: var(--card-shadow);
+}
+
+.chat-composer:focus-within {
+  border-color: color-mix(in srgb, var(--primary) 55%, var(--border));
+  box-shadow: var(--card-shadow), 0 0 0 3px var(--focus-ring);
+}
+
+.chat-composer-control {
+  background: var(--bg-surface);
+  color: var(--text-main);
+  border-color: var(--border);
+}
+
+.chat-composer-control:hover {
+  background: color-mix(in srgb, var(--bg-surface) 82%, var(--primary) 8%);
+  border-color: color-mix(in srgb, var(--primary) 38%, var(--border));
+}
+
+.dark .chat-composer-control {
+  background: rgba(255, 255, 255, 0.06);
+  color: #f8fafc;
+  border-color: rgba(255, 255, 255, 0.10);
+}
+
+.dark .chat-composer {
+  background: rgba(15, 23, 42, 0.72);
+  border-color: rgba(255, 255, 255, 0.10);
 }
 
 .theme-surface {
@@ -298,6 +376,13 @@ a:focus:not(:focus-visible),
   color: var(--text-main);
 }
 
+.theme-shell textarea[data-landing-prompt="true"],
+.theme-admin-page textarea[data-landing-prompt="true"] {
+  background: transparent !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+}
+
 .theme-shell [class*="bg-indigo-600"],
 .theme-shell [class*="bg-indigo-500"],
 .theme-shell [class*="bg-blue-600"],
@@ -391,12 +476,12 @@ a:focus:not(:focus-visible),
 
 /* ═══ TEXT GRADIENT (Animated) ═══ */
 .text-gradient {
-  background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 50%, #ec4899 100%);
+  background: linear-gradient(135deg, #a855f7 0%, #60a5fa 50%, #f472b6 100%);
   background-size: 200% auto;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  animation: gradientFlow 6s linear infinite;
+  animation: gradientFlow 4s ease infinite;
 }
 
 @keyframes gradientFlow {
@@ -540,8 +625,75 @@ code, pre, .font-mono {
 
 /* ═══ NEURAL GRID (subtle background pattern) ═══ */
 .neural-grid {
-  background-image:
-    linear-gradient(rgba(129,140,248,0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(129,140,248,0.03) 1px, transparent 1px);
-  background-size: 40px 40px;
+  background-image: radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.05) 1px, transparent 0);
+  background-size: 32px 32px;
+}
+
+.bg-dot-pattern {
+  background-image: radial-gradient(circle at 2px 2px, var(--border) 1px, transparent 0);
+  background-size: 24px 24px;
+}
+
+.home-gradient-bg {
+  background: radial-gradient(circle at 50% -20%, rgba(168, 85, 247, 0.15) 0%, transparent 60%),
+              radial-gradient(circle at 0% 100%, rgba(96, 165, 250, 0.05) 0%, transparent 40%);
+}
+
+.active-sidebar-item {
+  position: relative;
+  background: rgba(233, 213, 255, 0.72) !important;
+  border-color: rgba(192, 132, 252, 0.36) !important;
+  color: #18181b !important;
+}
+
+.dark .active-sidebar-item {
+  background: rgba(168, 85, 247, 0.1) !important;
+  border-color: rgba(192, 132, 252, 0.24) !important;
+  color: #f8fafc !important;
+}
+
+.active-sidebar-item::before {
+  content: '';
+  position: absolute;
+  left: -12px;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: linear-gradient(to bottom, #a855f7, #60a5fa);
+  border-radius: 0 4px 4px 0;
+}
+
+.cam-effect {
+  background: rgba(17, 24, 39, 0.45);
+  backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+}
+
+.sparkle-glow {
+  animation: sparkleRotate 3s linear infinite;
+  filter: drop-shadow(0 0 8px rgba(168, 85, 247, 0.6));
+}
+
+@keyframes sparkleRotate {
+  0% { transform: rotate(0deg) scale(1); opacity: 0.8; }
+  50% { transform: rotate(180deg) scale(1.2); opacity: 1; }
+  100% { transform: rotate(360deg) scale(1); opacity: 0.8; }
+}
+
+.gradient-border {
+  position: relative;
+}
+
+.gradient-border::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(135deg, rgba(168, 85, 247, 0.5), rgba(96, 165, 250, 0.5));
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
 }

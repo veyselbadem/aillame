@@ -38,9 +38,9 @@ export const NanoProfileSelector: React.FC = () => {
       
       <div className="w-px h-4 bg-white/10 mx-1" />
       
-      <button className="p-1.5 text-white/30 hover:text-white/60 transition-colors">
+      <a href="/settings" className="p-1.5 text-white/30 hover:text-white/60 transition-colors" title="Ayarlar">
         <FiSettings size={12} />
-      </button>
+      </a>
     </div>
   );
 };

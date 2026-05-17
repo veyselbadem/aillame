@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useRuntimeStatus } from '@hooks/useRuntimeStatus';
-import { tauriModelBridge } from '@core/platform/tauri-model-bridge';
+import { aillameFetch } from '@/lib/aillame-api-client';
+// import { tauriModelBridge } from '@core/platform/tauri-model-bridge'; // REMOVED: Using REST API
 import { 
   FiCpu, 
   FiBox, 
@@ -12,29 +13,25 @@ import {
   FiSettings,
   FiPower,
   FiRefreshCw,
-  FiSlash
+  FiSlash,
+  FiPlayCircle
 } from 'react-icons/fi';
 
 export const LocalRuntimePanel: React.FC = () => {
-  const { session, loading, refresh } = useRuntimeStatus();
+  const { session, loading, refresh, loadModel } = useRuntimeStatus();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const handleStartRuntime = async () => {
-    console.info("[LocalRuntimePanel] Runtime Başlat clicked");
     setBusy(true);
     setError(null);
     try {
-      console.info("[LocalRuntimePanel] calling tauriModelBridge.startRuntime");
-      const response = await tauriModelBridge.startRuntime({
-        devicePreference: "auto"
-      });
-      console.info('[LocalRuntimePanel] startRuntime resolved:', response);
-      await refresh();
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
-      console.error('[LocalRuntimePanel] startRuntime failed:', msg);
-      setError(msg);
+      const res = await loadModel();
+      if (!res.success) {
+        setError(res.error || 'Runtime başlatılamadı.');
+      }
+    } catch (err: any) {
+      setError(err.message);
     } finally {
       setBusy(false);
     }
@@ -43,7 +40,7 @@ export const LocalRuntimePanel: React.FC = () => {
   const handleStopRuntime = async () => {
     setBusy(true);
     try {
-      await tauriModelBridge.stopRuntime();
+      await aillameFetch('/api/aillame/models/unload', { method: 'POST' });
       await refresh();
     } catch (err) {
       console.error('Runtime stop failed:', err);
@@ -55,7 +52,7 @@ export const LocalRuntimePanel: React.FC = () => {
   const handleUnloadModel = async () => {
     setBusy(true);
     try {
-      await tauriModelBridge.safeModelUnload();
+      await aillameFetch('/api/aillame/models/unload', { method: 'POST' });
       await refresh();
     } catch (err) {
       console.error('Model unload failed:', err);
@@ -65,45 +62,32 @@ export const LocalRuntimePanel: React.FC = () => {
   };
 
   const handleCancelLoad = async () => {
-    setBusy(true);
-    try {
-      await tauriModelBridge.safeModelCancelLoad();
-      await refresh();
-    } catch (err) {
-      console.error('Model load cancel failed:', err);
-    } finally {
-      setBusy(false);
-    }
+    // Phase 9: Manual cancel not implemented in new API yet, using stop as fallback
+    await handleStopRuntime();
   };
 
-  if (!session && !loading) {
+  if (!session?.isSelected && !loading) {
     return (
       <div className="theme-surface rounded-2xl border border-rose-500/10 p-6 flex flex-col items-center text-center">
         <div className="w-12 h-12 rounded-2xl bg-rose-500/10 flex items-center justify-center mb-4">
           <FiPower className="text-rose-500" size={24} />
         </div>
-        <h3 className="text-sm font-bold theme-title mb-2">Runtime Kapalı</h3>
+        <h3 className="text-sm font-bold theme-title mb-2">Model Seçilmedi</h3>
         <p className="text-xs theme-muted mb-4 max-w-[200px]">
-          Yerel modelleri kullanabilmek için Aillame yan sürecini başlatmalısın.
+          Yerel modelleri kullanabilmek için önce bir model seçmelisin.
         </p>
-        <button
-          disabled={busy}
-          onClick={handleStartRuntime}
-          className="w-full py-2 rounded-xl bg-indigo-600 text-white text-xs font-bold hover:bg-indigo-500 transition-all disabled:opacity-50"
+        <a
+          href="/settings"
+          className="w-full py-2 rounded-xl bg-indigo-600 text-white text-xs font-bold hover:bg-indigo-500 transition-all flex items-center justify-center"
         >
-          {busy ? 'Başlatılıyor...' : 'Runtime Başlat'}
-        </button>
-        {error && (
-          <p className="mt-3 text-[10px] text-rose-500 font-medium leading-tight">
-            Runtime error: {error}
-          </p>
-        )}
+          Model Yönetimine Git
+        </a>
       </div>
     );
   }
 
-  const isModelLoaded = session?.processState === 'loaded';
-  const isModelLoading = session?.processState === 'loading' || session?.processState === 'preparing_load';
+  const isModelLoaded = session?.isLoaded === true;
+  const isModelLoading = loading && !isModelLoaded;
 
   return (
     <div className="theme-surface rounded-2xl border border-white/5 p-4 space-y-4">
@@ -160,22 +144,16 @@ export const LocalRuntimePanel: React.FC = () => {
                 <FiSlash size={14} />
               </button>
             ) : isModelLoading ? (
+              <FiLoader size={14} className="animate-spin text-indigo-400" />
+            ) : (
               <button
                 disabled={busy}
-                onClick={handleCancelLoad}
-                className="p-1.5 rounded-lg hover:bg-rose-500/10 text-rose-500/60 hover:text-rose-500 transition-all disabled:opacity-20"
-                title="Yüklemeyi İptal Et"
-              >
-                <FiXCircle size={14} />
-              </button>
-            ) : (
-              <a
-                href="/library"
+                onClick={handleStartRuntime}
                 className="p-1.5 rounded-lg hover:bg-indigo-500/10 text-indigo-500/60 hover:text-indigo-500 transition-all"
-                title="Model Seç"
+                title="Modeli Yükle"
               >
-                <FiSettings size={14} />
-              </a>
+                <FiPlayCircle size={14} />
+              </button>
             )}
           </div>
         </div>

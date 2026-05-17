@@ -1,7 +1,8 @@
 'use client';
 
 import { useRef, useEffect, useState, useMemo } from 'react';
-import { FiImage, FiSend, FiX, FiZap, FiMic, FiMicOff, FiAlertCircle, FiInfo, FiTrash2 } from 'react-icons/fi';
+import { FiImage, FiSend, FiX, FiZap, FiMic, FiMicOff, FiAlertCircle, FiInfo, FiTrash2, FiPlus, FiArrowUp } from 'react-icons/fi';
+import { AillameModelSelector } from './chat/AillameModelSelector';
 import { useVoiceInput } from '@hooks/useVoiceInput';
 import type { ImageAttachment } from '@apptypes/attachments';
 import { createImageAttachment, validateImageFile } from '@/lib/image-attachments';
@@ -18,6 +19,7 @@ interface ChatInputProps {
   visionEnabled?: boolean;
   attachments?: ImageAttachment[];
   onAttachmentsChange?: (attachments: ImageAttachment[]) => void;
+  variant?: 'bottom' | 'landing';
 }
 
 export default function ChatInput({
@@ -28,6 +30,7 @@ export default function ChatInput({
   visionEnabled = false,
   attachments = [],
   onAttachmentsChange,
+  variant = 'bottom',
 }: ChatInputProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
@@ -82,18 +85,22 @@ export default function ChatInput({
     const files = Array.from(e.target.files ?? []);
     if (files.length === 0) return;
 
+    if (files.length > 1 || attachments.length > 0) {
+      setImageError('Aynı anda yalnızca bir görsel ekleyebilirsiniz.');
+      if (imageInputRef.current) imageInputRef.current.value = '';
+      return;
+    }
+
     setImageError(null);
 
     try {
-      const nextAttachments: ImageAttachment[] = [];
-      for (const file of files.slice(0, 4)) {
-        const validation = validateImageFile(file);
-        if (validation) throw new Error(validation);
-        nextAttachments.push(await createImageAttachment(file));
-      }
-      onAttachmentsChange?.([...attachments, ...nextAttachments].slice(0, 4));
+      const file = files[0];
+      const validation = validateImageFile(file);
+      if (validation) throw new Error(validation);
+      const newAttachment = await createImageAttachment(file);
+      onAttachmentsChange?.([newAttachment]);
     } catch (error) {
-      setImageError(error instanceof Error ? error.message : 'Görsel eklenemedi.');
+      setImageError(error instanceof Error ? error.message : 'Görsel işlenirken bir hata oluştu.');
     } finally {
       if (imageInputRef.current) imageInputRef.current.value = '';
     }
@@ -119,6 +126,73 @@ export default function ChatInput({
 
   const isEmpty = !value.trim() && attachments.length === 0;
 
+  if (variant === 'landing') {
+    return (
+      <div className="w-full max-w-[1100px] relative group">
+        <div className="absolute -inset-1 rounded-[32px] bg-gradient-to-r from-purple-500/20 to-blue-500/20 blur-xl opacity-0 group-focus-within:opacity-100 transition-opacity duration-700 pointer-events-none" />
+        
+        <div className="chat-composer relative rounded-[28px] overflow-visible p-6 shadow-2xl">
+          {attachments.length > 0 && (
+            <div className="flex gap-3 pb-4 overflow-x-auto custom-scrollbar">
+              {attachments.map((attachment) => (
+                <div key={attachment.id} className="relative flex items-center gap-3 p-2 pr-10 rounded-xl overflow-hidden border border-white/10 group/img bg-black/20 backdrop-blur-md">
+                  <div className="h-14 w-14 flex-shrink-0 rounded-lg overflow-hidden border border-white/10">
+                    <img src={attachment.dataUrl} className="h-full w-full object-cover" alt="" />
+                  </div>
+                  <div className="flex flex-col justify-center min-w-0 max-w-[150px]">
+                    <span className="text-xs font-semibold text-white/90 truncate">{attachment.name}</span>
+                    <span className="text-[10px] text-white/50 mt-0.5">{attachment.size ? (attachment.size / 1024 / 1024).toFixed(2) + ' MB' : ''}</span>
+                  </div>
+                  <button onClick={() => removeAttachment(attachment.id)} className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/60 rounded-lg p-1.5 text-white hover:text-rose-400 backdrop-blur-md transition-all active:scale-90">
+                    <FiX size={14} />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <textarea
+            ref={textareaRef}
+            rows={1}
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder="Aillame’ye bir şey sorun veya bir görev tanımlayın..."
+            className="w-full resize-none appearance-none border-0 !bg-transparent p-0 text-lg font-medium leading-relaxed text-[var(--text-main)] !shadow-none outline-none !ring-0 placeholder:text-[var(--text-muted)] focus:border-0 focus:!bg-transparent focus:outline-none focus:!ring-0"
+            style={{ backgroundColor: 'transparent' }}
+            disabled={disabled}
+            data-landing-prompt="true"
+          />
+
+          <div className="relative z-20 flex items-center justify-between mt-4">
+            <div className="flex items-center">
+              <input ref={imageInputRef} type="file" accept="image/png,image/jpeg,image/webp" onChange={handleImageSelect} className="hidden" />
+              <button 
+                onClick={() => imageInputRef.current?.click()}
+                aria-label="Dosya ekle"
+                title="Dosya ekle"
+                className="chat-composer-control w-10 h-10 rounded-xl border flex items-center justify-center transition-all group"
+              >
+                <FiPlus size={20} className="group-hover:rotate-90 transition-transform" />
+              </button>
+            </div>
+
+            <div className="flex items-center gap-4">
+              <AillameModelSelector />
+              <button
+                onClick={handleSend}
+                disabled={disabled || isEmpty}
+                className="w-12 h-12 rounded-full bg-gradient-to-br from-[#a855f7] to-[#60a5fa] flex items-center justify-center text-white shadow-xl shadow-purple-500/20 hover:scale-105 active:scale-95 transition-all disabled:opacity-30 disabled:grayscale"
+              >
+                <FiArrowUp size={24} />
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="relative group input-glow rounded-[26px] transition-all duration-500">
       <div
@@ -131,16 +205,22 @@ export default function ChatInput({
         }}
       />
 
-      <div className="relative glass-card rounded-[26px] overflow-hidden border-white/10 shadow-2xl">
+      <div className="chat-composer relative rounded-[26px] overflow-hidden shadow-2xl">
         {attachments.length > 0 && (
           <div className="flex gap-3 px-5 pt-5 pb-2 overflow-x-auto custom-scrollbar bg-white/[0.02]">
             {attachments.map((attachment) => (
-              <div key={attachment.id} className="relative h-24 w-24 flex-shrink-0 overflow-hidden rounded-[20px] border border-white/10 bg-black/40 shadow-xl group/img">
-                <img src={attachment.dataUrl} alt={attachment.name} className="h-full w-full object-cover transition-transform duration-500 group-hover/img:scale-110" />
+              <div key={attachment.id} className="relative flex items-center gap-3 p-2 pr-10 overflow-hidden rounded-[20px] border border-white/10 bg-black/40 shadow-xl group/img">
+                <div className="h-16 w-16 flex-shrink-0 overflow-hidden rounded-xl border border-white/10 bg-black/60">
+                  <img src={attachment.dataUrl} alt={attachment.name} className="h-full w-full object-cover transition-transform duration-500 group-hover/img:scale-110" />
+                </div>
+                <div className="flex flex-col justify-center min-w-0 max-w-[150px]">
+                  <span className="text-xs font-semibold text-white/90 truncate">{attachment.name}</span>
+                  <span className="text-[10px] text-white/50 mt-0.5">{attachment.size ? (attachment.size / 1024 / 1024).toFixed(2) + ' MB' : 'Bilinmeyen boyut'}</span>
+                </div>
                 <button
                   type="button"
                   onClick={() => removeAttachment(attachment.id)}
-                  className="absolute right-1.5 top-1.5 flex h-7 w-7 items-center justify-center rounded-xl bg-black/80 text-white/80 hover:text-rose-400 backdrop-blur-md border border-white/5 transition-all active:scale-90"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 flex h-7 w-7 items-center justify-center rounded-xl bg-black/80 text-white/80 hover:text-rose-400 backdrop-blur-md border border-white/5 transition-all active:scale-90"
                   aria-label="Görseli kaldır"
                   title="Görseli kaldır"
                 >
@@ -207,14 +287,13 @@ export default function ChatInput({
         )}
 
         <div className="flex items-end px-2 pb-2 pt-1">
-          <div className="flex items-center gap-1 px-2 pb-1.5">
+          <div className="flex items-center gap-1 border-r border-[var(--border)] px-2 pb-1.5 pr-3">
             {visionEnabled && (
               <div className="flex-shrink-0">
                 <input
                   ref={imageInputRef}
                   type="file"
                   accept="image/png,image/jpeg,image/jpg,image/webp"
-                  multiple
                   onChange={handleImageSelect}
                   className="hidden"
                 />
@@ -222,7 +301,7 @@ export default function ChatInput({
                   type="button"
                   onClick={() => imageInputRef.current?.click()}
                   aria-label="Görsel ekle"
-                  className="w-11 h-11 flex items-center justify-center rounded-2xl text-gray-500 hover:bg-white/5 hover:text-indigo-400 transition-all active:scale-90 group/btn"
+                  className="chat-composer-control w-11 h-11 flex items-center justify-center rounded-2xl transition-all active:scale-90 group/btn"
                   title="Görsel ekle"
                   disabled={disabled}
                 >
@@ -239,7 +318,7 @@ export default function ChatInput({
                   className={`w-11 h-11 flex items-center justify-center rounded-2xl transition-all active:scale-90 ${
                     voiceState === 'listening'
                       ? 'bg-rose-500/20 text-rose-500 shadow-[0_0_20px_rgba(244,63,94,0.3)]'
-                      : 'text-gray-500 hover:bg-white/5'
+                      : 'chat-composer-control'
                   }`}
                   aria-label={voiceState === 'listening' ? 'Sesli komut durdur' : 'Sesli komut'}
                   title="Sesli Komut"
@@ -258,7 +337,7 @@ export default function ChatInput({
             onKeyDown={handleKeyDown}
             placeholder={voiceState === 'listening' ? 'Sizi dinliyorum...' : visionEnabled ? 'Bir görev verin veya görsel yükleyin...' : "Aillame'ye bir görev yazın..."}
             className="flex-1 bg-transparent border-none focus:ring-0 text-[15px] text-slate-900 dark:text-white/90 py-5 px-4 placeholder-slate-400 dark:placeholder-white/20 resize-none outline-none min-h-[60px] max-h-48 leading-relaxed font-medium"
-            aria-label="Chat mesajı"
+            aria-label="Sohbet mesajı"
             disabled={disabled || voiceState === 'listening'}
           />
 

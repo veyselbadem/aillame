@@ -1,20 +1,19 @@
 import { LLMProvider, LLMGenerateOptions } from './base';
-import { tauriModelBridge } from '@core/platform/tauri-model-bridge';
-import { listen } from '@tauri-apps/api/event';
+import { aillameFetch } from '@/lib/aillame-api-client';
 
 export class NativeLocalProvider implements LLMProvider {
   private _isLoading = false;
 
   async loadModel(): Promise<void> {
-    // Check if runtime is ready
-    const session = await tauriModelBridge.getSafeRuntimeSession();
-    if (!session || (session.processState !== 'runtime_ready' && session.processState !== 'loaded')) {
-      await tauriModelBridge.startRuntime({
-        devicePreference: "auto",
-        startTimeoutMs: 30000,
-        handshakeTimeoutMs: 30000,
-        shutdownTimeoutMs: 10000
-      });
+    this._isLoading = true;
+    try {
+      const res = await aillameFetch('/api/aillame/models/load', { method: 'POST' });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error?.message || 'Model yükleme başarısız.');
+      }
+    } finally {
+      this._isLoading = false;
     }
   }
 
@@ -23,25 +22,28 @@ export class NativeLocalProvider implements LLMProvider {
   }
 
   isReady(): boolean {
-    // Provider level ready means it can accept generate calls.
-    // We check this in generate, but for selector/router we can't do async check easily.
-    // So we assume true and fail fast if not actually ready.
+    // We assume true and the API will return 412 if not actually ready
     return true; 
   }
 
   async getStatus() {
-    const session = await tauriModelBridge.getSafeRuntimeSession();
-    if (!session) return { runtimeState: 'stopped', isModelLoaded: false };
-    
-    return {
-      runtimeState: session.processState,
-      loadStatus: session.processState === 'loaded' ? 'loaded' : 'idle',
-      activeModelId: session.activeModelId,
-      isModelLoaded: session.processState === 'loaded',
-      isGenerating: session.isInferring,
-      errorCode: session.lastErrorCode,
-      warnings: session.lastErrorCode ? [session.lastErrorCode] : []
-    };
+    try {
+      const res = await aillameFetch('/api/aillame/runtime/status');
+      const data = await res.json();
+      const isLoaded = data.runtime?.text?.loaded || false;
+      
+      return {
+        runtimeState: isLoaded ? 'loaded' : 'not_loaded',
+        loadStatus: isLoaded ? 'loaded' : 'idle',
+        activeModelId: data.runtime?.text?.modelId || null,
+        isModelLoaded: isLoaded,
+        isGenerating: false,
+        errorCode: null,
+        warnings: []
+      };
+    } catch (e) {
+      return { runtimeState: 'error', isModelLoaded: false };
+    }
   }
 
   async generate(
@@ -50,72 +52,44 @@ export class NativeLocalProvider implements LLMProvider {
     signal?: AbortSignal,
     options?: LLMGenerateOptions
   ): Promise<string> {
-    const session = await tauriModelBridge.getSafeRuntimeSession();
     
-    if (!session || session.processState !== 'loaded' || !session.activeModelId) {
-      throw new Error('MODEL_INFERENCE_MODEL_NOT_LOADED');
-    }
-
-    if (session.isInferring) {
-      throw new Error('MODEL_INFERENCE_BUSY');
-    }
-
-    if (!onToken) {
-      const resp = await tauriModelBridge.safeModelInfer(prompt, session.activeModelId);
-      if (resp.errorCode) throw new Error(resp.errorCode);
-      return resp.text;
-    }
-
-    // Streaming implementation
-    return new Promise<string>(async (resolve, reject) => {
-      let fullText = '';
-      let unlisten: (() => void) | null = null;
-
-      const cleanup = () => {
-        if (unlisten) unlisten();
-      };
-
-      if (signal) {
-        signal.addEventListener('abort', () => {
-          tauriModelBridge.cancelModelInferenceStream().catch(console.error);
-          cleanup();
-          reject(new Error('AbortError'));
-        });
-      }
-
-      const setupListener = async () => {
-        const unsubscribe = await listen('inference_event', (event: any) => {
-          const payload = event.payload;
-          
-          if (payload.event === 'token' && payload.delta) {
-            fullText += payload.delta;
-            onToken(payload.delta);
-          } else if (payload.event === 'completed' || payload.event === 'stream_completed') {
-            cleanup();
-            resolve(fullText);
-          } else if (payload.event === 'failed' || payload.event === 'stream_failed') {
-            cleanup();
-            reject(new Error(payload.error_code || 'STREAM_FAILED'));
-          } else if (payload.event === 'stream_cancelled') {
-            cleanup();
-            reject(new Error('STREAM_CANCELLED'));
-          }
-        });
-        unlisten = unsubscribe;
-      };
-
-      try {
-        await setupListener();
-        const startResp = await tauriModelBridge.safeModelInferStream(prompt, session.activeModelId!);
-        if (startResp.errorCode) {
-          cleanup();
-          reject(new Error(startResp.errorCode));
+    // Phase 9: Switching to API-based generation
+    const res = await aillameFetch('/api/aillame/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        prompt,
+        options: {
+          maxTokens: (options as any)?.maxTokens,
+          temperature: (options as any)?.temperature,
+          topP: (options as any)?.topP,
+          systemPrompt: (options as any)?.systemPrompt
         }
-      } catch (err) {
-        cleanup();
-        reject(err);
-      }
+      }),
+      signal
     });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      const errorCode = data.error?.code || 'GENERATION_FAILED';
+      throw new Error(errorCode);
+    }
+
+    const text = data.text || '';
+    
+    // Simulate tokens if onToken is provided (since API is non-streaming for now)
+    if (onToken && text) {
+      const words = text.split(' ');
+      for (const word of words) {
+        if (signal?.aborted) break;
+        onToken(word + ' ');
+        // Small delay for UI smoothness
+        await new Promise(r => setTimeout(r, 10));
+      }
+    }
+
+    return text;
   }
 }
 

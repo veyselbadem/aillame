@@ -139,7 +139,7 @@ async function runTests() {
     console.log(`Prompt: "${prompt}"`);
     console.log(`E2E response:`, data7.response);
     
-    if (data7.response.includes('Güvenlik Engeli') && data7.modelId === 'aillame-nano-v1-tool-blocked') {
+    if (data7.response.includes('güvenlik nedeniyle engellendi') && data7.modelId === 'aillame-nano-v1-tool-blocked') {
       console.log('✓ Success: Securely blocked and rejected dangerous operation.');
     } else {
       throw new Error(`Failed to block dangerous prompt: "${prompt}"`);

@@ -162,3 +162,6 @@ igm-venv/
 
 # Runtime debug artifacts
 api_response.json
+
+# Release Artifacts (Dağıtım dosyaları)
+release/

@@ -7,11 +7,11 @@ export function isSupportedImageType(type: string): type is ImageAttachment['mim
 
 export function validateImageFile(file: File): string | null {
   if (!isSupportedImageType(file.type)) {
-    return 'PNG, JPG, JPEG veya WEBP formatında bir görsel seçin.';
+    return 'Sadece PNG, JPEG veya WebP görseller desteklenir.';
   }
 
   if (file.size > MAX_IMAGE_ATTACHMENT_BYTES) {
-    return 'Görsel en fazla 10 MB olabilir.';
+    return 'Görsel boyutu en fazla 5 MB olabilir.';
   }
 
   return null;

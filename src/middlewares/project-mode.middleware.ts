@@ -65,7 +65,10 @@ export const projectModeMiddleware = (
   }
 
   // Check if mode is allowed by API key
-  if (!req.aillameAuth.allowedModes.includes(resolvedMode)) {
+  const isKeyAllowed = req.aillameAuth.allowedModes.includes('all') || 
+                       req.aillameAuth.allowedModes.includes(resolvedMode);
+
+  if (!isKeyAllowed) {
     return res.status(403).json(
       ApiResponseHelper.error('MODE_NOT_ALLOWED', 'Bu mode bu API key için izinli değil.')
     );

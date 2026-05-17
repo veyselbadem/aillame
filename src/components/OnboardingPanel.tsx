@@ -1,17 +1,24 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { usePathname } from 'next/navigation';
 import { FiCheckCircle, FiShield, FiFolder, FiCpu, FiPlay, FiX } from 'react-icons/fi';
 
 export default function OnboardingPanel() {
   const [isVisible, setIsVisible] = useState(false);
+  const pathname = usePathname();
 
   useEffect(() => {
+    if (pathname === '/') {
+      setIsVisible(false);
+      return;
+    }
+
     const hasSeen = localStorage.getItem('aillame_onboarding_seen');
     if (!hasSeen) {
       setIsVisible(true);
     }
-  }, []);
+  }, [pathname]);
 
   const dismiss = () => {
     localStorage.setItem('aillame_onboarding_seen', 'true');

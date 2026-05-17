@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { FiDownload, FiImage, FiLoader, FiZap } from 'react-icons/fi';
+import { FiDownload, FiImage, FiLoader, FiRefreshCw, FiZap } from 'react-icons/fi';
 import { DEFAULT_IMAGE_GENERATION_MODEL_ID, MODEL_REGISTRY } from '@core/models/registry';
 import { IMAGE_SIZE_PRESETS, type ImageSizePreset } from '@core/image-generation/types';
 
@@ -13,6 +13,73 @@ const FOUNDATION_STATUS = [
   ['Job Queue', 'preview'],
   ['ComfyUI', 'dependency yok'],
 ] as const;
+
+type ImageGenerationHealth = {
+  ok?: boolean;
+  model?: {
+    id?: string;
+    name?: string;
+  };
+  files?: {
+    diffusersExists?: boolean;
+    safetensorsExists?: boolean;
+  };
+  runtime?: {
+    enabled?: boolean;
+    cpuFallbackAllowed?: boolean;
+    message?: string;
+  };
+  safeRuntime?: {
+    ok?: boolean;
+    freeRamMb?: number;
+    freeVramMb?: number;
+    minFreeRamMb?: number;
+    minFreeVramMb?: number;
+    errors?: string[];
+    warnings?: string[];
+    message?: string;
+  };
+  gpuHeavyLock?: {
+    locked?: boolean;
+    owner?: string | null;
+    message?: string;
+  };
+};
+
+function formatMb(value?: number) {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return 'Ölçülemedi';
+  return `${value.toLocaleString('tr-TR')} MB`;
+}
+
+function statusTone(ok: boolean | undefined, warningWhenFalse = true) {
+  if (ok === undefined) return 'border-white/10 bg-white/5 text-gray-400';
+  if (ok) return 'border-emerald-400/20 bg-emerald-500/10 text-emerald-300';
+  return warningWhenFalse
+    ? 'border-amber-400/20 bg-amber-500/10 text-amber-300'
+    : 'border-rose-400/20 bg-rose-500/10 text-rose-300';
+}
+
+function StatusPill({ label, ok, warningWhenFalse = true }: { label: string; ok?: boolean; warningWhenFalse?: boolean }) {
+  return (
+    <span className={`inline-flex rounded-lg border px-2.5 py-1 text-[10px] font-black uppercase tracking-wide ${statusTone(ok, warningWhenFalse)}`}>
+      {label}
+    </span>
+  );
+}
+
+function formatGpuLockOwner(owner?: string | null) {
+  const labels: Record<string, string> = {
+    'qwen-vlm': 'Qwen3-VL 4B görsel anlama',
+    'sdxl-turbo': 'SDXL Turbo görsel üretim',
+    'nano-training': 'Aillame Nano eğitim',
+  };
+  return owner ? labels[owner] || owner : 'Yok';
+}
+
+function getGpuLockMessage(lock?: ImageGenerationHealth['gpuHeavyLock']) {
+  if (!lock?.locked) return 'Ağır GPU işlemi yok.';
+  return lock.message || 'Başka bir ağır GPU işlemi devam ediyor.';
+}
 
 export default function ImageGenerationPanel() {
   const model = MODEL_REGISTRY[DEFAULT_IMAGE_GENERATION_MODEL_ID];
@@ -27,6 +94,74 @@ export default function ImageGenerationPanel() {
   const [seed, setSeed] = useState<number | null>(null);
   const [jobId, setJobId] = useState<string | null>(null);
   const [jobStatus, setJobStatus] = useState<string | null>(null);
+  const [health, setHealth] = useState<ImageGenerationHealth | null>(null);
+  const [activeImageModelId, setActiveImageModelId] = useState<string | null>(null);
+  const [healthLoading, setHealthLoading] = useState(false);
+  const [healthCheckedAt, setHealthCheckedAt] = useState<string | null>(null);
+  const [healthError, setHealthError] = useState<string | null>(null);
+
+  const refreshHealth = useCallback(async () => {
+    setHealthLoading(true);
+    setHealthError(null);
+    try {
+      const [healthResponse, activeResponse] = await Promise.all([
+        fetch('/api/aillame/image-generation/health'),
+        fetch('/api/models/active'),
+      ]);
+
+      if (!healthResponse.ok) {
+        throw new Error('Görsel üretim durumu alınamadı.');
+      }
+
+      const healthPayload = await healthResponse.json();
+      setHealth(healthPayload);
+
+      if (activeResponse.ok) {
+        const activePayload = await activeResponse.json();
+        setActiveImageModelId(activePayload.activeImageModelId || activePayload.imageModel?.id || null);
+      }
+
+      setHealthCheckedAt(new Date().toLocaleTimeString('tr-TR'));
+    } catch (err) {
+      setHealthError(err instanceof Error ? err.message : 'Görsel üretim durumu alınamadı.');
+    } finally {
+      setHealthLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void refreshHealth();
+  }, [refreshHealth]);
+
+  const filesReady = health?.files
+    ? Boolean(health.files.diffusersExists && health.files.safetensorsExists)
+    : undefined;
+  const runtimeEnabled = health?.runtime?.enabled === true;
+  const cpuFallbackAllowed = health?.runtime?.cpuFallbackAllowed === true;
+  const safeRuntime = health?.safeRuntime;
+  const gpuHeavyLock = health?.gpuHeavyLock;
+  const ramReady = safeRuntime?.errors
+    ? !safeRuntime.errors.some((item) => item.toLocaleLowerCase('tr-TR').includes('ram yetersiz'))
+    : undefined;
+  const vramReady = safeRuntime?.errors
+    ? !safeRuntime.errors.some((item) => item.toLocaleLowerCase('tr-TR').includes('gpu belleği yetersiz'))
+    : undefined;
+  const preflightOk = safeRuntime?.ok === true;
+  const runtimeMessage = healthError
+    || health?.runtime?.message
+    || safeRuntime?.message
+    || 'Görsel üretim durumu kontrol ediliyor.';
+  const generateHint = !filesReady && filesReady !== undefined
+    ? 'SDXL Turbo dosyaları eksik, görsel üretim başlatılamaz.'
+    : !runtimeEnabled
+      ? 'SDXL Turbo dosyaları hazır, ancak görsel üretim runtime’ı henüz etkin değil.'
+      : !vramReady && vramReady !== undefined
+        ? 'GPU belleği yetersiz, görsel üretim başlatılamaz.'
+        : !ramReady && ramReady !== undefined
+          ? 'RAM yetersiz, görsel üretim başlatılamaz.'
+          : cpuFallbackAllowed
+            ? 'CPU fallback aktif, işlem daha yavaş sürebilir.'
+            : 'Görsel üretim güvenli çalışma koşulları kontrol edildi.';
 
   const handleDownload = useCallback(async () => {
     if (!image || downloading) return;
@@ -93,7 +228,7 @@ export default function ImageGenerationPanel() {
 
       const payload = await response.json();
       if (!response.ok || !payload.success) {
-        throw new Error(payload.error || payload.warning || 'Görsel üretimi başlatılamadı.');
+        throw new Error(payload.message || payload.error || payload.warning || payload.errors?.join(' | ') || 'Görsel üretimi başlatılamadı.');
       }
       setJobId(payload.jobId);
     } catch (err) {
@@ -151,6 +286,115 @@ export default function ImageGenerationPanel() {
             <p className="mt-2 text-sm font-semibold text-gray-200">{value}</p>
           </div>
         ))}
+      </section>
+
+      <section className="mb-6 glass-card rounded-[28px] border-white/5 p-5">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div>
+            <div className="flex flex-wrap items-center gap-2">
+              <h2 className="text-lg font-black text-white">SDXL Turbo Durumu</h2>
+              <StatusPill
+                label={runtimeEnabled ? 'Runtime Açık' : 'Runtime Kapalı'}
+                ok={runtimeEnabled}
+              />
+              <StatusPill
+                label={preflightOk ? 'Preflight Geçti' : 'Preflight Engellendi'}
+                ok={preflightOk}
+              />
+            </div>
+            <p className="mt-2 max-w-3xl text-sm text-gray-400">
+              Görsel üretim başlamadan önce model dosyaları, runtime ve güvenli çalışma koşulları kontrol edilir.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={refreshHealth}
+            disabled={healthLoading}
+            className="h-10 shrink-0 rounded-xl border border-white/10 bg-white/5 px-4 text-[10px] font-black uppercase tracking-[0.18em] text-gray-200 transition-all hover:bg-white/10 disabled:opacity-50"
+          >
+            <span className="inline-flex items-center gap-2">
+              <FiRefreshCw className={healthLoading ? 'animate-spin' : ''} />
+              Durumu Yenile
+            </span>
+          </button>
+        </div>
+
+        <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <div className={`rounded-2xl border p-4 lg:col-span-2 ${
+            gpuHeavyLock?.locked
+              ? 'border-amber-400/20 bg-amber-500/10 text-amber-200'
+              : 'border-emerald-400/20 bg-emerald-500/10 text-emerald-200'
+          }`}>
+            <p className="text-[10px] font-black uppercase tracking-[0.22em] opacity-70">GPU Durumu</p>
+            <p className="mt-2 text-sm font-black">{getGpuLockMessage(gpuHeavyLock)}</p>
+            <div className="mt-2 flex flex-wrap items-center justify-between gap-2 text-[10px]">
+              <span className="font-black uppercase tracking-widest opacity-70">Aktif işlem</span>
+              <span className="font-bold">{formatGpuLockOwner(gpuHeavyLock?.owner)}</span>
+            </div>
+          </div>
+          <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
+            <p className="text-[10px] font-black uppercase tracking-[0.22em] text-gray-500">Aktif Model</p>
+            <p className={`mt-2 text-sm font-black ${activeImageModelId === 'sdxl-turbo-1.0' ? 'text-emerald-300' : 'text-amber-300'}`}>
+              {activeImageModelId || health?.model?.id || 'Bilinmiyor'}
+            </p>
+          </div>
+          <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
+            <p className="text-[10px] font-black uppercase tracking-[0.22em] text-gray-500">Model Dosyaları</p>
+            <p className={`mt-2 text-sm font-black ${filesReady === undefined ? 'text-gray-400' : filesReady ? 'text-emerald-300' : 'text-rose-300'}`}>
+              {filesReady === undefined ? 'Kontrol ediliyor' : filesReady ? 'Hazır' : 'Eksik'}
+            </p>
+          </div>
+          <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
+            <p className="text-[10px] font-black uppercase tracking-[0.22em] text-gray-500">CPU Fallback</p>
+            <p className={`mt-2 text-sm font-black ${cpuFallbackAllowed ? 'text-amber-300' : 'text-gray-400'}`}>
+              {cpuFallbackAllowed ? 'Aktif' : 'Kapalı'}
+            </p>
+          </div>
+          <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
+            <p className="text-[10px] font-black uppercase tracking-[0.22em] text-gray-500">Son Kontrol</p>
+            <p className="mt-2 text-sm font-black text-gray-200">{healthCheckedAt || 'Bekleniyor'}</p>
+          </div>
+        </div>
+
+        <div className="mt-3 grid gap-3 sm:grid-cols-3">
+          <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
+            <p className="text-[10px] font-black uppercase tracking-[0.22em] text-gray-500">RAM</p>
+            <p className={`mt-2 text-sm font-black ${ramReady === undefined ? 'text-gray-400' : ramReady ? 'text-emerald-300' : 'text-rose-300'}`}>
+              {ramReady === undefined ? 'Ölçülüyor' : ramReady ? 'Yeterli' : 'Yetersiz'}
+            </p>
+            <p className="mt-1 text-[10px] text-gray-500">{formatMb(safeRuntime?.freeRamMb)} / min {formatMb(safeRuntime?.minFreeRamMb)}</p>
+          </div>
+          <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
+            <p className="text-[10px] font-black uppercase tracking-[0.22em] text-gray-500">VRAM</p>
+            <p className={`mt-2 text-sm font-black ${vramReady === undefined ? 'text-gray-400' : vramReady ? 'text-emerald-300' : 'text-rose-300'}`}>
+              {vramReady === undefined ? 'Ölçülüyor' : vramReady ? 'Yeterli' : 'Yetersiz'}
+            </p>
+            <p className="mt-1 text-[10px] text-gray-500">{formatMb(safeRuntime?.freeVramMb)} / min {formatMb(safeRuntime?.minFreeVramMb)}</p>
+          </div>
+          <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
+            <p className="text-[10px] font-black uppercase tracking-[0.22em] text-gray-500">Preflight</p>
+            <p className={`mt-2 text-sm font-black ${preflightOk ? 'text-emerald-300' : 'text-amber-300'}`}>
+              {preflightOk ? 'Geçti' : 'Engellendi'}
+            </p>
+            <p className="mt-1 text-[10px] text-gray-500">{runtimeMessage}</p>
+          </div>
+        </div>
+
+        <div className="mt-4 rounded-2xl border border-indigo-400/15 bg-indigo-500/10 px-4 py-3 text-xs font-medium text-indigo-100">
+          Aillame Nano görsel üretim isteğini SDXL Turbo'ya yönlendirir. Nano şu anda doğrudan görsel üretmez; gelecekte yerel üretim yetenekleri genişletilebilir.
+        </div>
+
+        {safeRuntime?.warnings?.length ? (
+          <div className="mt-3 rounded-2xl border border-amber-400/20 bg-amber-500/10 px-4 py-3 text-xs font-medium text-amber-200">
+            {safeRuntime.warnings.join(' | ')}
+          </div>
+        ) : null}
+
+        {(healthError || safeRuntime?.errors?.length) ? (
+          <div className="mt-3 rounded-2xl border border-rose-400/20 bg-rose-500/10 px-4 py-3 text-xs font-medium text-rose-200">
+            {healthError || safeRuntime?.errors?.join(' | ')}
+          </div>
+        ) : null}
       </section>
 
       <div className="grid grid-cols-1 lg:grid-cols-[420px_1fr] gap-5">
@@ -222,6 +466,13 @@ export default function ImageGenerationPanel() {
               {loading ? <FiLoader className="animate-spin" /> : <FiZap />}
               {jobStatus === 'queued' ? 'Sırada...' : jobStatus === 'running' ? 'Üretiliyor...' : 'Üret'}
             </button>
+            <div className={`rounded-2xl border px-4 py-3 text-xs font-medium ${
+              runtimeEnabled && preflightOk
+                ? 'border-emerald-400/20 bg-emerald-500/10 text-emerald-200'
+                : 'border-amber-400/20 bg-amber-500/10 text-amber-200'
+            }`}>
+              {generateHint}
+            </div>
           </div>
         </section>
 

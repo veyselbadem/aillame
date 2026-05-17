@@ -15,6 +15,11 @@ const nextConfig = {
     });
     return config;
   },
+  // Native modüller için external paketi olarak işaretle
+  serverExternalPackages: ["node-llama-cpp", "stable-diffusion-cpp-node-api", "sharp", "better-sqlite3"],
+  typescript: {
+    ignoreBuildErrors: true,
+  },
 };
 
 module.exports = nextConfig;

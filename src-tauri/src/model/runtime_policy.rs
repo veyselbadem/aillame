@@ -28,7 +28,7 @@ pub struct IpcEnvelope<T> {
     pub payload: T,
 }
 
-use crate::model::model_load_contract::{ModelLoadOptions, ModelResourceEstimate, ModelLoadDevicePreference};
+use crate::model::model_load_contract::{ModelLoadOptions, ModelResourceEstimate};
 
 use crate::model::inference_contract::{InferenceOptions, InferenceResponse};
 

@@ -17,6 +17,7 @@ export type ModelType = 'text' | 'image' | 'vision' | 'embedding' | 'audio' | 'm
  * - 'ollama'             : Ollama API server
  * - 'python-transformers': Qwen/HuggingFace Python Transformers
  * - 'python-diffusers'   : SDXL / Flux via Python Diffusers
+ * - 'aillame-gguf'       : Local GGUF runtime, including VLM models with mmproj
  * - 'external-api'       : Remote API (Gemini, OpenAI, etc.)
  * - 'browser-indexeddb'  : Client-side browser inference
  * - 'future-comfyui'     : Reserved — ComfyUI image worker (not implemented)
@@ -28,6 +29,7 @@ export type ModelRuntime =
   | 'ollama'
   | 'python-transformers'
   | 'python-diffusers'
+  | 'aillame-gguf'
   | 'external-api'
   | 'browser-indexeddb'
   | 'future-comfyui'

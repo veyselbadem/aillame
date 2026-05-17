@@ -16,6 +16,21 @@ if not exist "node_modules" (
     )
 )
 
+echo [*] Eski Aillame dev sunucusu kontrol ediliyor...
+call node scripts\ensure-desktop-dev-free.mjs
+if errorlevel 1 (
+    echo [X] Eski masaustu debug sureci temizlenemedi.
+    pause
+    exit /b 1
+)
+
+call node scripts\ensure-dev-port-free.mjs
+if errorlevel 1 (
+    echo [X] Port 3000 temizlenemedi. Lutfen yukaridaki mesaji kontrol edin.
+    pause
+    exit /b 1
+)
+
 echo [*] Masaustu modu baslatiliyor (Tauri v2)...
 call npm.cmd run desktop:dev
 

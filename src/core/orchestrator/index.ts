@@ -139,21 +139,24 @@ export async function orchestrateChat(
   if (tier === 'nano') {
     const { AillameNanoController } = await import('../nano/nano-controller');
     const controller = new AillameNanoController();
-    const plan = controller.createPlan({ 
+    const result = await controller.answer({ 
       prompt: enrichedInput, 
       images: attachments,
+      onToken: options?.onToken,
+      signal: signal,
       profile: options?.nanoProfile 
     });
-    enrichedInput = `${plan.systemPrompt}\n\n${plan.modelPrompt}`;
+    return result.content;
   }
 
   const providerMessages = shouldForwardProviderMessages(tier) ? options?.messages : undefined;
 
   if ('generate' in provider) {
-    return provider.generate(enrichedInput, options?.onToken, signal, { 
+    const result = await provider.generate(enrichedInput, options?.onToken, signal, { 
         images: attachments,
         messages: providerMessages 
-    }) as Promise<string>;
+    });
+    return typeof result === 'string' ? result : (result as any).text || (result as any).content || JSON.stringify(result);
   }
 
   if ('analyze' in provider) {

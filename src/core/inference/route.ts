@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { generateOllamaResponse } from '@/core/inference/ollama';
+import { generateOllamaResponse } from './ollama';
 import { generateWithTextRuntimeRouter } from '@core/inference/text-runtime-router';
 
 export async function POST(req: NextRequest) {

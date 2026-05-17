@@ -161,10 +161,14 @@ export async function POST(req: NextRequest) {
             'sudo ', 'runas', 'administrators', 'system32', 'registry', 'regedit'
         ];
         const pLower = prompt.toLowerCase();
-        const containsBlock = blockKeywords.some(keyword => pLower.includes(keyword)) || pLower.includes('komut çalıştır') || pLower.includes('dosya sil');
+        const isExploitDistill = pLower.includes('dataset') || pLower.includes('veri seti') || pLower.includes('öğrenme verisi') || pLower.includes('eğitim verisi');
+        const containsBlock = blockKeywords.some(keyword => pLower.includes(keyword)) || 
+                             pLower.includes('komut çalıştır') || 
+                             pLower.includes('dosya sil') ||
+                             (isExploitDistill && (pLower.includes('token') || pLower.includes('env') || pLower.includes('şifre') || pLower.includes('sır') || pLower.includes('secret')));
         
         if (containsBlock) {
-            const rejectionMsg = `**Güvenlik Engeli:** Aillame Nano, yerel sistem güvenliği gereği serbest kabuk (shell) komutları çalıştırma, sistem dosyalarına erişme veya hassas credential/token bilgilerini ifşa etme yetkisine sahip değildir. Bu işlem güvenlik politikalarımız nedeniyle kalıcı olarak engellenmiştir.`;
+            const rejectionMsg = `**Bu işlem güvenlik nedeniyle engellendi.**\n\nAillame Nano, yerel sistem güvenliği gereği serbest komut (shell/PowerShell/CMD) çalıştırma, gizli dosya okuma veya token/şifre gösterme işlemlerini desteklemez.\n\n**Güvenli alternatif:** Sisteminizin sağlığını (\`system.health\`) veya aktif yerel modellerin durumunu (\`models.status\`) kontrol etmemi isteyebilirsiniz.`;
             return chatJson({
                 response: rejectionMsg,
                 modelId: 'aillame-nano-v1-tool-blocked',
@@ -212,7 +216,7 @@ Sistem teşhis ve sağlık testi talebi başarıyla algılandı ve **Nano Lab** 
             const containsBlock = blockKeywords.some(keyword => pLower.includes(keyword));
             
             if (containsBlock || pLower.includes('komut çalıştır') || pLower.includes('dosya sil')) {
-                const rejectionMsg = `**Güvenlik Engeli:** Aillame Nano, yerel sistem güvenliği gereği serbest kabuk (shell) komutları çalıştırma, sistem dosyalarına erişme veya hassas credential/token bilgilerini ifşa etme yetkisine sahip değildir. Bu işlem güvenlik politikalarımız nedeniyle kalıcı olarak engellenmiştir.`;
+                const rejectionMsg = `**Bu işlem güvenlik nedeniyle engellendi.**\n\nAillame Nano, yerel sistem güvenliği gereği serbest komut (shell/PowerShell/CMD) çalıştırma, gizli dosya okuma veya token/şifre gösterme işlemlerini desteklemez.\n\n**Güvenli alternatif:** Sisteminizin sağlığını (\`system.health\`) veya aktif yerel modellerin durumunu (\`models.status\`) kontrol etmemi isteyebilirsiniz.`;
                 return chatJson({
                     response: rejectionMsg,
                     modelId: 'aillame-nano-v1-tool-blocked',
@@ -226,6 +230,11 @@ Sistem teşhis ve sağlık testi talebi başarıyla algılandı ve **Nano Lab** 
                 // Extract clean search query
                 const cleanQuery = prompt
                     .replace(/hafızamda|hafızada|ara|bul|sorgula|ile ilgili|hakkında|ne var/gi, '')
+                    .trim();
+                toolInput = { query: cleanQuery || prompt };
+            } else if (toolId === 'project.search') {
+                const cleanQuery = prompt
+                    .replace(/projelerimde|projelerimde|projesini|projesinde|ara|bul|sorgula|ile ilgili|hakkında|ne var/gi, '')
                     .trim();
                 toolInput = { query: cleanQuery || prompt };
             }
@@ -296,6 +305,44 @@ Sistem teşhis ve sağlık testi talebi başarıyla algılandı ve **Nano Lab** 
                             responseText += `    *Başlık/Özet:* _${doc.summary.split('\n')[0].replace('#', '').trim()}_\n`;
                         }
                     });
+                } else if (toolId === 'project.list') {
+                    const list = toolResult.data || [];
+                    if (list.length === 0) {
+                        responseText = `Aillame üzerinde kayıtlı herhangi bir proje bağlamı bulunmuyor.`;
+                    } else {
+                        responseText = `**Kayıtlı Aillame Proje Bağlamları:**\n\n`;
+                        list.forEach((p: any, idx: number) => {
+                            responseText += `${idx + 1}. 📁 **${p.name}** (\`${p.id}\` - Kategori: ${p.category})\n`;
+                            if (p.description) responseText += `   *Açıklama:* ${p.description}\n`;
+                            if (p.goals && p.goals.length > 0) responseText += `   *Hedefler:* ${p.goals.join(', ')}\n`;
+                        });
+                    }
+                } else if (toolId === 'project.active') {
+                    const active = toolResult.data;
+                    if (!active) {
+                        responseText = `Şu anda aktif bir Aillame proje bağlamı seçilmemiş.`;
+                    } else {
+                        responseText = `**Aktif Aillame Proje Bağlamı:**\n\n`;
+                        responseText += `*   **Adı:** 📁 **${active.name}** (\`${active.id}\`)\n`;
+                        if (active.description) responseText += `*   **Açıklama:** ${active.description}\n`;
+                        responseText += `*   **Kategori:** \`${active.category}\`\n`;
+                        if (active.tone) responseText += `*   **Ton / Üslup:** \`${active.tone}\`\n`;
+                        if (active.language) responseText += `*   **Dil:** \`${active.language.toUpperCase()}\`\n`;
+                        if (active.seoPreferences?.enabled) {
+                            responseText += `*   **SEO Tercihleri:** Etkin (Min ${active.seoPreferences.minWords || 300} kelime)\n`;
+                        }
+                    }
+                } else if (toolId === 'project.search') {
+                    const list = toolResult.data || [];
+                    if (list.length === 0) {
+                        responseText = `Arama sorgunuza uyan herhangi bir proje bağlamı bulunamadı.`;
+                    } else {
+                        responseText = `**Proje Arama Sonuçları:**\n\n`;
+                        list.forEach((p: any, idx: number) => {
+                            responseText += `${idx + 1}. 📁 **${p.name}** (\`${p.id}\` - Kategori: ${p.category})\n`;
+                            if (p.description) responseText += `   *Açıklama:* ${p.description}\n`;
+                        });
+                    }
                 }
             } else {
                 responseText = `**Araç Çalıştırma Hatası:** ${toolResult.errors?.join(', ') || 'Bilinmeyen bir hata oluştu.'}`;
@@ -637,6 +684,18 @@ Size en doğru yerel uzman modelimizle yardımcı olabilmem için lütfen isteğ
         
         let enrichedPrompt = enrichPromptForConversation(prompt, messages);
         
+        // --- Aillame Project Context Integration (Phase 8) ---
+        try {
+            const { AillameProjectContextService } = await import('@/core/projects/project-context.service');
+            const projectContextBlock = AillameProjectContextService.getProjectContextForPrompt(prompt);
+            if (projectContextBlock) {
+                console.log(`[AillameProjectContext] Injected active project context into LLM prompt.`);
+                enrichedPrompt = enrichedPrompt + '\n\n' + projectContextBlock;
+            }
+        } catch (projError) {
+            console.warn('[AillameProjectContext] Failed to retrieve or inject project context:', projError);
+        }
+        
         // --- Aillame Nano Local Memory Context Injection (Phase 6) ---
         try {
             const { AillameMemoryService } = await import('@/core/memory/aillame-memory.service');
@@ -706,10 +765,45 @@ Size en doğru yerel uzman modelimizle yardımcı olabilmem için lütfen isteğ
             ? buildExplicitIntentGuardResponse(prompt, messages, intentMeta.intent)
             : rawImproved;
 
+        // --- Aillame Local Distillation Dataset Suggestion Engine (Phase 9) ---
+        let distillationSuggestion = null;
+        try {
+            const { AillameDistillationDatasetService } = await import('@core/distillation/distillation-dataset.service');
+            const { AillameProjectContextService } = await import('@core/projects/project-context.service');
+            const { AillameMemoryService } = await import('@core/memory/aillame-memory.service');
+
+            const activeProjId = AillameProjectContextService.getActiveProjectId();
+            const relevantMems = await AillameMemoryService.getRelevantMemoriesForPrompt(prompt, 3);
+            const isBlocked = finalModelId === 'aillame-nano-v1-tool-blocked';
+
+            distillationSuggestion = AillameDistillationDatasetService.suggestSampleFromInteraction({
+                prompt,
+                intent: cognitiveRoute.intent,
+                target: cognitiveRoute.target,
+                toolId: cognitiveRoute.selectedToolId || undefined,
+                projectId: activeProjId || undefined,
+                memoryTags: relevantMems.length > 0 ? Array.from(new Set(relevantMems.flatMap(m => m.tags || []))) : undefined,
+                routeConfidence: cognitiveRoute.confidence,
+                safetyBlocked: isBlocked,
+                projectContextUsed: !!activeProjId,
+                modelId: finalModelId
+            });
+        } catch (distError) {
+            console.warn('[DistillationDataset] Failed to formulate dynamic sample suggestion:', distError);
+        }
+
         return chatJson({
             response, 
             modelId: finalModelId,
-            plan: { ...plan, cognitivePlan, conversationIntent, taskScore, intentMeta, correctionTriggered }
+            plan: { 
+                ...plan, 
+                cognitivePlan, 
+                conversationIntent, 
+                taskScore, 
+                intentMeta, 
+                correctionTriggered,
+                distillationSuggestion 
+            }
         }, buildRuntimeAttribution({ 
             provider: correctionTriggered ? 'ollama' : 'aillame-nano', 
             modelId: finalModelId, 

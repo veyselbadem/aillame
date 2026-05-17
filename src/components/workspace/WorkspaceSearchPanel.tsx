@@ -31,20 +31,20 @@ export function WorkspaceSearchPanel() {
       <div className="p-4 border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 flex-shrink-0">
         <div className="flex justify-between items-start mb-2">
           <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200">
-            Workspace Safe Search
+            Güvenli Workspace Araması
           </h2>
           <button
             onClick={buildIndex}
             disabled={isBuilding}
             className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs rounded disabled:opacity-50"
           >
-            {isBuilding ? 'Building...' : 'Build Index'}
+            {isBuilding ? 'İndeks oluşturuluyor...' : 'İndeks Oluştur'}
           </button>
         </div>
         <p className="text-xs text-gray-500 mb-2">
-          Status: <span className="font-semibold capitalize">{sessionStatus}</span>
+          Durum: <span className="font-semibold capitalize">{sessionStatus}</span>
           {sessionStats && (
-            <span> | {sessionStats.indexedFiles} files, {sessionStats.indexedChunks} chunks</span>
+            <span> | {sessionStats.indexedFiles} dosya, {sessionStats.indexedChunks} parça</span>
           )}
         </p>
 
@@ -54,7 +54,7 @@ export function WorkspaceSearchPanel() {
               <div key={i}>&#9888; {w}</div>
             ))}
             {sessionWarnings.length > 3 && (
-              <div>&#9888; ... and {sessionWarnings.length - 3} more warnings.</div>
+              <div>&#9888; ... ve {sessionWarnings.length - 3} uyarı daha.</div>
             )}
           </div>
         )}
@@ -63,14 +63,14 @@ export function WorkspaceSearchPanel() {
           <input
             type="text"
             className="w-full px-3 py-2 text-sm border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-900 dark:border-gray-700 dark:text-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
-            placeholder="Search workspace (e.g., config, API)..."
+            placeholder="Workspace içinde ara (örn. config, API)..."
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
             disabled={sessionStatus !== 'ready'}
           />
           {isSearching && (
             <div className="absolute right-3 top-2.5 text-xs text-gray-400">
-              <span className="animate-pulse">Searching...</span>
+              <span className="animate-pulse">Aranıyor...</span>
             </div>
           )}
         </div>
@@ -86,7 +86,7 @@ export function WorkspaceSearchPanel() {
         {results.length > 0 ? (
           <div>
             <div className="text-xs text-gray-500 mb-3">
-              Found {results.length} safe results
+              {results.length} güvenli sonuç bulundu
             </div>
             {results.map((result) => (
               <WorkspaceSearchResultItem 
