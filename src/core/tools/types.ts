@@ -57,3 +57,30 @@ export type ToolListResult = {
   success: true;
   tools: ToolRegistryEntry[];
 };
+
+// --- Aillame Nano Safe Tools Types ---
+export type AillameToolRiskLevel = 'safe' | 'confirm_required' | 'blocked';
+
+export type AillameToolContext = {
+  sessionUserId?: string;
+  projectPath?: string;
+};
+
+export type AillameToolResult = {
+  ok: boolean;
+  data?: any;
+  message?: string;
+  errors?: string[];
+  warnings?: string[];
+};
+
+export type AillameToolDefinition = {
+  id: string;
+  name: string;
+  description: string;
+  category: 'memory' | 'system' | 'project' | 'health' | 'ai';
+  riskLevel: AillameToolRiskLevel;
+  requiresUserConfirmation: boolean;
+  inputSchema: unknown;
+  execute: (input: any, context: AillameToolContext) => Promise<AillameToolResult>;
+};

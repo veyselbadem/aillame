@@ -4,7 +4,8 @@ import {
   NanoToolTarget,
   NanoCognitivePlan,
   NanoReflection,
-  NanoLearningSuggestion
+  NanoLearningSuggestion,
+  NanoCognitiveRoute
 } from './types';
 import {
   buildConversationAnswer,
@@ -760,3 +761,137 @@ export function safeFallback(prompt: string, history: { role: string, content: s
 
   return enrichNanoAnswer(prompt, 'Bu isteği tam karşılayacak bir model çıktısı alamadım; yine de konuyu adım adım açabilirim. İstersen biraz daha detay ver.', history);
 }
+
+export function routeCognitiveRequest(prompt: string, hasAttachment: boolean): NanoCognitiveRoute {
+  const p = prompt.toLowerCase().trim();
+
+  // 1. Prioritize image analysis (vision_chat) if attachment exists
+  if (hasAttachment) {
+    return {
+      intent: 'vision_chat',
+      target: 'qwen3_vl_4b',
+      confidence: 1.0,
+      reason: 'Görsel eki tespit edildi. İstek doğrudan Qwen3-VL 4B görsel anlama katmanına yönlendirildi.',
+      shouldAskClarifyingQuestion: false
+    };
+  }
+
+  // 1.5. Check for Safe Local Tool Use Intents
+  if (/hafıza|hafızamda/i.test(p)) {
+    if (/ara|bul|sorgula|sorgu/i.test(p) || p.includes('ne var') || p.includes('ile ilgili') || p.includes('hakkında')) {
+      return {
+        intent: 'tool_use',
+        target: 'aillame_tools',
+        confidence: 0.95,
+        reason: 'Hafıza arama sorgusu algılandı. Yerel araç "memory.search" tetikleniyor.',
+        shouldAskClarifyingQuestion: false,
+        selectedToolId: 'memory.search'
+      };
+    }
+    if (/listele|göster|hepsi|tümü|neler var/i.test(p)) {
+      return {
+        intent: 'tool_use',
+        target: 'aillame_tools',
+        confidence: 0.95,
+        reason: 'Hafıza listeleme talebi algılandı. Yerel araç "memory.list" tetikleniyor.',
+        shouldAskClarifyingQuestion: false,
+        selectedToolId: 'memory.list'
+      };
+    }
+  }
+
+  if (/sistem sağlığı|sistem sagligi|sistem sağlığını/i.test(p) || p.includes('sistem durumunu kontrol et') || p.includes('sistem durumu nedir') || p.includes('sistem durumunu sorgula')) {
+    return {
+      intent: 'tool_use',
+      target: 'aillame_tools',
+      confidence: 0.95,
+      reason: 'Sistem sağlığı sorgusu algılandı. Yerel araç "system.health" tetikleniyor.',
+      shouldAskClarifyingQuestion: false,
+      selectedToolId: 'system.health'
+    };
+  }
+
+  if (/model durum/i.test(p) || /model durumları/i.test(p) || p.includes('aktif model') || p.includes('yerel model durumunu') || p.includes('yerel modelleri listele')) {
+    return {
+      intent: 'tool_use',
+      target: 'aillame_tools',
+      confidence: 0.95,
+      reason: 'Yerel model durum sorgusu algılandı. Yerel araç "models.status" tetikleniyor.',
+      shouldAskClarifyingQuestion: false,
+      selectedToolId: 'models.status'
+    };
+  }
+
+  if (/yerel ai mimari|mimari doküman|hafıza sistemi belgesi/i.test(p) || p.includes('mimari döküman') || p.includes('mimari belgeler') || p.includes('mimari dokümanlar')) {
+    return {
+      intent: 'tool_use',
+      target: 'aillame_tools',
+      confidence: 0.95,
+      reason: 'Yerel AI mimari dokümantasyon sorgusu algılandı. Yerel araç "project.docs" tetikleniyor.',
+      shouldAskClarifyingQuestion: false,
+      selectedToolId: 'project.docs'
+    };
+  }
+
+  // 2. Health and Diagnostics (health_check)
+  const healthSignals = [
+    'vision health', 'sağlık kontrol', 'görsel model sağlığı', 'mini görsel testi',
+    'sdxl dry-run', 'sağlığını kontrol et', 'health kontrol', 'sağlık durumu',
+    'test çalıştır', 'sağlık testi', 'model health'
+  ];
+  if (healthSignals.some(sig => p.includes(sig))) {
+    return {
+      intent: 'health_check',
+      target: 'nano_lab',
+      confidence: 0.95,
+      reason: 'Sistem sağlık kontrolü veya teşhis testi talebi. İstek Nano Lab yönetim paneline yönlendirildi.',
+      shouldAskClarifyingQuestion: false
+    };
+  }
+
+  // 3. Image Generation (image_generation)
+  const hasAction = /üret|oluştur|çiz|tasarla|yap/i.test(p);
+  const hasObject = /görsel|resim|logo|foto|manzara|portre|desen/i.test(p);
+  const imageGenSignals = [
+    'görsel oluştur', 'resim üret', 'logo tasarla', 'metinden görsel yap',
+    'görsel üret', 'görsel yap', 'resim çiz', 'fotoğraf oluştur',
+    'fotoğraf üret', 'image oluştur', 'görsel tasarla'
+  ];
+  const isImageGen = (hasAction && hasObject) || imageGenSignals.some(sig => p.includes(sig));
+
+  if (isImageGen) {
+    return {
+      intent: 'image_generation',
+      target: 'sdxl_turbo',
+      confidence: 0.95,
+      reason: 'Görsel/resim üretme niyeti algılandı. İstek SDXL Turbo modülüne yönlendirildi.',
+      shouldAskClarifyingQuestion: false
+    };
+  }
+
+  // 4. Ambiguous / Empty / Meaningless input (unknown)
+  const isMeaningless = p.length === 0 || 
+    (p.length < 3 && !/^(hi|ok|no|ye|ha|ok|slm|iyi|ev|hay)$/i.test(p)) ||
+    /^[.,\/#!$%\^&\*;:{}=\-_`~()?\s]+$/.test(p) ||
+    /^(asdf|qwer|xyz|foo|bar|test)$/i.test(p);
+
+  if (isMeaningless) {
+    return {
+      intent: 'unknown',
+      target: 'aillame_nano',
+      confidence: 0.3,
+      reason: 'İstek çok kısa veya belirsiz. Doğru bir yönlendirme yapabilmek için kullanıcıdan netleştirme isteniyor.',
+      shouldAskClarifyingQuestion: true
+    };
+  }
+
+  // 5. Standard text-only conversation (text_chat)
+  return {
+    intent: 'text_chat',
+    target: 'aillame_nano',
+    confidence: 0.9,
+    reason: 'Standart metin sohbeti veya bilgi sorgusu. İstek Aillame Nano asistanında işleniyor.',
+    shouldAskClarifyingQuestion: false
+  };
+}
+

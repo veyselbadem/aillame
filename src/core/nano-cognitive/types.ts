@@ -70,3 +70,16 @@ export interface NanoReflection {
   learningCandidate?: NanoLearningSuggestion;
   nextStep?: string;
 }
+
+export type NanoCognitiveIntent = 'text_chat' | 'vision_chat' | 'image_generation' | 'health_check' | 'tool_use' | 'unknown';
+export type NanoCognitiveTarget = 'aillame_nano' | 'qwen3_vl_4b' | 'sdxl_turbo' | 'nano_lab' | 'aillame_tools';
+
+export interface NanoCognitiveRoute {
+  intent: NanoCognitiveIntent;
+  target: NanoCognitiveTarget;
+  confidence: number;
+  reason: string;
+  shouldAskClarifyingQuestion: boolean;
+  selectedToolId?: string;
+}
+

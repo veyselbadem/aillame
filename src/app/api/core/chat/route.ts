@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { VlmInferenceAdapter } from '@core/nano/vision/vlm-inference-adapter';
 import { getSharedCore } from '@/lib/aillame-engine';
 import { routeRequest } from '@/core/model-orchestration/router';
 import { webSearch } from '@/core/research/search';
@@ -18,7 +19,8 @@ import {
   getGeneralKnowledgeResponse, 
   looksMalformedNanoText, 
   safeFallback,
-  classifyTask
+  classifyTask,
+  routeCognitiveRequest
 } from '@/core/nano-cognitive/service';
 import { imageGenerationService } from '@/core/runtime/image/image-generation-service';
 import { getActiveChatModelId, getActiveImageModelId } from '@core/model-management/active-model-store';
@@ -95,6 +97,46 @@ export async function POST(req: NextRequest) {
     let messages: any[] = [];
     try {
         const body = await req.json();
+
+        // --- Multimodal vision interceptor (UI-internal, no external API key required) ---
+        if (body?.multimodal && body?.imageBase64) {
+            const visionPrompt = (typeof body.prompt === 'string' && body.prompt.trim())
+                ? body.prompt.trim()
+                : 'Bu görseli kısaca açıkla.';
+            const startMs = Date.now();
+            try {
+                const visionResult = await VlmInferenceAdapter.analyzeImage({
+                    modelId: 'qwen3-vl-4b-instruct-q4-k-m',
+                    image: body.imageBase64,
+                    prompt: visionPrompt,
+                    maxTokens: 256
+                });
+                const durationMs = Date.now() - startMs;
+                if (!visionResult.success) {
+                    return NextResponse.json({
+                        response: 'Görsel işlenirken bir hata oluştu: ' + (visionResult.message || 'Bilinmeyen hata'),
+                        model: 'qwen3-vl-4b-instruct-q4-k-m',
+                        meta: { durationMs },
+                        degraded: true
+                    });
+                }
+                return NextResponse.json({
+                    response: visionResult.text,
+                    model: 'qwen3-vl-4b-instruct-q4-k-m',
+                    meta: { durationMs },
+                    executionMode: 'vision_inference'
+                });
+            } catch (visionErr: any) {
+                return NextResponse.json({
+                    response: 'Beklenmeyen bir hata oluştu: ' + (visionErr?.message || 'hata'),
+                    model: 'qwen3-vl-4b-instruct-q4-k-m',
+                    meta: { durationMs: Date.now() - startMs },
+                    degraded: true
+                });
+            }
+        }
+        // --- End multimodal interceptor ---
+
         prompt = typeof body?.prompt === 'string' ? body.prompt : '';
         messages = Array.isArray(body?.messages) ? body.messages : [];
         const requestedMaxTokens = typeof body?.maxTokens === 'number' ? body.maxTokens : 100;
@@ -110,6 +152,186 @@ export async function POST(req: NextRequest) {
 
         if (prompt === 'PING') {
             return NextResponse.json({ status: 'ready' });
+        }
+
+        // --- Central Safety Shield (Hassas ve Tehlikeli İstek Engelleyici) ---
+        const blockKeywords = [
+            'env', '.env', 'dotenv', 'shifre', 'şifre', 'parola', 'password', 'token', 'api_key', 'apikey', 'secret',
+            'format', 'delete', 'rm -rf', 'rmdir', 'del ', 'cmd', 'powershell', 'shell', 'bash', 'run ', 'exec',
+            'sudo ', 'runas', 'administrators', 'system32', 'registry', 'regedit'
+        ];
+        const pLower = prompt.toLowerCase();
+        const containsBlock = blockKeywords.some(keyword => pLower.includes(keyword)) || pLower.includes('komut çalıştır') || pLower.includes('dosya sil');
+        
+        if (containsBlock) {
+            const rejectionMsg = `**Güvenlik Engeli:** Aillame Nano, yerel sistem güvenliği gereği serbest kabuk (shell) komutları çalıştırma, sistem dosyalarına erişme veya hassas credential/token bilgilerini ifşa etme yetkisine sahip değildir. Bu işlem güvenlik politikalarımız nedeniyle kalıcı olarak engellenmiştir.`;
+            return chatJson({
+                response: rejectionMsg,
+                modelId: 'aillame-nano-v1-tool-blocked',
+                plan: {}
+            }, buildRuntimeAttribution({ provider: 'aillame-nano', modelId: 'aillame-nano-v1-tool-blocked', runtime: 'nano-tool-security-guard' }));
+        }
+        // --- End Safety Shield ---
+
+        // --- Aillame Nano Cognitive Router (Phase 5) ---
+        const hasAttachment = Boolean(body?.multimodal && body?.imageBase64);
+        const cognitiveRoute = routeCognitiveRequest(prompt, hasAttachment);
+        console.log(`[CognitiveRouter] Intent: ${cognitiveRoute.intent}, Target: ${cognitiveRoute.target}, Confidence: ${cognitiveRoute.confidence}`);
+
+        // Health Check router decision
+        if (cognitiveRoute.intent === 'health_check') {
+            const healthResponse = `**Aillame Nano Görev Yönlendirici (Teşhis/Sağlık Kontrolü):**
+Sistem teşhis ve sağlık testi talebi başarıyla algılandı ve **Nano Lab** yönetim katmanına yönlendirildi.
+
+**Mevcut Sistem Durumu Özeti:**
+*   **Ana Çekirdek (Aillame Nano):** Çevrimdışı/Yerel motor çalışıyor, niyet anlama ve görev yönlendirme kararlı.
+*   **Göz (Qwen3-VL 4B Nano Vision):** Kurulu ve multimodal analize hazır (C:\\Aillame\\Models\\nano\\qwen3-vl-4b\\).
+*   **Görsel Üretici (SDXL Turbo):** Güvenli Çalışma Zamanı (SafeRuntime) ve GPU Kilit (GpuHeavyLock) korumalı olarak devrede.
+
+*Gerçek bir performans testi veya sağlık taraması gerçekleştirmek için lütfen üst menüden **Nano Lab** panelini açın veya doğrudan **Vision Health** ya da **Mini Görsel Anlama Testi** kartlarındaki test butonlarını kullanın.*`;
+
+            return chatJson({
+                response: healthResponse,
+                modelId: 'aillame-nano-v1-router-health',
+                plan: { cognitiveRoute }
+            }, buildRuntimeAttribution({ provider: 'aillame-nano', modelId: 'aillame-nano-v1-router-health', runtime: 'nano-cognitive-router' }));
+        }
+
+        // --- Aillame Nano Safe Local Tool Execution Interceptor ---
+        if (cognitiveRoute.intent === 'tool_use' && cognitiveRoute.selectedToolId) {
+            const toolId = cognitiveRoute.selectedToolId;
+            console.log(`[CognitiveRouter] Intercepting chat request for safe tool-use: ${toolId}`);
+            
+            // 1. Securely check for malicious/dangerous keywords before launching tool
+            const blockKeywords = [
+                'env', '.env', 'dotenv', 'shifre', 'şifre', 'parola', 'password', 'token', 'api_key', 'apikey', 'secret',
+                'format', 'delete', 'rm -rf', 'rmdir', 'del ', 'cmd', 'powershell', 'shell', 'bash', 'run ', 'exec',
+                'sudo ', 'runas', 'administrators', 'system32', 'registry', 'regedit'
+            ];
+            const pLower = prompt.toLowerCase();
+            const containsBlock = blockKeywords.some(keyword => pLower.includes(keyword));
+            
+            if (containsBlock || pLower.includes('komut çalıştır') || pLower.includes('dosya sil')) {
+                const rejectionMsg = `**Güvenlik Engeli:** Aillame Nano, yerel sistem güvenliği gereği serbest kabuk (shell) komutları çalıştırma, sistem dosyalarına erişme veya hassas credential/token bilgilerini ifşa etme yetkisine sahip değildir. Bu işlem güvenlik politikalarımız nedeniyle kalıcı olarak engellenmiştir.`;
+                return chatJson({
+                    response: rejectionMsg,
+                    modelId: 'aillame-nano-v1-tool-blocked',
+                    plan: { cognitiveRoute }
+                }, buildRuntimeAttribution({ provider: 'aillame-nano', modelId: 'aillame-nano-v1-tool-blocked', runtime: 'nano-tool-security-guard' }));
+            }
+
+            // 2. Prepare safe input arguments
+            let toolInput: any = {};
+            if (toolId === 'memory.search') {
+                // Extract clean search query
+                const cleanQuery = prompt
+                    .replace(/hafızamda|hafızada|ara|bul|sorgula|ile ilgili|hakkında|ne var/gi, '')
+                    .trim();
+                toolInput = { query: cleanQuery || prompt };
+            }
+
+            // 3. Execute tool via central safe executor
+            const { AillameToolExecutor } = await import('@core/tools/tool-executor');
+            const toolResult = await AillameToolExecutor.executeTool(toolId, toolInput);
+
+            // 4. Build natural Turkish commentary summarizing the results
+            let responseText = '';
+            if (toolResult.ok) {
+                if (toolId === 'memory.search') {
+                    const records = toolResult.data || [];
+                    if (records.length === 0) {
+                        responseText = `Yerel hafızanızda aradığınız konuyla ilgili herhangi bir kayıt bulunamadı.`;
+                    } else {
+                        responseText = `**Aillame Nano Yerel Hafıza Sorgusu Başarılı:**\n`;
+                        responseText += `Yerel hafızanızda arama sorgunuza uygun **${records.length}** adet kayıt bulundu:\n\n`;
+                        records.forEach((rec: any, idx: number) => {
+                            responseText += `${idx + 1}. **[${rec.type === 'preference' ? 'Tercih' : 'Not'}]** ${rec.content} *(Etiketler: ${rec.tags.join(', ')})*\n`;
+                        });
+                    }
+                } else if (toolId === 'memory.list') {
+                    const records = toolResult.data || [];
+                    if (records.length === 0) {
+                        responseText = `Yerel hafızanızda henüz kayıtlı herhangi bir bilgi bulunmuyor.`;
+                    } else {
+                        responseText = `**Aillame Nano Yerel Hafıza Listesi:**\n`;
+                        responseText += `Yerel hafızanızda toplam **${records.length}** adet kayıtlı tercih/not listelendi:\n\n`;
+                        records.forEach((rec: any, idx: number) => {
+                            responseText += `${idx + 1}. **[${rec.type === 'preference' ? 'Tercih' : 'Not'}]** ${rec.content} *(Etiketler: ${rec.tags.join(', ')})*\n`;
+                        });
+                    }
+                } else if (toolId === 'system.health') {
+                    const data = toolResult.data || {};
+                    responseText = `**Aillame Nano Sistem Sağlığı Raporu:**\n\n`;
+                    responseText += `*   **GPU Heavy Lock Durumu:** ${data.gpuHeavyLock === 'locked' ? '🔴 Dolu (İşlem Çalışıyor)' : '🟢 Boş (Kullanılabilir)'}\n`;
+                    if (data.gpuHeavyLockOwner) {
+                        responseText += `*   **GPU Kilidini Tutan İşlem:** \`${data.gpuHeavyLockOwner}\`\n`;
+                    }
+                    responseText += `*   **İşletim Sistemi Platformu:** \`${data.platform}\`\n`;
+                    responseText += `*   **NodeJS Sürümü:** \`${data.nodeVersion}\`\n`;
+                    responseText += `*   **Genel Sistem Durumu:** 🟢 Sağlıklı\n\n`;
+                    responseText += `*${toolResult.message}*`;
+                } else if (toolId === 'models.status') {
+                    const models = toolResult.data || {};
+                    responseText = `**Yerel Yapay Zeka Model Hazır Olma Raporu:**\n\n`;
+                    
+                    const mList = Object.values(models) as any[];
+                    mList.forEach((m: any) => {
+                        let statusEmoji = '⚪';
+                        if (m.status === 'active') statusEmoji = '🟢';
+                        else if (m.status === 'inactive') statusEmoji = '🟡';
+                        else if (m.status === 'removed') statusEmoji = '🔴';
+                        
+                        responseText += `*   ${statusEmoji} **${m.name}** (${m.id}): ${m.status === 'active' ? 'Aktif / Hazır' : m.status === 'removed' ? 'Sistemden Kaldırıldı' : 'Yüklü Değil / İnaktif'}\n`;
+                        if (m.message) {
+                            responseText += `    *Açıklama: ${m.message}*\n`;
+                        }
+                    });
+                } else if (toolId === 'project.docs') {
+                    const docs = toolResult.data || [];
+                    responseText = `**Yerel AI Mimari Dokümanları Kontrol Raporu:**\n\n`;
+                    docs.forEach((doc: any) => {
+                        responseText += `*   ${doc.exists ? '🟢' : '🔴'} **${doc.name}** (\`${doc.id}\`): ${doc.exists ? 'Mevcut' : 'Bulunamadı'}\n`;
+                        if (doc.exists) {
+                            responseText += `    *Boyut:* ${(doc.sizeBytes / 1024).toFixed(2)} KB\n`;
+                            responseText += `    *Başlık/Özet:* _${doc.summary.split('\n')[0].replace('#', '').trim()}_\n`;
+                        }
+                    });
+                }
+            } else {
+                responseText = `**Araç Çalıştırma Hatası:** ${toolResult.errors?.join(', ') || 'Bilinmeyen bir hata oluştu.'}`;
+            }
+
+            return chatJson({
+                response: responseText,
+                modelId: `aillame-nano-v1-tool-${toolId}`,
+                plan: { cognitiveRoute },
+                meta: {
+                    toolExecuted: toolId,
+                    riskLevel: toolResult.riskLevel,
+                    toolOk: toolResult.ok
+                }
+            }, buildRuntimeAttribution({ 
+                provider: 'aillame-nano', 
+                modelId: `aillame-nano-v1-tool-${toolId}`, 
+                runtime: 'nano-cognitive-tool-executor' 
+            }));
+        }
+        // --- End tool execution interceptor ---
+
+        // Clarification query for ambiguous inputs
+        if (cognitiveRoute.shouldAskClarifyingQuestion) {
+            const clarifyResponse = `Merhaba! Ben Aillame Nano, yerel asistanınız ve yönlendiriciniz. Talebinizi tam olarak anlayamadım veya bağlam çok belirsiz kaldı. 
+
+Size en doğru yerel uzman modelimizle yardımcı olabilmem için lütfen isteğinizi biraz daha detaylandırabilir misiniz?
+*   **Sohbet veya Bilgi:** Normal bir soru sorabilir veya konuyu açıklamamı isteyebilirsiniz (örn. *"Bana kısa bir özet çıkar"*).
+*   **Görsel Analiz:** Ekranın sol altındaki buton veya sürükle-bırak ile bir görsel ekleyip soru sorabilirsiniz.
+*   **Görsel Üretim:** *"Bana fütüristik bir şehir görseli üret"* gibi net bir görsel üretim komutu verebilirsiniz.`;
+
+            return chatJson({
+                response: clarifyResponse,
+                modelId: 'aillame-nano-v1-router-clarify',
+                plan: { cognitiveRoute }
+            }, buildRuntimeAttribution({ provider: 'aillame-nano', modelId: 'aillame-nano-v1-router-clarify', runtime: 'nano-cognitive-router' }));
         }
 
         // 0. Active model override — if user selected an Ollama model, route ALL chat there
@@ -180,7 +402,10 @@ export async function POST(req: NextRequest) {
         const cognitivePlan = classifyTask(prompt);
         const intentMeta = cognitivePlan.intentMeta || classifyIntentWithConfidence(prompt, messages);
         const taskScore = cognitivePlan.taskScore || { complexity: 0, research: 0, code: 0, creative: 0 };
-        const plan = routeRequest(prompt); // Keep orchestration plan for compatibility
+        const plan = {
+            ...routeRequest(prompt),
+            cognitiveRoute
+        }; // Keep orchestration plan for compatibility
         const conversationIntent = detectUserIntent(prompt);
         const maxTokens = Math.max(typeof body?.maxTokens === 'number' ? body.maxTokens : 100, getRecommendedMaxTokens(conversationIntent));
         const directConversationAnswer = buildConversationAnswer(prompt, messages);
@@ -226,7 +451,7 @@ export async function POST(req: NextRequest) {
         }
 
         // 4. Handle Image Generation
-        if (cognitivePlan.taskType === 'image_generation' || plan.selectedTarget === 'sdxl') {
+        if (cognitiveRoute.intent === 'image_generation' || cognitivePlan.taskType === 'image_generation' || plan.selectedTarget === 'sdxl') {
             try {
                 // Extract clean prompt for image generation
                 const imagePrompt = prompt
@@ -410,7 +635,34 @@ export async function POST(req: NextRequest) {
         // 5. Inference (Version Controlled)
         const { inferWithVersionControl } = await import('@/core/nano-cognitive/service');
         
-        const enrichedPrompt = enrichPromptForConversation(prompt, messages);
+        let enrichedPrompt = enrichPromptForConversation(prompt, messages);
+        
+        // --- Aillame Nano Local Memory Context Injection (Phase 6) ---
+        try {
+            const { AillameMemoryService } = await import('@/core/memory/aillame-memory.service');
+            const relevantMemories = await AillameMemoryService.getRelevantMemoriesForPrompt(prompt, 3);
+            
+            if (relevantMemories.length > 0) {
+                console.log(`[AillameMemory] Retrieved ${relevantMemories.length} relevant memories for prompt context injection.`);
+                const memoryContextBlock = `\n\n[YEREL HAFIZA BİLGİLERİ (Sadece yerel olarak saklanan kullanıcı/proje tercihleri)]:\n` +
+                    relevantMemories.map((m, i) => `- ${m.content}`).join('\n') + 
+                    `\nLütfen yanıtını hazırlarken yukarıdaki kullanıcı/proje tercihlerine uygun hareket et.`;
+                
+                enrichedPrompt = enrichedPrompt + memoryContextBlock;
+            }
+            
+            // Update session context with current routing info
+            AillameMemoryService.updateSessionContext({
+                lastPrompt: prompt,
+                lastIntent: cognitiveRoute.intent,
+                lastTarget: cognitiveRoute.target,
+                lastModelId: activeChatModelId || 'aillame-nano-v1',
+                lastRouteExplanation: cognitiveRoute.reason
+            });
+        } catch (memError) {
+            console.warn('[AillameMemory] Failed to retrieve or inject memory context:', memError);
+        }
+
         const { response: rawResponse, modelId } = await inferWithVersionControl(
             enrichedPrompt,
             taskScore,
