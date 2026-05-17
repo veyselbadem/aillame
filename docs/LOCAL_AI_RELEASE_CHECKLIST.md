@@ -161,4 +161,10 @@ npx tauri build
 *   **Sessiz Kaldırma (Silent Uninstall):** `uninstall.exe /S` komutuyla kısayollar dahil tüm binary dosyalar silinmiştir.
 *   **Veri Koruma Güvencesi:** Kaldırma sonrasında yerel `.aillame-data` verileri ve `C:\Aillame\Models` altındaki büyük modeller tamamen korunmuştur.
 
+---
+
+## Sürüm Notu ve Gelecek Sürüm Yol Haritası
+*   Sonraki sürüm planları, hotfix politikaları ve minor `v1.4.0` aday özellikleri için lütfen [ROADMAP.md](file:///c:/Users/veyse/OneDrive/Desktop/çalışmalar/aillame/docs/ROADMAP.md) dosyasına bakınız.
+
+
 
