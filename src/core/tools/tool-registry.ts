@@ -1,6 +1,7 @@
 import { AillameToolDefinition, AillameToolResult, AillameToolContext } from './types';
 import { AillameMemoryService } from '../memory/aillame-memory.service';
 import { getQwenReadiness, getSdxlReadiness } from '../model-management/status';
+import { formatBytes, getModelPathHealth } from '../models/model-path-health';
 import { resolveProjectRelative } from '../project-root';
 import fs from 'fs';
 import path from 'path';
@@ -372,6 +373,56 @@ export const TOOL_REGISTRY: Record<string, AillameToolDefinition> = {
           ok: true,
           data: list,
           message: `Öğrenme verisinde kayıtlı ${list.length} adet veri örneği listelendi.`
+        };
+      } catch (err: any) {
+        return { ok: false, errors: [err.message] };
+      }
+    }
+  },
+
+  'models.pathHealth': {
+    id: 'models.pathHealth',
+    name: 'Model Yolları Doğrulaması',
+    description: 'Aillame yerel model dosyalarının doğru yerde olup olmadığını read-only olarak denetler.',
+    category: 'system',
+    riskLevel: 'safe',
+    requiresUserConfirmation: false,
+    inputSchema: { type: 'object', properties: {} },
+    async execute(input: any, context: any): Promise<any> {
+      try {
+        const data = getModelPathHealth();
+        const statusLabels: Record<string, string> = {
+          ready: 'Hazır',
+          missing: 'Eksik',
+          warning: 'Uyarı',
+          optional_missing: 'Opsiyonel eksik',
+          legacy_absent: 'Legacy yok',
+        };
+        const missingRequired = data.models
+          .filter((model) => model.required && model.status === 'missing')
+          .flatMap((model) => model.paths
+            .filter((item) => !item.exists)
+            .map((item) => `${model.name} / ${item.label}`));
+
+        let message = 'Model Yolu Doğrulama Sonuçları:\n\n';
+        if (missingRequired.length === 0) {
+          message += 'Qwen3-VL 4B, SDXL Turbo ve Aillame Nano dosyaları hazır görünüyor. Tiny SD artık aktif model olmadığı için eksik olması sorun değildir.\n\n';
+        } else {
+          message += `Bazı gerekli model dosyaları eksik. Eksik olanlar: ${missingRequired.join(', ')}\n\n`;
+        }
+
+        for (const model of data.models) {
+          message += `* ${model.name}: ${statusLabels[model.status] || model.status} - ${model.role}\n`;
+          for (const item of model.paths) {
+            message += `  - ${item.label}: ${item.exists ? 'Mevcut' : 'Dosya bulunamadı'} (${formatBytes(item.sizeBytes)})\n`;
+          }
+          if (model.note) message += `  - Not: ${model.note}\n`;
+        }
+
+        return {
+          ok: true,
+          data,
+          message: `${message}\nBu araç yalnızca okuma yapar; dosya indirmez, silmez veya taşımaz.`
         };
       } catch (err: any) {
         return { ok: false, errors: [err.message] };

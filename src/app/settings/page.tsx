@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import {
   FiCheckCircle, FiDownloadCloud, FiLoader, FiSettings, FiTrash2,
-  FiZap, FiImage, FiCpu, FiBox, FiDatabase, FiPlus, FiSearch, FiFolder, FiGlobe
+  FiZap, FiImage, FiCpu, FiBox, FiDatabase, FiPlus, FiSearch, FiFolder, FiGlobe, FiCopy
 } from 'react-icons/fi';
 import { useSettings } from '@hooks/useSettings';
 import type { AillameTier, LLMMode } from '@apptypes/settings';
@@ -49,8 +49,146 @@ type ActiveSelection = {
   activeImageModelId: string | null;
 };
 
+type ModelPathStatus = 'ready' | 'missing' | 'warning' | 'optional_missing' | 'legacy_absent';
+
+type ModelPathCheck = {
+  label: string;
+  path: string;
+  exists: boolean;
+  signature?: string | null;
+  sizeBytes: number;
+  type: 'file' | 'directory';
+  error?: string;
+};
+
+type ModelPathHealthDetail = {
+  id: string;
+  name: string;
+  role: string;
+  required: boolean;
+  requirement: 'required' | 'optional' | 'legacy';
+  status: ModelPathStatus;
+  paths: ModelPathCheck[];
+  note?: string;
+};
+
+type ModelPathHealth = {
+  ok: boolean;
+  generatedAt: string;
+  checkedAt?: string;
+  readOnly: true;
+  models: ModelPathHealthDetail[];
+  summary: {
+    ready: number;
+    missing: number;
+    warning: number;
+    optionalMissing: number;
+    legacyAbsent: number;
+  };
+  message: string;
+};
+
 function purposeLabel(purpose: ModelStatus['purpose']) {
   return purpose === 'chat' ? 'Chat / LLM' : 'Görsel Üretim';
+}
+
+function pathStatusLabel(status: ModelPathStatus) {
+  const labels: Record<ModelPathStatus, string> = {
+    ready: 'Hazır',
+    missing: 'Eksik',
+    warning: 'Uyarı',
+    optional_missing: 'Opsiyonel Eksik',
+    legacy_absent: 'Legacy Yok',
+  };
+  return labels[status];
+}
+
+function pathStatusClass(status: ModelPathStatus) {
+  if (status === 'ready') return 'bg-emerald-500/10 text-emerald-300 border-emerald-500/20';
+  if (status === 'missing') return 'bg-rose-500/10 text-rose-300 border-rose-500/25';
+  if (status === 'warning' || status === 'optional_missing') return 'bg-amber-500/10 text-amber-300 border-amber-500/25';
+  return 'bg-slate-500/10 text-slate-300 border-slate-500/20';
+}
+
+function formatBytes(bytes: number) {
+  if (!Number.isFinite(bytes) || bytes <= 0) return '0 B';
+  const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+  let value = bytes;
+  let unitIndex = 0;
+  while (value >= 1024 && unitIndex < units.length - 1) {
+    value /= 1024;
+    unitIndex += 1;
+  }
+  const fractionDigits = unitIndex >= 3 ? 3 : value >= 10 || unitIndex === 0 ? 0 : 1;
+  return `${value.toFixed(fractionDigits)} ${units[unitIndex]}`;
+}
+
+function formatCheckedAt(value?: string) {
+  if (!value) return 'Henüz kontrol yapılmadı';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return 'Henüz kontrol yapılmadı';
+  return `Son kontrol: ${date.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}`;
+}
+
+function getPathHealthSummaryMessage(pathHealth: ModelPathHealth | null) {
+  if (!pathHealth) return 'Henüz kontrol yapılmadı';
+  if (pathHealth.summary.missing > 0) {
+    return 'Bazı gerekli model dosyaları eksik. Lütfen model yollarını kontrol edin.';
+  }
+  if (pathHealth.summary.warning > 0) {
+    return 'Bazı model yollarında uyarı var. Ayrıntıları aşağıdan kontrol edin.';
+  }
+  if (pathHealth.summary.legacyAbsent > 0) {
+    return 'Temel yerel AI modelleri hazır görünüyor. Legacy modeller eksik olabilir; bu durum ana sistemi etkilemez.';
+  }
+  return 'Temel yerel AI modelleri hazır görünüyor.';
+}
+
+function supportStatusLabel(model: ModelPathHealthDetail) {
+  if (model.id === 'tiny-sd' && model.status === 'legacy_absent') {
+    return 'Kaldırılmış Legacy';
+  }
+  return pathStatusLabel(model.status);
+}
+
+function buildModelPathSupportSummary(pathHealth: ModelPathHealth) {
+  const lines = [
+    'Aillame Model Yolu Destek Özeti',
+    formatCheckedAt(pathHealth.checkedAt || pathHealth.generatedAt),
+    `Genel durum: ${getPathHealthSummaryMessage(pathHealth)}`,
+    '',
+    'Özet:',
+    `- Hazır: ${pathHealth.summary.ready}`,
+    `- Eksik: ${pathHealth.summary.missing}`,
+    `- Uyarı: ${pathHealth.summary.warning}`,
+    `- Legacy Yok: ${pathHealth.summary.legacyAbsent}`,
+    '',
+    'Modeller:',
+  ];
+
+  for (const model of pathHealth.models) {
+    lines.push(`- ${model.name}: ${supportStatusLabel(model)}`);
+    if (model.id === 'tiny-sd') {
+      lines.push('  - Tiny SD artık aktif/korunan model değildir. Eksik olması hata değildir.');
+      continue;
+    }
+
+    for (const item of model.paths) {
+      const parts = [item.exists ? 'Var' : 'Yok'];
+      if (item.signature) parts.push(item.signature);
+      parts.push(formatBytes(item.sizeBytes));
+      if (item.error) parts.push('Uyarı var');
+      lines.push(`  - ${item.label}: ${parts.join(', ')}`);
+    }
+  }
+
+  lines.push(
+    '',
+    'Not:',
+    'Bu rapor yalnızca dosya varlığı, boyut ve temel imza bilgisini içerir. Gizli anahtar, parola, ortam dosyası içeriği veya kişisel kullanıcı yolu içermez.',
+  );
+
+  return lines.join('\n');
 }
 
 function ModelCard({
@@ -195,6 +333,12 @@ export default function SettingsPage() {
   const [activating, setActivating] = useState<string | null>(null);
   const [modelError, setModelError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
+  const [pathHealth, setPathHealth] = useState<ModelPathHealth | null>(null);
+  const [loadingPathHealth, setLoadingPathHealth] = useState(false);
+  const [pathHealthError, setPathHealthError] = useState<string | null>(null);
+  const [pathHealthStatusMessage, setPathHealthStatusMessage] = useState('Henüz kontrol yapılmadı');
+  const [pathHealthCopyMessage, setPathHealthCopyMessage] = useState<string | null>(null);
+  const [pathHealthSupportText, setPathHealthSupportText] = useState<string | null>(null);
 
   // Aillame Hafıza ve Bağlam Yönetimi Durum Bildirimleri ve Fonksiyonları (Phase 6)
   const [activeTab, setActiveTab] = useState<'models' | 'memory' | 'projects' | 'distillation'>('models');
@@ -518,7 +662,47 @@ export default function SettingsPage() {
     }
   }, []);
 
+  const loadPathHealth = useCallback(async () => {
+    setLoadingPathHealth(true);
+    setPathHealthError(null);
+    setPathHealthCopyMessage(null);
+    setPathHealthStatusMessage('Model yolları kontrol ediliyor...');
+    try {
+      const payload = await aillameFetch('/api/aillame/models/path-health');
+      setPathHealth(payload);
+      setPathHealthStatusMessage('Model yolu kontrolü tamamlandı.');
+    } catch (error) {
+      setPathHealthError(error instanceof Error ? error.message : 'Model yolu doğrulama bilgisi alınamadı.');
+      setPathHealthStatusMessage('Model yolu kontrolü sırasında hata oluştu.');
+    } finally {
+      setLoadingPathHealth(false);
+    }
+  }, []);
+
+  const copyPathHealthSupportSummary = useCallback(async () => {
+    if (!pathHealth) {
+      setPathHealthCopyMessage('Önce model yolu kontrolü yapılmalı.');
+      return;
+    }
+
+    const report = buildModelPathSupportSummary(pathHealth);
+    setPathHealthSupportText(null);
+
+    try {
+      if (!navigator.clipboard?.writeText) {
+        throw new Error('Clipboard desteklenmiyor.');
+      }
+
+      await navigator.clipboard.writeText(report);
+      setPathHealthCopyMessage('Destek özeti panoya kopyalandı.');
+    } catch {
+      setPathHealthSupportText(report);
+      setPathHealthCopyMessage('Destek özeti kopyalanamadı. Metni aşağıdan elle kopyalayabilirsiniz.');
+    }
+  }, [pathHealth]);
+
   useEffect(() => { loadModels(); }, [loadModels]);
+  useEffect(() => { loadPathHealth(); }, [loadPathHealth]);
 
   useEffect(() => {
     let cancelled = false;
@@ -692,6 +876,131 @@ export default function SettingsPage() {
                   </div>
                 </div>
               </div>
+            </section>
+
+            <section className="glass-card rounded-[28px] p-5 border-white/5">
+              <div className="flex items-start justify-between gap-3 mb-4">
+                <div>
+                  <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Model Yolu Doğrulama</h2>
+                  <p className="mt-1 text-[10px] leading-relaxed text-gray-500">
+                    Bu kontrol yalnızca yerel dosya varlığını doğrular; dosya indirmez veya silmez.
+                  </p>
+                  <p className="mt-2 text-[10px] font-bold text-indigo-300">
+                    {formatCheckedAt(pathHealth?.checkedAt || pathHealth?.generatedAt)}
+                  </p>
+                </div>
+                <div className="flex flex-wrap justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={copyPathHealthSupportSummary}
+                    disabled={!pathHealth || loadingPathHealth}
+                    title="Model yolu durumunu güvenli destek metni olarak panoya kopyalar."
+                    className="h-8 px-3 rounded-xl bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/20 text-indigo-200 text-[9px] font-black uppercase tracking-widest flex items-center gap-1.5 disabled:opacity-50"
+                  >
+                    <FiCopy size={11} />
+                    Destek Özeti Kopyala
+                  </button>
+                  <button
+                    type="button"
+                    onClick={loadPathHealth}
+                    disabled={loadingPathHealth}
+                    className="h-8 px-3 rounded-xl bg-white/5 hover:bg-white/10 text-gray-300 text-[9px] font-black uppercase tracking-widest flex items-center gap-1.5 disabled:opacity-50"
+                  >
+                    <FiLoader size={11} className={loadingPathHealth ? 'animate-spin' : ''} />
+                    {loadingPathHealth ? 'Model yolları kontrol ediliyor...' : 'Tekrar kontrol et'}
+                  </button>
+                </div>
+              </div>
+
+              <div className="mb-3 rounded-2xl border border-indigo-500/20 bg-indigo-500/10 px-3 py-2 text-[10px] leading-relaxed text-indigo-200">
+                <p className="font-bold">{pathHealthStatusMessage}</p>
+                <p className="mt-1">{getPathHealthSummaryMessage(pathHealth)}</p>
+              </div>
+
+              {pathHealth && (
+                <div className="mb-3 grid grid-cols-2 gap-2">
+                  {[
+                    { label: 'Hazır', value: pathHealth.summary.ready, tone: 'bg-emerald-500/10 text-emerald-300 border-emerald-500/20' },
+                    { label: 'Eksik', value: pathHealth.summary.missing, tone: 'bg-rose-500/10 text-rose-300 border-rose-500/25' },
+                    { label: 'Uyarı', value: pathHealth.summary.warning, tone: 'bg-amber-500/10 text-amber-300 border-amber-500/25' },
+                    { label: 'Legacy Yok', value: pathHealth.summary.legacyAbsent, tone: 'bg-slate-500/10 text-slate-300 border-slate-500/20' },
+                  ].map((item) => (
+                    <div key={item.label} className={`rounded-2xl border px-3 py-2 ${item.tone}`}>
+                      <p className="text-[8px] font-black uppercase tracking-widest opacity-75">{item.label}</p>
+                      <p className="mt-1 text-lg font-black">{item.value}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {pathHealthError && (
+                <div className="mb-3 rounded-2xl border border-rose-500/20 bg-rose-500/10 px-3 py-2 text-[10px] text-rose-200">
+                  {pathHealthError}
+                </div>
+              )}
+
+              {pathHealthCopyMessage && (
+                <div className={`mb-3 rounded-2xl border px-3 py-2 text-[10px] ${
+                  pathHealthSupportText
+                    ? 'border-amber-500/25 bg-amber-500/10 text-amber-200'
+                    : 'border-emerald-500/20 bg-emerald-500/10 text-emerald-200'
+                }`}>
+                  {pathHealthCopyMessage}
+                </div>
+              )}
+
+              {pathHealthSupportText && (
+                <textarea
+                  readOnly
+                  value={pathHealthSupportText}
+                  className="mb-3 h-44 w-full resize-none rounded-2xl border border-white/10 bg-black/30 p-3 font-mono text-[10px] leading-relaxed text-gray-200 outline-none"
+                />
+              )}
+
+              {loadingPathHealth && !pathHealth ? (
+                <div className="h-28 flex items-center justify-center text-gray-500">
+                  <FiLoader className="animate-spin" size={22} />
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {pathHealth?.models.map((model) => (
+                    <div key={model.id} className="rounded-2xl border border-white/10 bg-black/20 p-3">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <p className="text-xs font-black text-white truncate">{model.name}</p>
+                          <p className="mt-0.5 text-[10px] text-gray-500">{model.role}</p>
+                        </div>
+                        <span className={`shrink-0 rounded-full border px-2 py-0.5 text-[8px] font-black uppercase tracking-widest ${pathStatusClass(model.status)}`}>
+                          {model.id === 'tiny-sd' && model.status === 'legacy_absent' ? 'Kaldırılmış Legacy' : pathStatusLabel(model.status)}
+                        </span>
+                      </div>
+                      <div className="mt-3 space-y-2">
+                        {model.paths.map((item) => (
+                          <div key={`${model.id}-${item.label}`} className="rounded-xl border border-white/5 bg-black/20 px-3 py-2">
+                            <div className="flex items-center justify-between gap-2 text-[9px]">
+                              <span className="font-black uppercase tracking-widest text-gray-500">{item.label}</span>
+                              <span className={item.exists ? 'text-emerald-300 font-bold' : 'text-rose-300 font-bold'}>
+                                {item.exists ? 'Hazır' : 'Dosya bulunamadı'}
+                              </span>
+                            </div>
+                            <p className="mt-1 font-mono text-[9px] text-gray-600 truncate" title={item.path}>{item.path}</p>
+                            <div className="mt-1 flex flex-wrap gap-2 text-[9px] text-gray-500">
+                              <span>Boyut: {formatBytes(item.sizeBytes)}</span>
+                              {item.signature && <span>GGUF: {item.signature}</span>}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                      {model.note && <p className="mt-2 text-[10px] leading-relaxed text-gray-500">{model.note}</p>}
+                    </div>
+                  ))}
+                  {pathHealth && (
+                    <p className="rounded-2xl border border-indigo-500/20 bg-indigo-500/10 px-3 py-2 text-[10px] leading-relaxed text-indigo-200">
+                      Model dosyaları uygulama paketine dahil değildir. Eksik Tiny SD hata değildir; aktif modeller listesine geri eklenmez.
+                    </p>
+                  )}
+                </div>
+              )}
             </section>
 
             {/* Tier selection */}

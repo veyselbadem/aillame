@@ -811,6 +811,26 @@ export function routeCognitiveRequest(prompt: string, hasAttachment: boolean): N
     };
   }
 
+  if (
+    p.includes('model dosyalarım doğru yerde mi') ||
+    p.includes('model dosyalarim dogru yerde mi') ||
+    p.includes('model yolu') ||
+    p.includes('model yolları') ||
+    p.includes('model yollari') ||
+    p.includes('path health') ||
+    p.includes('dosya yolu doğrula') ||
+    p.includes('dosya yolu dogrula')
+  ) {
+    return {
+      intent: 'tool_use',
+      target: 'aillame_tools',
+      confidence: 0.95,
+      reason: 'Model yolu doğrulama sorgusu algılandı. Yerel read-only araç "models.pathHealth" tetikleniyor.',
+      shouldAskClarifyingQuestion: false,
+      selectedToolId: 'models.pathHealth'
+    };
+  }
+
   if (/model durum/i.test(p) || /model durumları/i.test(p) || p.includes('aktif model') || p.includes('yerel model durumunu') || p.includes('yerel modelleri listele')) {
     return {
       intent: 'tool_use',
@@ -926,4 +946,3 @@ export function routeCognitiveRequest(prompt: string, hasAttachment: boolean): N
     shouldAskClarifyingQuestion: false
   };
 }
-

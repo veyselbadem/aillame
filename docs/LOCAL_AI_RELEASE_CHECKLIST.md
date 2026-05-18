@@ -49,6 +49,7 @@ Aillame Nano, yerel sistem güvenliği gereği serbest komut (shell/PowerShell/C
 | Endpoint | HTTP Metodu | Beklenen Yanıt Tipi / Başarı Kriteri | Durum |
 | :--- | :--- | :--- | :--- |
 | `/api/models` | GET | Aktif/İnaktif model listesi ve durumları | 🟢 ÇALIŞIYOR |
+| `/api/aillame/models/path-health` | GET | Model yolları, boyutları ve GGUF imza kontrolü; read-only | 🟢 ÇALIŞIYOR |
 | `/api/aillame/vision/health` | GET | Qwen3-VL dosyaları, GPU Lock ve preflight durumları | 🟢 ÇALIŞIYOR |
 | `/api/aillame/vision/mini-test` | POST | SafeRuntime limitlerine göre dryRun veya preflight kontrolü | 🟢 ÇALIŞIYOR |
 | `/api/image-generation?dryRun=true` | POST | SDXL Turbo kilit ve GPU preflight testi | 🟢 ÇALIŞIYOR |
@@ -88,6 +89,9 @@ npx tsx scripts/smoke-phase8.1-project-context-validation.ts
 
 # 7. Yerel Öğrenme Verisi / Distillation Testi
 npx tsx scripts/smoke-phase9-distillation-dataset-validation.ts
+
+# 8. Model Yolu Doğrulama Sihirbazı Testi
+npx tsx scripts/smoke-phase22-model-path-health-validation.ts
 ```
 
 ---
@@ -97,6 +101,7 @@ npx tsx scripts/smoke-phase9-distillation-dataset-validation.ts
 *   [x] **TypeScript & Derleme:** `npm run typecheck` sıfır hata ile geçiyor, `npm run build` production paketi başarıyla derleniyor.
 *   [x] **Tüm Dışlanmış Modeller:** `Qwen2.5 0.5B`, `Qwen3-VL 8B`, `Gemma 26B`, `Gemma E4B`, `Ollama Qwen3.5` modelleri sistem envanterinden ve registry'den kalıcı olarak çıkarılmış, arayüzde görünmüyor.
 *   [x] **Model Dosyaları Bütünlüğü:** `C:\Aillame\Models\nano\qwen3-vl-4b\` altındaki `model.gguf` ve `mmproj.gguf` dosyaları mevcut ve geçerli GGUF formatına sahip.
+*   [x] **Model Yolu Doğrulama:** `/api/aillame/models/path-health`, Ayarlar paneli ve `models.pathHealth` aracı yalnızca okuma yaparak Qwen3-VL 4B, SDXL Turbo ve Aillame Nano yollarını doğrular. Tiny SD eksikliği hata sayılmaz ve aktif model listesine geri eklenmez.
 *   [x] **Storage Dosyaları Sağlığı:** JSON dosyalarında herhangi bir bozulma yok. Bozulma durumunda self-healing mekanizmasının `.corrupted` yedeği alıp veritabanını sıfırlayarak kurtardığı smoke testle doğrulanmış.
 *   [x] **Kişisel / Hassas Veri Sızıntısı:** `.aillame-data` altındaki depolarda ham şifre, token veya kredi kartı bilgisi yer almıyor, filtreler aktif.
 *   [x] **Dokümantasyon Güncelliği:** Mimari, hafıza, araçlar, proje bağlamları ve distillation kılavuzları son stabil güncellemelere göre revize edilmiş.
@@ -165,6 +170,3 @@ npx tauri build
 
 ## Sürüm Notu ve Gelecek Sürüm Yol Haritası
 *   Sonraki sürüm planları, hotfix politikaları ve minor `v1.4.0` aday özellikleri için lütfen [ROADMAP.md](file:///c:/Users/veyse/OneDrive/Desktop/çalışmalar/aillame/docs/ROADMAP.md) dosyasına bakınız.
-
-
-

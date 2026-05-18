@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
-import { FiUploadCloud } from 'react-icons/fi';
+import { FiTrash2, FiUploadCloud } from 'react-icons/fi';
 import { useChat } from '@hooks/useChat';
 import { useDragDrop } from '@hooks/useDragDrop';
 import { useRuntimeStatus } from '@hooks/useRuntimeStatus';
@@ -35,6 +35,7 @@ export default function ChatShell({ conversationId }: ChatShellProps) {
     setAttachments,
     sendMessage,
     stopGeneration,
+    clearChat,
     loading,
     listRef,
   } = useChat(conversationId, { llmMode, tier });
@@ -97,6 +98,20 @@ export default function ChatShell({ conversationId }: ChatShellProps) {
     >
       {dragOverlay}
 
+      {isLanding && (
+        <div className="pointer-events-none absolute right-5 top-5 z-30">
+          <button
+            type="button"
+            disabled
+            title="Yalnızca ekrandaki sohbet mesajlarını temizler."
+            className="pointer-events-auto inline-flex cursor-not-allowed items-center gap-2 rounded-xl border border-[color:var(--border-color)] bg-[color:var(--card-bg)] px-3 py-2 text-xs font-bold text-[color:var(--text-secondary)] opacity-50 shadow-sm"
+          >
+            <FiTrash2 size={14} />
+            <span>Sohbeti Temizle</span>
+          </button>
+        </div>
+      )}
+
       {isLanding ? (
         <LandingView
           input={input}
@@ -117,6 +132,7 @@ export default function ChatShell({ conversationId }: ChatShellProps) {
           setInput={setInput}
           onSend={sendMessage}
           onStop={stopGeneration}
+          onClearChat={clearChat}
           visionEnabled={visionEnabled}
           attachments={attachments}
           onAttachmentsChange={setAttachments}

@@ -1,12 +1,13 @@
 'use client';
 
 import { useState } from 'react';
-import { FiAlertCircle, FiSquare } from 'react-icons/fi';
+import { FiAlertCircle, FiSquare, FiTrash2 } from 'react-icons/fi';
 import type { RefObject } from 'react';
 import type { Message } from '@apptypes/message';
 import type { ImageAttachment } from '@apptypes/attachments';
 import MessageList from '../MessageList';
 import ChatInput from '../ChatInput';
+import { safeConfirm } from '@/lib/confirm';
 
 interface ChatThreadViewProps {
   messages: Message[];
@@ -17,6 +18,7 @@ interface ChatThreadViewProps {
   setInput: (value: string) => void;
   onSend: () => void;
   onStop: () => void;
+  onClearChat: () => boolean;
   visionEnabled: boolean;
   attachments: ImageAttachment[];
   onAttachmentsChange: (attachments: ImageAttachment[]) => void;
@@ -81,6 +83,7 @@ export function ChatThreadView({
   setInput,
   onSend,
   onStop,
+  onClearChat,
   visionEnabled,
   attachments,
   onAttachmentsChange,
@@ -89,6 +92,7 @@ export function ChatThreadView({
   onLoadModel,
 }: ChatThreadViewProps) {
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [clearNotice, setClearNotice] = useState<string | null>(null);
 
   const handleLoadModel = async () => {
     setLoadError(null);
@@ -98,12 +102,56 @@ export function ChatThreadView({
     }
   };
 
+  const handleClearChat = async () => {
+    if (loading || messages.length === 0) {
+      return;
+    }
+
+    const confirmed = await safeConfirm(
+      'Bu işlem yalnızca ekrandaki mevcut sohbet mesajlarını temizler. Hafıza, proje bağlamı ve öğrenme verileri silinmez.',
+      { title: 'Sohbet temizlensin mi?' },
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    const cleared = onClearChat();
+    if (!cleared) {
+      setClearNotice('Yanıt hazırlanırken sohbet temizlenemez.');
+      return;
+    }
+
+    setClearNotice(null);
+  };
+
   return (
     <div className="chat-thread relative flex h-full min-h-0 w-full flex-col overflow-hidden">
       <div className="pointer-events-none absolute inset-0 neural-grid opacity-45" />
       <div className="chat-ambient pointer-events-none absolute inset-0" />
 
       <div className="relative z-10 flex min-h-0 flex-1 flex-col overflow-hidden">
+        <div className="mx-auto flex w-full max-w-[900px] flex-col gap-2 px-5 pt-5 sm:px-6">
+          <div className="flex justify-end">
+            <button
+              type="button"
+              onClick={handleClearChat}
+              disabled={loading || messages.length === 0}
+              title="Yalnızca ekrandaki sohbet mesajlarını temizler."
+              className="inline-flex items-center gap-2 rounded-xl border border-[color:var(--border-color)] bg-[color:var(--card-bg)] px-3 py-2 text-xs font-bold text-[color:var(--text-secondary)] shadow-sm transition hover:border-rose-300 hover:text-[color:var(--text-primary)] disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <FiTrash2 size={14} />
+              <span>Sohbeti Temizle</span>
+            </button>
+          </div>
+
+          {clearNotice && (
+            <div className="rounded-xl border border-amber-400/25 bg-amber-500/10 px-3 py-2 text-xs font-semibold text-amber-100">
+              {clearNotice}
+            </div>
+          )}
+        </div>
+
         <MessageList
           messages={messages}
           loading={loading}

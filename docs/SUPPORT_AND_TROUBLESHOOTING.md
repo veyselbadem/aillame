@@ -31,6 +31,16 @@ Bu doküman, **Aillame Local AI Foundation** masaüstü uygulamasının çalış
 *   **Açıklama:** Resim oluşturmak istediğinizde donanım yetersiz veya kilitli hatası alınıyor.
 *   **Çözüm:** SDXL Turbo motorunun çalışabilmesi için sistemde en az **8 GB RAM** ve **6.5 GB Boş VRAM** bulunması gerekir. Kaynaklar yetersizse SafeRuntime koruma sınırı işlemi güvenle durdurur.
 
+### C) Model Yolu Doğrulama
+*   **Açıklama:** Ayarlar ekranındaki **Model Yolu Doğrulama** paneli, Qwen3-VL 4B, SDXL Turbo ve Aillame Nano dosyalarının beklenen yerlerde olup olmadığını kontrol eder.
+*   **Kontrol edilen yollar:** `C:\Aillame\Models\nano\qwen3-vl-4b\model.gguf`, `C:\Aillame\Models\nano\qwen3-vl-4b\mmproj.gguf`, `C:\aillame-models\diffusion\sdxl-turbo-1.0`, `C:\aillame-models\diffusion\sd_xl_turbo_1.0_fp16.safetensors`, `public/model/aillame-v1` ve `src/core/engine/checkpoints`.
+*   **Güvenlik notu:** Bu kontrol yalnızca okuma yapar; model indirmez, silmez, taşımaz veya dosya içeriğini değiştirmez. GGUF dosyalarında sadece ilk 4 byte imza kontrolü yapılır.
+*   **Tiny SD:** Tiny SD artık aktif/korunan model değildir. `C:\aillame-models\diffusion\tiny-sd` yoksa hata sayılmaz; varsa legacy/opsiyonel/pasif olarak raporlanır.
+*   **Panel bilgileri:** Ayarlar panelinde son kontrol zamanı, hazır/eksik/uyarı/legacy özet sayaçları ve kısa genel durum mesajı görünür.
+*   **Destek özeti:** **Destek Özeti Kopyala** butonu ile model yolu durumunu kısa ve paylaşılabilir bir destek metni olarak panoya kopyalayabilirsiniz.
+*   **Gizlilik:** Destek özeti token, şifre, `.env` içeriği veya kişisel kullanıcı yolu içermez; yalnızca dosya varlığı, boyut, durum ve temel GGUF imza bilgisini özetler.
+*   **Eksik ana model:** Qwen3-VL 4B eksikse Nano Lab’daki Vision Health kartına, SDXL Turbo eksikse Görsel Üretim Durumu kartına bakın.
+
 ---
 
 ## 🛡️ 3. Güvenlik ve Veri Gizliliği
@@ -48,3 +58,11 @@ Bu doküman, **Aillame Local AI Foundation** masaüstü uygulamasının çalış
 ## 🔄 4. Kaldırma (Uninstall) Sonrası Veri Koruma
 *   Aillame kaldırıldığında (uninstall), diskinizdeki büyük model dosyalarına (`C:\Aillame`) ve kullanıcı veri tabanlarına (`.aillame-data`) kesinlikle dokunulmaz.
 *   Eğer tüm verileri sıfırlamak istiyorsanız, kaldırma işlemi sonrasında `.aillame-data/` klasörünü manuel olarak silebilirsiniz.
+
+---
+
+## 5. Sohbeti Temizle
+*   **Açıklama:** Sohbet ekranındaki **Sohbeti Temizle** butonu yalnızca aktif ekranda görünen sohbet mesajlarını temizler.
+*   **Kapsam:** Mevcut mesaj listesi, yazma alanındaki taslak metin ve aktif görsel ek temizlenir.
+*   **Veri güvenliği:** Aillame Hafızası, Proje Bağlamı, Nano Öğrenme/Distillation verileri, model registry kayıtları ve yerel model dosyaları silinmez veya değiştirilmez.
+*   **Kalıcı veri yönetimi:** Hafıza, proje bağlamı veya öğrenme verilerini yönetmek için Ayarlar ekranındaki ilgili paneller kullanılmalıdır.

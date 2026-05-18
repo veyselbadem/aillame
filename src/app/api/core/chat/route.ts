@@ -74,6 +74,32 @@ function isExplicitIntent(intent?: string): boolean {
     return intent === 'image_generation' || intent === 'general_knowledge' || intent === 'coding_help';
 }
 
+function normalizeSafetyText(value: string): string {
+    return value
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/ı/g, 'i')
+        .replace(/ğ/g, 'g')
+        .replace(/ü/g, 'u')
+        .replace(/ş/g, 's')
+        .replace(/ö/g, 'o')
+        .replace(/ç/g, 'c');
+}
+
+function isSafeModelPathHealthRequest(value: string): boolean {
+    const text = normalizeSafetyText(value);
+    return (
+        text.includes('path health') ||
+        text.includes('model yolu') ||
+        text.includes('model yollari') ||
+        (
+            text.includes('model dosyalar') &&
+            (text.includes('dogru yerde') || text.includes('kontrol') || text.includes('dogrula') || text.includes('hazir mi'))
+        )
+    );
+}
+
 function buildExplicitIntentGuardResponse(prompt: string, messages: any[], intent?: string): string {
     if (intent === 'image_generation') {
         return improveAssistantAnswer(prompt, 'Görsel üretim isteğini algıladım. İsteği IGM/SDXL modülüne yönlendiriyorum; üretim durumunu iş kaydı üzerinden takip edebilirsin.', messages);
@@ -161,13 +187,27 @@ export async function POST(req: NextRequest) {
             'sudo ', 'runas', 'administrators', 'system32', 'registry', 'regedit'
         ];
         const pLower = prompt.toLowerCase();
+        const pSafe = normalizeSafetyText(prompt);
         const isExploitDistill = pLower.includes('dataset') || pLower.includes('veri seti') || pLower.includes('öğrenme verisi') || pLower.includes('eğitim verisi');
-        const containsBlock = blockKeywords.some(keyword => pLower.includes(keyword)) || 
+        const modelDangerRequested = (
+            (pLower.includes('model') || pLower.includes('gguf') || pLower.includes('tiny sd') || pLower.includes('qwen2.5') || pLower.includes('gemma') || pLower.includes('ollama')) &&
+            (pLower.includes('sil') || pLower.includes('kaldır') || pLower.includes('taşı') || pLower.includes('indir') || pLower.includes('düzenle') || pLower.includes('geri getir') || pLower.includes('delete') || pLower.includes('remove') || pLower.includes('move') || pLower.includes('download') || pLower.includes('edit') || pLower.includes('restore'))
+        );
+        const normalizedModelDangerRequested = (
+            (pSafe.includes('model') || pSafe.includes('gguf') || pSafe.includes('tiny sd') || pSafe.includes('qwen2.5') || pSafe.includes('gemma') || pSafe.includes('ollama')) &&
+            (pSafe.includes('sil') || pSafe.includes('kaldir') || pSafe.includes('tasi') || pSafe.includes('indir') || pSafe.includes('duzenle') || pSafe.includes('geri getir') || pSafe.includes('delete') || pSafe.includes('remove') || pSafe.includes('move') || pSafe.includes('download') || pSafe.includes('edit') || pSafe.includes('restore'))
+        );
+        const containsKeywordBlock = blockKeywords.some(keyword =>
+            keyword === 'del ' ? /^\s*del\s+/i.test(pLower) : pLower.includes(keyword)
+        );
+        const containsBlock = containsKeywordBlock || 
                              pLower.includes('komut çalıştır') || 
                              pLower.includes('dosya sil') ||
+                             modelDangerRequested ||
+                             normalizedModelDangerRequested ||
                              (isExploitDistill && (pLower.includes('token') || pLower.includes('env') || pLower.includes('şifre') || pLower.includes('sır') || pLower.includes('secret')));
         
-        if (containsBlock) {
+        if (containsBlock && !isSafeModelPathHealthRequest(prompt)) {
             const rejectionMsg = `**Bu işlem güvenlik nedeniyle engellendi.**\n\nAillame Nano, yerel sistem güvenliği gereği serbest komut (shell/PowerShell/CMD) çalıştırma, gizli dosya okuma veya token/şifre gösterme işlemlerini desteklemez.\n\n**Güvenli alternatif:** Sisteminizin sağlığını (\`system.health\`) veya aktif yerel modellerin durumunu (\`models.status\`) kontrol etmemi isteyebilirsiniz.`;
             return chatJson({
                 response: rejectionMsg,
@@ -213,9 +253,20 @@ Sistem teşhis ve sağlık testi talebi başarıyla algılandı ve **Nano Lab** 
                 'sudo ', 'runas', 'administrators', 'system32', 'registry', 'regedit'
             ];
             const pLower = prompt.toLowerCase();
-            const containsBlock = blockKeywords.some(keyword => pLower.includes(keyword));
+            const pSafe = normalizeSafetyText(prompt);
+            const modelDangerRequested = (
+                (pLower.includes('model') || pLower.includes('gguf') || pLower.includes('tiny sd') || pLower.includes('qwen2.5') || pLower.includes('gemma') || pLower.includes('ollama')) &&
+                (pLower.includes('sil') || pLower.includes('kaldır') || pLower.includes('taşı') || pLower.includes('indir') || pLower.includes('düzenle') || pLower.includes('geri getir') || pLower.includes('delete') || pLower.includes('remove') || pLower.includes('move') || pLower.includes('download') || pLower.includes('edit') || pLower.includes('restore'))
+            );
+            const normalizedModelDangerRequested = (
+                (pSafe.includes('model') || pSafe.includes('gguf') || pSafe.includes('tiny sd') || pSafe.includes('qwen2.5') || pSafe.includes('gemma') || pSafe.includes('ollama')) &&
+                (pSafe.includes('sil') || pSafe.includes('kaldir') || pSafe.includes('tasi') || pSafe.includes('indir') || pSafe.includes('duzenle') || pSafe.includes('geri getir') || pSafe.includes('delete') || pSafe.includes('remove') || pSafe.includes('move') || pSafe.includes('download') || pSafe.includes('edit') || pSafe.includes('restore'))
+            );
+            const containsBlock = blockKeywords.some(keyword =>
+                keyword === 'del ' ? /^\s*del\s+/i.test(pLower) : pLower.includes(keyword)
+            );
             
-            if (containsBlock || pLower.includes('komut çalıştır') || pLower.includes('dosya sil')) {
+            if (containsBlock || pLower.includes('komut çalıştır') || pLower.includes('dosya sil') || modelDangerRequested) {
                 const rejectionMsg = `**Bu işlem güvenlik nedeniyle engellendi.**\n\nAillame Nano, yerel sistem güvenliği gereği serbest komut (shell/PowerShell/CMD) çalıştırma, gizli dosya okuma veya token/şifre gösterme işlemlerini desteklemez.\n\n**Güvenli alternatif:** Sisteminizin sağlığını (\`system.health\`) veya aktif yerel modellerin durumunu (\`models.status\`) kontrol etmemi isteyebilirsiniz.`;
                 return chatJson({
                     response: rejectionMsg,
@@ -295,6 +346,8 @@ Sistem teşhis ve sağlık testi talebi başarıyla algılandı ve **Nano Lab** 
                             responseText += `    *Açıklama: ${m.message}*\n`;
                         }
                     });
+                } else if (toolId === 'models.pathHealth') {
+                    responseText = toolResult.message || '**Model Yolu Doğrulama:** Kontrol tamamlandı.';
                 } else if (toolId === 'project.docs') {
                     const docs = toolResult.data || [];
                     responseText = `**Yerel AI Mimari Dokümanları Kontrol Raporu:**\n\n`;

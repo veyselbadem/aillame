@@ -450,6 +450,23 @@ export default function AiLabPage() {
           </div>
         </section>
 
+        <section className="mb-6 rounded-2xl border border-indigo-500/20 bg-indigo-500/10 px-5 py-4 text-sm text-indigo-800 dark:text-indigo-200">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="font-black uppercase tracking-[0.18em] text-[10px]">Model Yolları</p>
+              <p className="mt-1 font-medium">
+                Qwen3-VL 4B, SDXL Turbo ve Aillame Nano dosya yollarını Ayarlar ekranından read-only olarak doğrulayabilirsiniz.
+              </p>
+            </div>
+            <a
+              href="/settings"
+              className="inline-flex h-9 items-center justify-center rounded-xl border border-indigo-500/25 bg-indigo-500/10 px-4 text-[10px] font-black uppercase tracking-widest text-indigo-700 transition hover:bg-indigo-500/20 dark:text-indigo-200"
+            >
+              Model yollarını Ayarlar'da doğrula
+            </a>
+          </div>
+        </section>
+
         <section className="mb-6 grid grid-cols-1 xl:grid-cols-3 gap-6">
           <div className="glass-card rounded-3xl p-6">
             <div className="flex items-center justify-between mb-4">

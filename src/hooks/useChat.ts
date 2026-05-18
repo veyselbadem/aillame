@@ -3,7 +3,6 @@ import { Message } from '@apptypes/message';
 import { LocalMemoryStore } from '@providers/memory/local';
 import { useSettings } from '@hooks/useSettings';
 import { aillameFetch } from '@/lib/aillame-api-client';
-import { safeConfirm } from '@/lib/confirm';
 import type { ToolCall, ToolResult } from '@core/orchestrator/tools';
 import type { ImageAttachment } from '@apptypes/attachments';
 import type { AillameTier, LLMMode } from '@apptypes/settings';
@@ -125,12 +124,17 @@ export function useChat(conversationId?: string, runtimeSettings?: UseChatRuntim
     streamingAssistantIdRef.current = null;
   };
 
-  const clearMessages = async () => {
-    if (conversationId && await safeConfirm('Bu sohbetteki tüm mesajları silmek istediğine emin misin?', { title: 'Sohbeti Temizle' })) {
-      await memory.deleteConversation(conversationId);
-      setMessages([]);
-      setActiveTools([]);
+  const clearChat = () => {
+    if (loading || modelLoading) {
+      return false;
     }
+
+    setMessages([]);
+    setInput('');
+    setAttachments([]);
+    setActiveTools([]);
+    streamingAssistantIdRef.current = null;
+    return true;
   };
 
   const sendMessage = async () => {
@@ -339,7 +343,8 @@ export function useChat(conversationId?: string, runtimeSettings?: UseChatRuntim
     setAttachments,
     sendMessage,
     stopGeneration,
-    clearMessages,
+    clearChat,
+    clearMessages: clearChat,
     loading: loading || modelLoading,
     modelLoading,
     isLocalModelReady: llmMode === 'local' ? !loading && !modelLoading : true,

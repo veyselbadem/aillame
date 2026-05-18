@@ -48,4 +48,24 @@ Herhangi bir minor (`v1.4.0`) veya patch (`v1.3.1`) yayını öncesinde aşağı
 - `npx tsx scripts/smoke-phase7.1-all-validations.ts`
 - `npx tsx scripts/smoke-phase8.1-project-context-validation.ts`
 - `npx tsx scripts/smoke-phase9-distillation-dataset-validation.ts`
+- `npx tsx scripts/smoke-phase22-model-path-health-validation.ts`
 - Tauri MSI ve EXE paketlemesinin yerelde başarıyla tamamlanması.
+
+---
+
+## 5. v1.4.0 Model Yolu Doğrulama Sihirbazı
+
+Model Yolu Doğrulama Sihirbazı, kullanıcının kurulumdan sonra yerel model dosyalarının doğru yerde olup olmadığını Ayarlar ekranından read-only olarak kontrol etmesini sağlar.
+
+Kontrol edilen aktif yollar:
+- Qwen3-VL 4B Nano Vision: `C:\Aillame\Models\nano\qwen3-vl-4b\model.gguf` ve `mmproj.gguf`
+- SDXL Turbo: `C:\aillame-models\diffusion\sdxl-turbo-1.0` ve `sd_xl_turbo_1.0_fp16.safetensors`
+- Aillame Nano: `public/model/aillame-v1` ve `src/core/engine/checkpoints`
+
+Bu özellik dosya indirmez, silmez, taşımaz veya düzenlemez. Tiny SD artık aktif/korunan model değildir; bulunmaması hata sayılmaz ve yalnızca legacy/opsiyonel durum olarak raporlanır.
+
+Faz 22.1 ile Ayarlar paneline son kontrol zamanı, hazır/eksik/uyarı/legacy özet sayaçları ve daha açık Tiny SD açıklaması eklenmiştir. Tiny SD “Kaldırılmış Legacy” olarak ele alınır; eksikliği ana sistemi etkilemez.
+
+Faz 22.2 ile **Sohbeti Temizle** butonu güvenli bir UI aksiyonu olarak geri getirildi. Bu aksiyon yalnızca aktif sohbet ekranındaki mesajları, taslak metni ve aktif görsel eki temizler; Hafıza, Proje Bağlamı, Nano Öğrenme/Distillation verileri, model registry ve yerel dosyalar etkilenmez.
+
+Faz 22.3 ile Model Yolu Doğrulama paneline **Destek Özeti Kopyala** eklendi. Bu özet token, şifre, `.env` içeriği veya kişisel kullanıcı yolu içermez; yalnızca dosya varlığı, boyut, durum ve temel GGUF imza bilgisini paylaşılabilir şekilde özetler. Tiny SD kaldırılmış legacy model olarak kalır; eksikliği hata değildir.
