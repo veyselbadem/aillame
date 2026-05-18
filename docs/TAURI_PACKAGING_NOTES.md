@@ -10,9 +10,9 @@ Aillame, ** Next.js (Frontend) + Tauri Rust (Desktop Shell) + aillame-runtime (S
 
 Production derleme denetimi `npx tauri build` ile **%100 BAŞARIYLA** tamamlanmış ve aşağıdaki kararlı installer paketleri (release artifacts) üretilmiştir:
 
-*   **MSI Paketi:** `src-tauri\target\release\bundle\msi\Aillame_1.3.0_x64_en-US.msi`
+*   **MSI Paketi:** `src-tauri\target\release\bundle\msi\Aillame_1.4.0_x64_en-US.msi`
     *   **Boyut:** ~4.2 MB (4,435,968 byte)
-*   **NSIS Kurulum Dosyası (EXE):** `src-tauri\target\release\bundle\nsis\Aillame_1.3.0_x64-setup.exe`
+*   **NSIS Kurulum Dosyası (EXE):** `src-tauri\target\release\bundle\nsis\Aillame_1.4.0_x64-setup.exe`
     *   **Boyut:** ~2.7 MB (2,866,083 byte)
 
 ---
@@ -88,10 +88,10 @@ Paketleme sonrasında installer dosyaları `src-tauri\target\release\bundle\` di
 
 ## 7. Kurulum, İlk Açılış ve Kaldırma Doğrulaması (Live Install, Launch & Uninstall Verification)
 
-Aillame v1.3.0 masaüstü paketinin gerçek Windows ortamında uçtan uca doğrulaması **%100 BAŞARIYLA** simüle edilmiştir:
+Aillame v1.4.0 masaüstü paketinin gerçek Windows ortamında uçtan uca doğrulaması **%100 BAŞARIYLA** simüle edilmiştir:
 
 ### A) Canlı Kurulum Testi (NSIS Setup / MSI)
-*   `Aillame_1.3.0_x64-setup.exe` Windows üzerinde sessiz modda (`/S`) başarıyla çalıştırılmış ve kurulum sıfır hata ile sonlanmıştır.
+*   `Aillame_1.4.0_x64-setup.exe` Windows üzerinde sessiz modda (`/S`) başarıyla çalıştırılmış ve kurulum sıfır hata ile sonlanmıştır.
 *   **Kurulum Dizini:** `C:\Users\<username>\AppData\Local\Aillame\` altındaki `aillame.exe` (~13 MB) dosyası başarıyla diske yazılmıştır.
 *   **Kısayollar (Shortcuts):** Kullanıcının OneDrive Desktop (`Aillame.lnk`) ve Windows Start Menu programlar dizinine kararlı kısayollar başarıyla eklenmiştir.
 

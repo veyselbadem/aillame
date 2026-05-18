@@ -1,6 +1,6 @@
 [package]
 name = "aillame"
-version = "1.3.0"
+version = "1.4.0"
 description = "Aillame Desktop Shell"
 authors = ["Aillame Team"]
 edition = "2021"

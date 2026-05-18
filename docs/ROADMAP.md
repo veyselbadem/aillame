@@ -76,22 +76,28 @@ Faz 23.1 ve 23.2 ile ana sohbet ekranindaki **HIZLI** hiz secici dropdown'unun s
 
 Faz 23.3 ile 390px mobil ekranda composer, hiz secici ve shortcut kartlari viewport disina tasmayacak sekilde responsive duzen guncellendi. Mobilde sidebar baslangicta kapali gelir, kapali sidebar bos alan birakmaz ve shortcut kartlari iki sutun grid olarak sarilir.
 
-### v1.4.0-dev Tamamlananlar
-- Model Yolu Dogrulama endpoint'i ve Settings paneli.
-- `models.pathHealth` read-only tool'u.
-- Destek Ozeti Kopyala aksiyonu.
-- Sohbeti Temizle UI aksiyonu.
-- HIZLI dropdown z-index/tiklanabilirlik duzeltmesi.
-- 390px/768px responsive composer ve shortcut layout duzeltmesi.
-- Port 3000 tanilama ve kullanici dostu uyari akisi.
-- Ilk Acilis Rehberi / readiness paneli.
+### v1.4.0 Tamamlananlar
+- Model Yolu Doğrulama
+- Destek Özeti Kopyala
+- Sohbeti Temizle
+- HIZLI dropdown fix
+- Mobil responsive layout fix
+- Port 3000 health diagnostics
+- İlk Açılış Rehberi / readiness paneli
 
-### Kalan v1.4.0 Adaylari
-- Ilk acilis/onboarding rehberinin ileride modal veya ilk calistirma tercihiyle genisletilmesi.
-- Model path wizard icin daha rehberli kurulum ve hata cozum adimlari.
-- Hafiza duzenleme ve export/import akisi.
-- Proje presetleri.
-- SDXL prompt presetleri.
+### v1.4.0'dan Sonra Kalan Adaylar
+- Model path wizard adım adım sorun giderme
+- Hafıza düzenleme / export-import
+- Proje presetleri
+- SDXL prompt presetleri
+- Daha gelişmiş onboarding modalı
+- Otomatik updater, code signing sonrası ileride değerlendirilecek
+
+### Non-Goals (Kesinlikle Yapılmayacaklar)
+- Shell execution yok.
+- Dosya silme/taşıma/yazma tool’u yok.
+- Model dosyaları release içine gömülmez.
+- Fine-tuning bu sürümde yok.
 
 ## 6. v1.4.0 Port 3000 Tanilama ve Uyari Akisi
 

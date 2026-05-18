@@ -7,15 +7,15 @@ Bu doküman, **Aillame Local AI Foundation** projesinin sürüm kontrolü (versi
 ## 🔢 1. Semantic Versioning (SemVer) Yaklaşımı
 Aillame, standard `MAJOR.MINOR.PATCH` formatına dayalı SemVer şemasını uygular:
 
-1.  **PATCH (Yama) Sürümleri (Örn: `1.3.0` ➔ `1.3.1`):**
+1.  **PATCH (Yama) Sürümleri (Örn: `1.4.0` ➔ `1.4.1`):**
     *   Sadece geriye dönük uyumlu hata düzeltmeleri (bug fixes).
     *   Hafıza veya tool-use servislerindeki küçük optimizasyonlar.
     *   Güvenlik kalkanı (Safety Shield) kelime listesi güncellemeleri.
-2.  **MINOR (İkincil) Sürümleri (Örn: `1.3.0` ➔ `1.4.0`):**
+2.  **MINOR (İkincil) Sürümleri (Örn: `1.4.0` ➔ `1.5.0`):**
     *   Geriye dönük uyumlu yeni özelliklerin eklenmesi.
     *   Yeni bir yerel AI aracının (safe tool-use) sisteme dahil edilmesi.
     *   Arayüze yeni bir tanı/diagnostic panelinin eklenmesi.
-3.  **MAJOR (Birincil) Sürümleri (Örn: `1.3.0` ➔ `2.0.0`):**
+3.  **MAJOR (Birincil) Sürümleri (Örn: `1.4.0` ➔ `2.0.0`):**
     *   Geriye dönük uyumsuz (breaking) mimari değişiklikler.
     *   Merkezi bilişsel yönlendiricinin veya sidecar NAPI-RS katmanının kökten değiştirilmesi.
 

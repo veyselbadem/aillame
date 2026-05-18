@@ -139,8 +139,8 @@ Aillame masaüstü uygulamasının yerel ve güvenli AI motoru kararlı genel s�
 Aillame masaüstü uygulamasının Tauri v2 production derleme ve paketleme (packaging) denetimi başarıyla tamamlanmış ve kararlı installer paketleri üretilmiştir:
 
 ### A) Paketleme Sonuçları (Release Artifacts)
-*   **MSI Installer:** `src-tauri\target\release\bundle\msi\Aillame_1.3.0_x64_en-US.msi` (~4.2 MB)
-*   **NSIS Setup EXE:** `src-tauri\target\release\bundle\nsis\Aillame_1.3.0_x64-setup.exe` (~2.7 MB)
+*   **MSI Installer:** `src-tauri\target\release\bundle\msi\Aillame_1.4.0_x64_en-US.msi` (~4.2 MB)
+*   **NSIS Setup EXE:** `src-tauri\target\release\bundle\nsis\Aillame_1.4.0_x64-setup.exe` (~2.7 MB)
 *   **Hafiflik Kriteri:** Büyük model dosyaları (GGUF, mmproj, safetensors) bundle içine gömülmeyip dış local path'lerden (`C:\Aillame\Models\...`) yüklendiği için installer boyutları son derece hafiftir.
 
 ### B) Desktop Derleme Adımları
@@ -161,7 +161,7 @@ npx tauri build
 2.  Geliştirme portu çakışırsa `npm run ensure-desktop-dev-free.mjs` ve `npm run ensure-dev-port-free.mjs` scriptlerini çalıştırın.
 
 ### E) Canlı Kurulum ve Kaldırma Doğrulaması (E2E Verification)
-*   **Sessiz Kurulum (Silent Install):** `Aillame_1.3.0_x64-setup.exe /S` komutuyla sorunsuz kurulmuş ve `C:\Users\<username>\AppData\Local\Aillame\aillame.exe` dizini ile masaüstü kısayolu oluşturulmuştur.
+*   **Sessiz Kurulum (Silent Install):** `Aillame_1.4.0_x64-setup.exe /S` komutuyla sorunsuz kurulmuş ve `C:\Users\<username>\AppData\Local\Aillame\aillame.exe` dizini ile masaüstü kısayolu oluşturulmuştur.
 *   **İlk Açılış Doğrulaması:** `aillame.exe` süreci başlatılmış ve arka planda dynamic library link hatası vermeden kararlı şekilde çalıştığı doğrulanmıştır.
 *   **Sessiz Kaldırma (Silent Uninstall):** `uninstall.exe /S` komutuyla kısayollar dahil tüm binary dosyalar silinmiştir.
 *   **Veri Koruma Güvencesi:** Kaldırma sonrasında yerel `.aillame-data` verileri ve `C:\Aillame\Models` altındaki büyük modeller tamamen korunmuştur.
@@ -169,4 +169,4 @@ npx tauri build
 ---
 
 ## Sürüm Notu ve Gelecek Sürüm Yol Haritası
-*   Sonraki sürüm planları, hotfix politikaları ve minor `v1.4.0` aday özellikleri için lütfen [ROADMAP.md](file:///c:/Users/veyse/OneDrive/Desktop/çalışmalar/aillame/docs/ROADMAP.md) dosyasına bakınız.
+*   Sonraki sürüm planları, hotfix politikaları ve minor `v1.5.0` aday özellikleri için lütfen [ROADMAP.md](file:///c:/Users/veyse/OneDrive/Desktop/çalışmalar/aillame/docs/ROADMAP.md) dosyasına bakınız.

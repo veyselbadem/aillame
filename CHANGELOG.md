@@ -4,54 +4,56 @@ Tüm önemli değişiklikler bu dosyada belgelenecektir. Bu projenin sürüm şe
 
 ---
 
-## Unreleased - v1.4.0-dev
+## v1.4.0 - Local AI Usability Update
 
-v1.4.0-dev hatti, v1.3.0 stabil release tag'ini degistirmeden model yolu dogrulama, guvenli sohbet temizleme ve ana sohbet ekranindaki mobil/dropdown UX duzeltmelerini toplar.
+v1.4.0 sürümü, yerel yapay zeka deneyimini iyileştiren model yolu doğrulama, güvenli sohbet temizleme ve ana sohbet ekranındaki mobil/dropdown UX düzeltmelerini içerir.
 
 ### Added
-*   **Model Yolu Dogrulama Endpoint'i:** `/api/aillame/models/path-health` aktif yerel model yollarini read-only olarak denetler.
-*   **Settings Model Yolu Dogrulama Paneli:** Qwen3-VL 4B, SDXL Turbo, Aillame Nano ve Tiny SD legacy durumlarini kullaniciya ozetler.
-*   **models.pathHealth Tool'u:** Nano safe tool-use hatti uzerinden model yolu saglik bilgisini guvenli sekilde raporlar.
-*   **Destek Ozeti Kopyala:** Model yolu durumunu paylasilabilir, secret ve kisisel path icermeyen bir destek metnine donusturur.
-*   **Sohbeti Temizle:** Aktif sohbet ekranindaki mesajlari, taslagi ve aktif gorsel eki temizleyen UI aksiyonu geri getirildi.
-*   **Port 3000 Health Diagnostics:** `/api/aillame/runtime/port-health` yerel sunucu portunu read-only olarak kontrol eder ve Aillame'in kendi runtime'ini false conflict saymaz.
-*   **Ilk Acilis Rehberi / İlk Açılış Rehberi:** Ayarlar ekraninda model dosyalari, Port 3000, yerel veri ve guvenlik durumunu read-only olarak ozetleyen onboarding/readiness paneli eklendi.
+*   **Model Yolu Doğrulama endpoint’i.**
+*   **Settings içinde Model Yolu Doğrulama paneli.**
+*   **`models.pathHealth` güvenli read-only tool’u.**
+*   **Destek Özeti Kopyala butonu.**
+*   **Sohbeti Temizle butonu.**
+*   **Port 3000 health diagnostics.**
+*   **Settings içinde İlk Açılış Rehberi / readiness paneli.**
 
 ### Fixed
-*   **HIZLI Dropdown Layering:** Hiz secici menunun shortcut ikon kartlarinin arkasinda kalmasi giderildi.
-*   **Dropdown Tiklanabilirligi:** Dropdown acikken secenek tiklamalarinin alttaki ikon/kart tarafindan yakalanmasi engellendi.
-*   **390px Mobil Layout:** Dar mobil ekranda composer, sidebar, hiz selector ve shortcut kartlari viewport disina tasmayacak sekilde duzeltildi.
-*   **Safety False Positive:** `model` kelimesindeki `del` alt dizesinin yanlis silme alarmi uretmesi duzeltildi.
+*   **HIZLI dropdown’ın shortcut ikonlarının arkasında kalması.**
+*   **Dropdown seçeneklerinin tıklanamaması.**
+*   **390px mobil görünümde composer/sidebar taşması.**
+*   **`model` kelimesindeki `del` alt dizisinin güvenlik kalkanında yanlış tetiklenmesi.**
 
 ### Changed
-*   **Tiny SD Legacy Durumu:** Tiny SD artik kaldirilmis legacy/opsiyonel model olarak net gosterilir; eksikligi hata sayilmaz.
-*   **Mobil Sidebar Varsayilani:** Dar ekranlarda sidebar baslangicta kapali gelir.
-*   **Shortcut Mobil Grid:** Shortcut ikonlari mobilde iki sutun grid olarak sarilir.
-*   **Okunabilir Dosya Boyutlari:** Model yolu saglik panelinde dosya boyutlari GB/MB formatinda gosterilir.
-*   **Readiness UX:** Port durumu karti, model yolu karti, yerel veri notu ve guvenlik notu tek rehber alaninda toplandi.
+*   **Tiny SD artık kaldırılmış legacy model olarak gösteriliyor.**
+*   **Tiny SD eksikliği hata sayılmıyor.**
+*   **Mobilde sidebar başlangıçta kapalı geliyor.**
+*   **Shortcut kartları mobilde 2 sütun grid’e geçiyor.**
+*   **Model dosya boyutları okunabilir GB/MB formatında gösteriliyor.**
+*   **`ensure-dev-port-free` artık otomatik process öldürmüyor; sadece raporluyor.**
 
 ### Security
-*   **Read-only Model Health:** Model silme, indirme, duzenleme veya geri yukleme istekleri engellenir.
-*   **Gizli Veri Koruma:** Destek ozeti token, `.env`, sifre, private key veya `C:\Users\...` gibi kisisel kullanici yolu icermez.
-*   **Safe Chat Clearing:** Sohbeti Temizle hafiza, proje baglami, distillation dataset, registry veya yerel dosyalari silmez.
-*   **Read-only Onboarding:** Ilk Acilis Rehberi dosya indirmez, silmez, process kapatmaz, shell/PowerShell/CMD calistirma yetkisi eklemez.
+*   **Model silme/indirme/geri yükleme istekleri engelleniyor.**
+*   **Destek özeti token/env/şifre ve kişisel `C:\Users\...` yolu içermiyor.**
+*   **Sohbeti Temizle hafıza/proje/dataset/registry/model dosyalarını silmiyor.**
+*   **Port health process öldürmüyor, shell yetkisi eklemiyor.**
 
 ### Tests
-*   `npm run typecheck` gecti.
-*   `npm run build` gecti.
-*   `npx tsx scripts/smoke-phase22-model-path-health-validation.ts` 25/25 gecti.
-*   `npx tsx scripts/smoke-phase24-port-health-validation.ts` 9/9 gecti.
-*   `npx tsx scripts/smoke-phase25-onboarding-readiness-validation.ts` onboarding/readiness kaynaklarini ve UI metinlerini dogrular.
-*   `npx tsx scripts/smoke-phase7.1-all-validations.ts` 7/7 gecti.
-*   `npx tsx scripts/smoke-phase8.1-project-context-validation.ts` 11/11 gecti.
-*   `npx tsx scripts/smoke-phase9-distillation-dataset-validation.ts` 17/17 gecti.
-*   Acik/koyu tema dropdown testleri gecti.
-*   390px ve 768px responsive dropdown/layout testleri gecti.
+*   `npm run typecheck`
+*   `npm run build`
+*   `phase22 25/25`
+*   `phase24 9/9`
+*   `phase25 18/18`
+*   `phase7.1 7/7`
+*   `phase8.1 11/11`
+*   `phase9 17/17`
+*   Açık/koyu tema dropdown testleri
+*   390px / 768px responsive kontroller
 
 ### Known Notes
-*   SDXL Turbo klasor boyutu metadata uzerinden hesaplanir; cok buyuk klasorlerde kisa gecikme olabilir.
-*   Clipboard fallback kodu mevcuttur; otomasyon ortaminda fallback her zaman tetiklenmeyebilir.
-*   Tiny SD eksikligi hata degildir; legacy/opsiyonel model olarak raporlanir.
+*   SDXL Turbo klasör boyutu metadata üzerinden hesaplanıyor; büyük klasörde kısa gecikme olabilir.
+*   Çok dar cihazlarda sidebar mobil davranışı bilinçli olarak kapalı başlangıç kullanır.
+*   Tiny SD eksikliği hata değildir.
+*   Port 3000 çakışmasında Aillame process öldürmez; kullanıcıya manuel çözüm önerir.
 
 ---
 
