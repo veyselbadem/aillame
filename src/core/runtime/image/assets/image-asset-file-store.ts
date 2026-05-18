@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import { resolveProjectRelative } from '@/core/project-root';
+import { resolveProjectRelative } from '../../../project-root';
 import { ImageAssetRecord, ImageAssetQuery } from './image-asset-types';
 
 export class ImageAssetFileStore {

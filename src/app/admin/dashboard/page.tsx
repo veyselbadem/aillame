@@ -61,25 +61,25 @@ interface LiveStatus {
 const QUICK_LINKS = [
   { href: '/admin/model-library',       label: 'Modeller',           icon: FiPackage,   color: 'text-violet-400 bg-violet-500/10 border-violet-500/15' },
   { href: '/admin/image-assets',        label: 'Görseller',          icon: FiImage,     color: 'text-pink-400 bg-pink-500/10 border-pink-500/15' },
-  { href: '/admin/agent-tasks',         label: 'Code Agent',         icon: FiClipboard, color: 'text-blue-400 bg-blue-500/10 border-blue-500/15' },
-  { href: '/admin/ai-lab',              label: 'Compatibility Lab',     icon: FiCpu,       color: 'text-indigo-400 bg-indigo-500/10 border-indigo-500/15' },
+  { href: '/admin/agent-tasks',         label: 'Kod Ajanı',          icon: FiClipboard, color: 'text-blue-400 bg-blue-500/10 border-blue-500/15' },
+  { href: '/admin/ai-lab',              label: 'Nano Lab',              icon: FiCpu,       color: 'text-indigo-400 bg-indigo-500/10 border-indigo-500/15' },
   { href: '/admin/documents',           label: 'Belgeler / RAG',     icon: FiBook,      color: 'text-cyan-400 bg-cyan-500/10 border-cyan-500/15' },
-  { href: '/admin/api-clients',         label: 'Provider API',       icon: FiKey,       color: 'text-indigo-400 bg-indigo-500/10 border-indigo-500/15' },
+  { href: '/admin/api-clients',         label: 'Sağlayıcı API',      icon: FiKey,       color: 'text-indigo-400 bg-indigo-500/10 border-indigo-500/15' },
   { href: '/admin/memory-cards',        label: 'Hafıza Kartları',    icon: FiDatabase,  color: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/15' },
 ] as const;
 
 const FOUNDATION_STATUS = [
-  { label: 'Local Text Runtime', desc: 'GGUF/text runtime ve registry diagnostic yüzeyi hazır.', variant: 'active' as const, status: 'ready' },
-  { label: 'Runtime Router', desc: 'OpenAI-compatible routing foundation.', variant: 'active' as const, status: 'ready' },
-  { label: 'Model Registry', desc: 'Tip güvenli model arama.', variant: 'active' as const, status: 'ready' },
-  { label: 'Project Memory', desc: 'Global, project ve session scope izolasyonu.', variant: 'active' as const, status: 'ready' },
-  { label: 'External Provider API', desc: 'Dış uygulamalar için güvenli API yüzeyi.', variant: 'active' as const, status: 'ready' },
-  { label: 'Code Agent', desc: 'Plan-only ve approval-gated foundation.', variant: 'active' as const, status: 'ready' },
-  { label: 'Image Workflow', desc: 'Job queue ve node validator hazır; runtime model yok.', variant: 'disabled' as const, status: 'not-configured' },
-  { label: 'Vector Memory / RAG', desc: 'Document ingestion ve bellek entegrasyonu.', variant: 'active' as const, status: 'ready' },
-  { label: 'Nano Diagnostics', desc: 'Advisory decisions ve hooks (otonom kapalı).', variant: 'protected' as const, status: 'ready' },
-  { label: 'Security / Permissions', desc: 'API key, permission scopes.', variant: 'active' as const, status: 'ready' },
-  { label: 'Legacy Services', desc: 'Eski sağlayıcılar devre dışı (AILLAME_ENABLE_LEGACY_PROVIDERS).', variant: 'disabled' as const, status: 'disabled' },
+  { label: 'Yerel Metin Runtime', desc: 'GGUF/metin runtime ve kayıt tanılama yüzeyi hazır.', variant: 'active' as const, status: 'ready' },
+  { label: 'Runtime Yönlendirici', desc: 'OpenAI uyumlu yönlendirme temeli.', variant: 'active' as const, status: 'ready' },
+  { label: 'Model Kaydı', desc: 'Tip güvenli model arama.', variant: 'active' as const, status: 'ready' },
+  { label: 'Proje Belleği', desc: 'Global, proje ve oturum kapsamı izolasyonu.', variant: 'active' as const, status: 'ready' },
+  { label: 'Harici Sağlayıcı API', desc: 'Dış uygulamalar için güvenli API yüzeyi.', variant: 'active' as const, status: 'ready' },
+  { label: 'Kod Ajanı', desc: 'Plan odaklı ve onay kapılı temel.', variant: 'active' as const, status: 'ready' },
+  { label: 'Görsel İş Akışı', desc: 'İş kuyruğu ve düğüm doğrulayıcı hazır; runtime modeli yok.', variant: 'disabled' as const, status: 'not-configured' },
+  { label: 'Vektör Belleği / RAG', desc: 'Belge içe aktarma ve bellek entegrasyonu.', variant: 'active' as const, status: 'ready' },
+  { label: 'Nano Tanılama', desc: 'Danışman kararlar ve kancalar (otonom kapalı).', variant: 'protected' as const, status: 'ready' },
+  { label: 'Güvenlik / İzinler', desc: 'API anahtarı ve izin kapsamları.', variant: 'active' as const, status: 'ready' },
+  { label: 'Eski Servisler', desc: 'Eski sağlayıcılar devre dışı (AILLAME_ENABLE_LEGACY_PROVIDERS).', variant: 'disabled' as const, status: 'disabled' },
 ];
 
 export default function AdminDashboard() {
@@ -150,17 +150,17 @@ export default function AdminDashboard() {
     
     let liveStatus: string | undefined;
     switch (label) {
-      case 'Local Text Runtime': liveStatus = systemHealth.llm?.status; break;
-      case 'Model Registry': liveStatus = systemHealth.llm?.details?.runtime ? 'ready' : 'not-configured'; break;
-      case 'Project Memory': liveStatus = systemHealth.memory?.status; break;
-      case 'External Provider API': liveStatus = systemHealth.providerApi?.status; break;
-      case 'Code Agent': liveStatus = systemHealth.agent?.status; break;
-      case 'Image Workflow': liveStatus = systemHealth.igm?.status; break;
-      case 'Vector Memory / RAG': liveStatus = systemHealth.storage?.status; break;
-      case 'Nano Diagnostics': liveStatus = systemHealth.llm?.details?.nanoAvailable ? 'ready' : 'failed'; break;
-      case 'Security / Permissions': liveStatus = 'ready'; break;
-      case 'Desktop Readiness': liveStatus = systemHealth.storage?.status; break;
-      case 'Legacy Services': liveStatus = 'disabled'; break;
+      case 'Yerel Metin Runtime': liveStatus = systemHealth.llm?.status; break;
+      case 'Model Kaydı': liveStatus = systemHealth.llm?.details?.runtime ? 'ready' : 'not-configured'; break;
+      case 'Proje Belleği': liveStatus = systemHealth.memory?.status; break;
+      case 'Harici Sağlayıcı API': liveStatus = systemHealth.providerApi?.status; break;
+      case 'Kod Ajanı': liveStatus = systemHealth.agent?.status; break;
+      case 'Görsel İş Akışı': liveStatus = systemHealth.igm?.status; break;
+      case 'Vektör Belleği / RAG': liveStatus = systemHealth.storage?.status; break;
+      case 'Nano Tanılama': liveStatus = systemHealth.llm?.details?.nanoAvailable ? 'ready' : 'failed'; break;
+      case 'Güvenlik / İzinler': liveStatus = 'ready'; break;
+      case 'Masaüstü Hazırlığı': liveStatus = systemHealth.storage?.status; break;
+      case 'Eski Servisler': liveStatus = 'disabled'; break;
     }
 
     if (!liveStatus) return { status: defaultStatus, variant: defaultVariant, isLive: false };
@@ -229,25 +229,25 @@ export default function AdminDashboard() {
         <section className="mb-10 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <RuntimeStatusCard 
             title="Metin Üretimi (Text)" 
-            status={getLiveStatus('Local Text Runtime', 'Hazır', 'active')} 
+            status={getLiveStatus('Yerel Metin Runtime', 'Hazır', 'active')} 
             icon={<FiMessageCircle />}
             desc="GGUF / Llama-server altyapısı"
           />
           <RuntimeStatusCard 
             title="Görsel Üretimi (Image)" 
-            status={getLiveStatus('Image Workflow', 'Yapılandırılmadı', 'disabled')} 
+            status={getLiveStatus('Görsel İş Akışı', 'Yapılandırılmadı', 'disabled')} 
             icon={<FiImage />}
             desc="SDXL / Diffusers iş akışı"
           />
           <RuntimeStatusCard 
-            title="Code Agent" 
-            status={getLiveStatus('Code Agent', 'Hazır', 'active')} 
+            title="Kod Ajanı" 
+            status={getLiveStatus('Kod Ajanı', 'Hazır', 'active')} 
             icon={<FiClipboard />}
             desc="Plan-only foundation"
           />
           <RuntimeStatusCard 
             title="Bilgi / RAG" 
-            status={getLiveStatus('Vector Memory / RAG', 'Hazır', 'active')} 
+            status={getLiveStatus('Vektör Belleği / RAG', 'Hazır', 'active')} 
             icon={<FiDatabase />}
             desc="Yerel bellek izolasyonu"
           />
@@ -296,7 +296,7 @@ export default function AdminDashboard() {
 
             {/* Beta Readiness Checklist - Required for smoke tests */}
             <section className="p-8 rounded-[32px] bg-indigo-500/5 border border-indigo-500/10">
-              <h2 className="text-[10px] font-black uppercase tracking-[0.3em] theme-muted mb-6">Beta Checklist</h2>
+              <h2 className="text-[10px] font-black uppercase tracking-[0.3em] theme-muted mb-6">Beta Kontrol Listesi</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-4">
                   <ChecklistItem label="Yerel GGUF Runtime Doğrulandı" checked />
@@ -331,7 +331,7 @@ export default function AdminDashboard() {
               </h2>
               <div className="grid gap-2">
                 <StatusRow label="Metin Motoru (Text)" value="verified" ok />
-                <StatusRow label="IGM Worker" value={getLiveStatus('Image Workflow', 'pending', 'pending').status} ok={getLiveStatus('Image Workflow', 'pending', 'pending').status === 'ready'} />
+                <StatusRow label="IGM Worker" value={getLiveStatus('Görsel İş Akışı', 'pending', 'pending').status} ok={getLiveStatus('Görsel İş Akışı', 'pending', 'pending').status === 'ready'} />
                 <StatusRow label="Agent Planı" value="hazır" ok />
                 <StatusRow label="RAG Pipeline" value="aktif" ok />
               </div>

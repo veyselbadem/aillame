@@ -39,14 +39,15 @@ export class IGMRuntimeReadiness {
     const enabled = process.env.AILLAME_IGM_RUNTIME_ENABLED === 'true';
     const modelDir = process.env.AILLAME_IGM_MODEL_DIR;
     const activeModel = process.env.AILLAME_IGM_ACTIVE_MODEL;
+    const visionModelPath = process.env.AILLAME_VISION_MODEL_PATH;
     const outputDir = process.env.AILLAME_IGM_OUTPUT_DIR 
         ? resolveProjectRelative(process.env.AILLAME_IGM_OUTPUT_DIR)
         : resolveProjectRelative('.aillame-data/assets/images');
     const device = (process.env.AILLAME_IGM_DEVICE as any) || 'auto';
 
     if (!enabled) missingConfig.push('AILLAME_IGM_RUNTIME_ENABLED is false');
-    if (!modelDir) missingConfig.push('AILLAME_IGM_MODEL_DIR is not set');
-    if (!activeModel) missingConfig.push('AILLAME_IGM_ACTIVE_MODEL is not set');
+    if (!modelDir && !visionModelPath) missingConfig.push('AILLAME_IGM_MODEL_DIR or AILLAME_VISION_MODEL_PATH is not set');
+    if (!activeModel && !visionModelPath) missingConfig.push('AILLAME_IGM_ACTIVE_MODEL is not set');
 
     const modelDirExists = Boolean(modelDir && fs.existsSync(modelDir));
     if (modelDir && !modelDirExists) {
@@ -54,14 +55,22 @@ export class IGMRuntimeReadiness {
     }
 
     let activeModelExists = false;
-    if (modelDir && activeModel && modelDirExists) {
+    let resolvedActiveModelPath = '';
+    
+    if (visionModelPath && fs.existsSync(visionModelPath)) {
+      activeModelExists = true;
+      resolvedActiveModelPath = visionModelPath;
+    } else if (modelDir && activeModel && modelDirExists) {
       const activeModelPath = path.isAbsolute(activeModel)
         ? activeModel
         : path.join(modelDir, activeModel);
       activeModelExists = fs.existsSync(activeModelPath);
+      resolvedActiveModelPath = activeModelExists ? activeModelPath : '';
       if (!activeModelExists) {
         missingFiles.push('AILLAME_IGM_ACTIVE_MODEL file was not found in the configured model directory');
       }
+    } else if (visionModelPath && !fs.existsSync(visionModelPath)) {
+      missingFiles.push('AILLAME_VISION_MODEL_PATH file was not found');
     }
 
     let outputDirWritable = false;

@@ -1,5 +1,6 @@
 import { createHash } from 'crypto';
 import { NextRequest, NextResponse } from 'next/server';
+import { VlmInferenceAdapter } from '@core/nano/vision/vlm-inference-adapter';
 import { validateExternalApiKey } from '@core/external-api/auth';
 import { validateExternalAillameRequest } from '@core/external-api/validation';
 import { getExternalProjectConfig } from '@core/external-api/project-config';
@@ -419,7 +420,7 @@ export async function POST(req: NextRequest) {
       return createErrorResponse(message, status);
     }
 
-    let payload: unknown;
+    let payload: any;
     try {
       payload = await req.json();
     } catch {
@@ -435,6 +436,44 @@ export async function POST(req: NextRequest) {
         durationMs: Date.now() - startTime,
       });
       return createErrorResponse('Invalid JSON payload.', 400);
+    }
+
+    if (payload && payload.multimodal && payload.imageBase64) {
+      const prompt = payload.message || "Bu görseli kısaca açıkla.";
+      try {
+        const result = await VlmInferenceAdapter.analyzeImage({
+          modelId: payload.modelId || 'qwen3-vl-4b-instruct-q4-k-m',
+          image: payload.imageBase64,
+          prompt,
+          maxTokens: 256
+        });
+
+        const durationMs = Date.now() - startTime;
+        
+        if (!result.success) {
+          return NextResponse.json({
+            success: false,
+            answer: "Görsel işlenirken bir hata oluştu: " + (result.message || "Bilinmeyen hata"),
+            model: "qwen3-vl-4b-instruct-q4-k-m",
+            meta: { durationMs }
+          });
+        }
+
+        return NextResponse.json({
+          success: true,
+          answer: result.text,
+          model: "qwen3-vl-4b-instruct-q4-k-m",
+          meta: { durationMs },
+          executionMode: "vision_inference"
+        });
+      } catch (error: any) {
+         return NextResponse.json({
+            success: false,
+            answer: "Beklenmeyen bir hata oluştu: " + error.message,
+            model: "qwen3-vl-4b-instruct-q4-k-m",
+            meta: { durationMs: Date.now() - startTime }
+         });
+      }
     }
 
     const metadata = getRequestMetadata(payload);

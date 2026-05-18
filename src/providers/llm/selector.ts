@@ -1,4 +1,4 @@
-import { AillameLocalProvider } from './aillame-provider';
+import { NativeLocalProvider } from './native-local';
 import { ProLocalProvider } from './pro-provider';
 import { GemmaProvider } from './gemma-provider';
 import { RemoteApiLLMProvider } from './remote-api';
@@ -7,7 +7,7 @@ import { LOCAL_FIRST_DISABLED_MESSAGE, isLegacyProvidersEnabled } from '@core/fe
 
 export type LLMProviderType = 'local' | 'cloud' | 'hybrid';
 
-const localProvider = new AillameLocalProvider();
+const localProvider = new NativeLocalProvider();
 const proProvider = new ProLocalProvider();
 const gemmaProvider = new GemmaProvider();
 const remoteProvider = new RemoteApiLLMProvider();
@@ -33,7 +33,7 @@ function createDisabledProvider(type: Exclude<LLMProviderType, 'local'>): LLMPro
 
 export function getLLMProvider(type: LLMProviderType): LLMProvider {
   if (type === 'local') return localProvider;
-  if (!isLegacyProvidersEnabled()) return createDisabledProvider(type);
+  if (!isLegacyProvidersEnabled()) return createDisabledProvider(type === 'hybrid' ? 'hybrid' : 'cloud');
   if (type === 'cloud') return remoteProvider;
   // hybrid: önce local uygunsa local, değilse cloud
   return {

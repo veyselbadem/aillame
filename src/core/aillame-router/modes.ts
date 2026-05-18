@@ -59,6 +59,10 @@ export const AILLAME_MODES: readonly AillameModeDefinition[] = [
       'terminal',
       'build',
       'refactor',
+      'script',
+      'scripting',
+      'kodla',
+      'collision',
     ],
   },
   {

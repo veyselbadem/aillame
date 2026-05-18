@@ -58,6 +58,7 @@ check("Desktop Readiness API route exists", () => {
   if (!fs.existsSync(apiRoutePath)) return "Desktop Readiness API missing";
   const content = fs.readFileSync(apiRoutePath, 'utf8');
   if (!content.includes('RuntimeAcceptanceService.getReport()')) return "Missing acceptance report call";
+  if (!content.includes('checkLocalPort')) return "Missing port health diagnostic call";
   return true;
 });
 
@@ -66,6 +67,7 @@ check("Admin UI has Desktop Readiness visibility", () => {
   if (!fs.existsSync(uiPath)) return "Desktop Readiness UI page missing";
   const content = fs.readFileSync(uiPath, 'utf8');
   if (!content.includes('Desktop Readiness')) return "Missing title";
+  if (!content.includes('Port Durumu')) return "Missing port status card";
   return true;
 });
 

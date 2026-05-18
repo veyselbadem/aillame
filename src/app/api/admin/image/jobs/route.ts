@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+export const dynamic = 'force-dynamic';
 import { imageJobStore } from '@/core/runtime/image/jobs/image-job-file-store';
 import { imageGenerationService } from '@/core/runtime/image/image-generation-service';
 import { createAdminAuthErrorResponse, validateAdminRequest } from '@core/admin-auth/auth';
@@ -29,5 +30,43 @@ export async function POST(request: NextRequest) {
     }
   } catch (error: any) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+  }
+}
+
+export async function DELETE(request: NextRequest) {
+  if (!validateAdminRequest(request)) return createAdminAuthErrorResponse();
+  const { searchParams } = new URL(request.url);
+  const jobId = searchParams.get('jobId');
+
+  if (!jobId) {
+    return NextResponse.json(
+      { ok: false, success: false, error: 'jobId zorunludur' },
+      { status: 400 }
+    );
+  }
+
+  try {
+    // Artık çalışan işlerin de silinmesine izin veriyoruz (takılmaları temizlemek için)
+    const deleted = await imageJobStore.deleteJob(jobId);
+
+    if (!deleted) {
+      // Job zaten yoksa hayalet kayıt — başarılı say, frontend temizleyecek
+      console.warn(`[JobDelete] Job bulunamadı: ${jobId} — hayalet kayıt, yoksayılıyor.`);
+      return NextResponse.json({
+        ok: true,
+        success: true,
+        deleted: false,
+        reason: 'Job store\'da bulunamadı. Muhtemelen daha önce silinmiş.',
+        jobId,
+      });
+    }
+
+    return NextResponse.json({ ok: true, success: true, deleted: true, jobId });
+  } catch (error: any) {
+    console.error('[JobDelete] Silme hatası:', error);
+    return NextResponse.json(
+      { ok: false, success: false, error: 'İş kaydı silinirken hata oluştu' },
+      { status: 500 }
+    );
   }
 }

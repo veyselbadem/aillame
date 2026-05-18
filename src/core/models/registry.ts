@@ -19,7 +19,9 @@ import type { AillameTier, ModelRuntime, ModelCapability, ManagedModel } from '.
 
 // ---- Model ID constants ----------------------------------------
 export const NANO_CHAT_MODEL_ID = 'aillame-nano-v1';
-export const PRO_CHAT_MODEL_ID = 'qwen3-vl-8b-instruct';
+export const QWEN3_VL_4B_LOCAL_MODEL_ID = 'qwen3-vl-4b-instruct-q4-k-m';
+export const QWEN3_VL_8B_LEGACY_MODEL_ID = 'qwen3-vl-8b-instruct';
+export const PRO_CHAT_MODEL_ID = QWEN3_VL_4B_LOCAL_MODEL_ID;
 export const PRO_IMAGE_MODEL_ID = 'sdxl-base-1.0';
 export const SDXL_TURBO_MODEL_ID = 'sdxl-turbo-1.0';
 export const INTERNAL_TEXT_GGUF_MODEL_ID = 'internal-text-gemma-gguf';
@@ -50,8 +52,41 @@ export const MODEL_REGISTRY: Record<string, ManagedModel> = {
     recommendedRamGb: 1,
     recommendedVramGb: 0,
   },
-  [PRO_CHAT_MODEL_ID]: {
-    id: PRO_CHAT_MODEL_ID,
+  [QWEN3_VL_4B_LOCAL_MODEL_ID]: {
+    id: QWEN3_VL_4B_LOCAL_MODEL_ID,
+    displayName: 'Qwen3-VL 4B Nano Vision',
+    label: 'Qwen3-VL 4B Nano Vision',
+    shortLabel: 'Qwen3-VL 4B',
+    tier: 'nano',
+    purpose: 'chat',
+    type: 'multimodal',
+    family: 'qwen',
+    runtime: 'aillame-gguf',
+    sizeLabel: 'GGUF Q4_K_M + mmproj',
+    licenseLabel: 'Apache-2.0',
+    capabilities: [
+      'text-generation',
+      'chat',
+      'vision',
+      'multimodal',
+      'vision-image-understanding',
+      'multimodal-input',
+      'analysis',
+    ],
+    description: 'Yerel çalışan görsel anlama ve multimodal analiz modeli. Görselleri inceleme, belge/görsel yorumlama ve vision tabanlı testlerde kullanılır.',
+    installHint: 'Registered local GGUF model at C:\\Aillame\\Models\\nano\\qwen3-vl-4b with model.gguf and mmproj.gguf.',
+    quantization: 'Q4_K_M',
+    parameterSize: '4B',
+    contextSize: 8192,
+    recommendedRamGb: 8,
+    recommendedVramGb: 0,
+    enabled: true,
+    experimental: false,
+    defaultForModes: ['vision', 'multimodal'],
+    tags: ['Yerel', 'Multimodal', 'Vision', 'GGUF', 'Nano'],
+  },
+  [QWEN3_VL_8B_LEGACY_MODEL_ID]: {
+    id: QWEN3_VL_8B_LEGACY_MODEL_ID,
     displayName: 'Qwen3-VL 8B Instruct',
     label: 'Qwen3-VL 8B Instruct',
     shortLabel: 'Qwen3-VL 8B',
@@ -142,8 +177,8 @@ export const MODEL_REGISTRY: Record<string, ManagedModel> = {
     sizeLabel: 'GGUF Q4_K_M',
     licenseLabel: 'Gemma Terms',
     capabilities: ['text-generation', 'chat', 'instruct'],
-    description: 'Unified internal text runtime default - served via llama-server GGUF path.',
-    installHint: 'Set AILLAME_INTERNAL_TEXT_MODEL_PATH to the GGUF file and enable internal text runtime.',
+    description: 'Optional internal text runtime profile. Hidden until a GGUF path is configured again.',
+    installHint: 'Set AILLAME_INTERNAL_TEXT_MODEL_PATH to an installed GGUF file before enabling this profile.',
     internalTextProvider: 'gguf',
     modelPathEnv: 'AILLAME_INTERNAL_TEXT_MODEL_PATH',
     localPathEnv: 'AILLAME_INTERNAL_TEXT_MODEL_PATH',
@@ -152,7 +187,7 @@ export const MODEL_REGISTRY: Record<string, ManagedModel> = {
     contextSize: 8192,
     recommendedRamGb: 8,
     recommendedVramGb: 0,
-    enabled: true,
+    enabled: false,
     experimental: false,
     defaultForModes: ['general', 'code'],
   },
@@ -168,12 +203,12 @@ export const MODEL_REGISTRY: Record<string, ManagedModel> = {
     runtime: 'ollama',
     sizeLabel: 'Depends on pulled model',
     capabilities: ['text-generation', 'chat', 'instruct'],
-    description: 'Fallback text provider via local Ollama server.',
-    installHint: 'Install Ollama and run: ollama pull <model>',
+    description: 'Optional fallback text provider via a local Ollama server. Hidden when no Ollama service/model is available.',
+    installHint: 'Enable only after Ollama is installed, running, and has a pulled model.',
     externalModelId: 'gemma:2b',
     recommendedRamGb: 4,
     recommendedVramGb: 0,
-    enabled: true,
+    enabled: false,
     experimental: false,
     defaultForModes: ['fast-fallback'],
   },

@@ -13,6 +13,7 @@ import { listLocalModels, getDefaultModelPreferences } from '../model-library';
 import { isFallbackPolicyReady } from '../inference/fallback-policy';
 import { getRuntimeEventLogSummary } from './runtime-event-log';
 import { getAllowedGemmaModelRoots } from '../local-runtime/gemma-model-preflight';
+import { getQwenReadiness } from '../model-management/status';
 
 export type AiLabModelLibrarySummary = {
   totalModels: number;
@@ -560,7 +561,8 @@ export async function executeNextStep(id: string): Promise<LabMessage> {
       }
     } else if (currentParticipant === 'qwen') {
       outputType = 'text';
-      const isQwenConfigured = process.env.AILLAME_QWEN_ENABLED === 'true' && !!process.env.AILLAME_PYTHON;
+      const qwenReadiness = await getQwenReadiness();
+      const isQwenConfigured = qwenReadiness.isReady;
       if (isQwenConfigured && process.env.AILLAME_PRO_PROVIDER?.trim().toLowerCase() !== 'gemini') {
         const lastMsgs = session.messages.slice(-5).map(m => `${m.model}: ${m.content}`).join('\n');
         const qwenPrompt = `Sen AI Lab katılımcısısın. Konu: "${session.topic}".\n\nKonuşma kalite kuralları:\n${buildAnswerStyleGuide('ai_lab_analysis')}\n\nÖnceki tartışma:\n${lastMsgs}\n\nKonuyu teknik ve analitik açıdan değerlendir. 2-4 net maddeyle cevap ver.`;

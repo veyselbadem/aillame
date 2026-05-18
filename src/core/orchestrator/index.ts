@@ -18,6 +18,15 @@ export interface OrchestratorOptions {
   onToolCall?: (call: ToolCall) => void;
   onToolResult?: (result: ToolResult) => void;
   signal?: AbortSignal;
+  nanoProfile?: any; // Phase 19: Nano profile support
+}
+
+export function isNanoNoToolMode(tier: AillameTier): boolean {
+  return tier === 'nano';
+}
+
+export function shouldForwardProviderMessages(tier: AillameTier): boolean {
+  return tier !== 'nano';
 }
 
 /**
@@ -33,11 +42,12 @@ export async function orchestrateChat(
   const tier = options?.tier ?? 'nano';
   const attachments = options?.attachments ?? [];
   const signal = options?.signal;
+  const nanoNoToolMode = isNanoNoToolMode(tier);
 
   // ──────────────────────────────────────────
   // ADIM 1: Araç Tespiti & Çalıştırma
   // ──────────────────────────────────────────
-  const toolCalls = detectTools(input);
+  const toolCalls = nanoNoToolMode ? [] : detectTools(input);
   const toolOutputs: string[] = [];
 
   if (toolCalls.length > 0) {
@@ -87,7 +97,7 @@ export async function orchestrateChat(
   // ──────────────────────────────────────────
   // ADIM 2: Araştırma isteği varsa direkt döndür
   // ──────────────────────────────────────────
-  if (analyzed.type === 'research' || (toolCalls.length > 0 && toolOutputs.length > 0)) {
+  if (!nanoNoToolMode && (analyzed.type === 'research' || (toolCalls.length > 0 && toolOutputs.length > 0))) {
     if (toolOutputs.length > 0) {
       return toolOutputs.join('\n\n');
     }
@@ -121,15 +131,32 @@ export async function orchestrateChat(
     }
   }
 
-  const enrichedInput = toolOutputs.length > 0
+  let enrichedInput = toolOutputs.length > 0
     ? `${input}\n\n[Sistem Bağlamı]:\n${toolOutputs.join('\n')}`
     : analyzed.content;
 
+  // Phase 18: Nano özel planlama ve sistem promptu entegrasyonu
+  if (tier === 'nano') {
+    const { AillameNanoController } = await import('../nano/nano-controller');
+    const controller = new AillameNanoController();
+    const result = await controller.answer({ 
+      prompt: enrichedInput, 
+      images: attachments,
+      onToken: options?.onToken,
+      signal: signal,
+      profile: options?.nanoProfile 
+    });
+    return result.content;
+  }
+
+  const providerMessages = shouldForwardProviderMessages(tier) ? options?.messages : undefined;
+
   if ('generate' in provider) {
-    return provider.generate(enrichedInput, options?.onToken, signal, { 
+    const result = await provider.generate(enrichedInput, options?.onToken, signal, { 
         images: attachments,
-        messages: options?.messages 
-    }) as Promise<string>;
+        messages: providerMessages 
+    });
+    return typeof result === 'string' ? result : (result as any).text || (result as any).content || JSON.stringify(result);
   }
 
   if ('analyze' in provider) {

@@ -1,35 +1,40 @@
 import { routeAillameRequest } from "../aillame-router/router";
-import { getAillameEngine, initializeAillameNanoEngine } from "../engine/rust-core";
-import { AillameTokenizer } from "../engine/tokenizer";
-import { buildNanoGenerationConfig } from "./nano-generation-config";
-import { cleanupNanoOutput, extractGeneratedTokenIds } from "./nano-output-cleanup";
+import { nativeLocalProvider } from "../../providers/llm/native-local";
+import { cleanupNanoOutput } from "./nano-output-cleanup";
 import { analyzeNanoTask } from "./task-analyzer";
 import { retrieveNanoKnowledge } from "./retrieval";
 import { buildNanoModelPrompt, buildNanoSystemPrompt } from "./system-prompt";
 import type { NanoAnswer, NanoControlPlan, NanoGenerationSettings, NanoUserInput } from "./types";
 
+import { buildNanoGenerationConfig, NANO_PROFILES } from "./nano-generation-config";
+import { RagRetrieverService } from "@/services/rag/rag-retriever.service";
+
 function getSettings(input: NanoUserInput, plan: Pick<NanoControlPlan, "analysis">): NanoGenerationSettings {
+  const profile = input.profile ? NANO_PROFILES[input.profile] : NANO_PROFILES.balanced;
   return buildNanoGenerationConfig({
     analysis: plan.analysis,
+    profile,
     maxTokens: input.maxTokens,
     temperature: input.temperature,
   });
 }
 
-function buildFallbackAnswer(plan: NanoControlPlan): string {
+function buildFallbackAnswer(plan: NanoControlPlan, reason: string): string {
   const clarification = plan.analysis.needsClarification
     ? "İstek çok kısa olduğu için hedefi netleştirmem gerekir."
-    : "Yerel üretim motoru hazır değil; yine de kontrol katmanı görevi analiz etti.";
+    : `Yerel üretim motoru şu an hazır değil. (${reason})`;
 
-  const knowledge = plan.knowledge.length > 0
-    ? `İlgili yerel bağlam: ${plan.knowledge.map((hit) => hit.title).join(", ")}.`
-    : "İlgili yerel bilgi kartı bulunamadı.";
+  const actionHint = reason === 'MODEL_NOT_LOADED' 
+    ? "Lütfen Kütüphane'den bir model seçip yükleyin."
+    : reason === 'RUNTIME_NOT_READY'
+    ? "Lütfen Runtime'ı başlatın."
+    : "Lütfen sistem durumunu kontrol edin.";
 
   return [
     clarification,
-    `Görev türü: ${plan.analysis.kind}. Zorluk: ${plan.analysis.difficulty}. Risk: ${plan.analysis.riskLevel}.`,
-    knowledge,
-    "Bir sonraki adımda yerel metin modeli bağlandığında bu plan doğrudan üretim prompt'una dönüşecek.",
+    `Görev türü: ${plan.analysis.kind} | Zorluk: ${plan.analysis.difficulty}`,
+    `👉 ${actionHint}`,
+    "Aillame Nano yerel runtime üzerinden çalışmak için hazır olduğunda bu isteği doğrudan işleyebileceğim.",
   ].join("\n");
 }
 
@@ -41,8 +46,18 @@ export class AillameNanoController {
       attachmentMimeTypes: input.images?.map((image) => image.mimeType),
     });
     const analysis = analyzeNanoTask(input.prompt);
-    const knowledge = retrieveNanoKnowledge(`${input.prompt} ${analysis.keywords.join(" ")}`);
-    const partialPlan = { route, analysis, knowledge };
+    // Phase 18: RAG henüz aktif değil, boş bilgi kartları ile ilerliyoruz.
+    const knowledge: any[] = []; 
+    const profile = input.profile || 'balanced';
+    const memoryContext: string[] = []; // Phase 21: Memory skeleton
+    const partialPlan = {
+      route,
+      analysis,
+      knowledge,
+      profile,
+      memoryContext,
+      userPrompt: input.prompt,
+    };
     const systemPrompt = buildNanoSystemPrompt(partialPlan);
     const modelPrompt = buildNanoModelPrompt(input.prompt, partialPlan);
     const settings = getSettings(input, { analysis });
@@ -54,90 +69,95 @@ export class AillameNanoController {
       systemPrompt,
       modelPrompt,
       settings,
+      profile,
+      memoryContext,
     };
   }
 
   async answer(input: NanoUserInput): Promise<NanoAnswer> {
+    console.log(`[NanoController] answer() called with prompt: "${input.prompt.substring(0, 50)}..."`);
     const plan = this.createPlan(input);
-    const engine = getAillameEngine();
     const warnings: string[] = [];
 
-    if (!engine) {
-      return {
-        content: buildFallbackAnswer(plan),
-        plan,
-        usedLocalEngine: false,
-        warnings: ["Aillame Rust engine could not be loaded."],
-        engineDebug: {
-          nativeEngineAvailable: false,
-          checkpointLoaded: false,
-          generatedTokenCount: 0,
-          decodedLength: 0,
-          usefulOutput: false,
-          reason: "NATIVE_ENGINE_NOT_AVAILABLE",
-        },
-      };
+    // Phase 2.2: RAG Context Injection (Always run for context-awareness)
+    try {
+      console.log(`[NanoController] Fetching RAG context for: "${input.prompt}"`);
+      const contextDocs = await RagRetrieverService.retrieveContext(input.prompt);
+      console.log(`[NanoController] Found ${contextDocs.length} context docs`);
+      if (contextDocs.length > 0) {
+        const formattedContext = RagRetrieverService.formatContext(contextDocs);
+        console.log(`[NanoController] Injecting RAG context into system prompt`);
+        plan.systemPrompt = `${formattedContext}${plan.systemPrompt}`;
+        plan.knowledge = contextDocs.map(d => ({ id: d.id, text: d.text, score: d.score }));
+      }
+    } catch (ragError) {
+      console.error("[NanoController] RAG Retrieval failed:", ragError);
     }
 
     try {
-      const init = initializeAillameNanoEngine(engine);
-      if (!init.success) {
+      const status = await nativeLocalProvider.getStatus?.();
+      
+      if (!status || status.runtimeState !== 'loaded' || !status.isModelLoaded) {
+        const reason = status?.errorCode || "MODEL_NOT_LOADED";
         return {
-          content: buildFallbackAnswer(plan),
+          content: buildFallbackAnswer(plan, reason),
           plan,
           usedLocalEngine: false,
-          warnings: [init.reason ?? "Aillame Nano checkpoint could not be loaded."],
+          warnings: [`Nano runtime status: ${reason}`],
           engineDebug: {
-            nativeEngineAvailable: true,
-            checkpointLoaded: false,
-            checkpointPath: init.checkpoint.checkpointPath,
+            nativeEngineAvailable: status?.runtimeState === 'runtime_ready' || status?.runtimeState === 'loaded',
+            checkpointLoaded: status?.isModelLoaded ?? false,
             generatedTokenCount: 0,
             decodedLength: 0,
             usefulOutput: false,
-            reason: init.reason ?? "NANO_ENGINE_INIT_FAILED",
+            reason: reason,
           },
         };
       }
 
-      const tokenizer = new AillameTokenizer();
-      const fullPrompt = `${plan.systemPrompt}\n\n${plan.modelPrompt}`;
-      tokenizer.train(fullPrompt);
-      engine.trainTokenizer(fullPrompt);
-      const inputIds = tokenizer.encode(fullPrompt);
-      const rawOutputIds = engine.generate(new Uint32Array(inputIds), plan.settings.maxNewTokens, plan.settings.temperature);
-      const outputIds = Array.from(rawOutputIds);
-      const extraction = extractGeneratedTokenIds(outputIds, inputIds);
-      const rawContent = tokenizer.decode(extraction.generatedIds);
+      if (status.isGenerating) {
+         return {
+           content: "Sistem şu an başka bir cevap üretiyor. Lütfen bekleyin.",
+           plan,
+           usedLocalEngine: false,
+           warnings: ["ENGINE_BUSY"],
+         };
+      }
+
+      // Phase 18: Non-streaming generation via Provider
+      console.log(`[NanoController] Sending prompt to provider: "${plan.modelPrompt.substring(0, 100)}..."`);
+      const rawContent = await nativeLocalProvider.generate(plan.modelPrompt, input.onToken, input.signal, {
+        maxTokens: plan.settings.maxNewTokens,
+        temperature: plan.settings.temperature,
+        topP: plan.settings.topP,
+        systemPrompt: plan.systemPrompt
+      } as any);
+      
+      console.log(`[NanoController] Raw content received: "${rawContent.substring(0, 100)}..."`);
+      
       const cleanup = cleanupNanoOutput(rawContent, plan.settings);
-      const engineGenerated = extraction.generatedIds.length > 0 && cleanup.content.length > 0;
-      const content = cleanup.useful ? cleanup.content : buildFallbackAnswer(plan);
-      const warningsForOutput = cleanup.useful
-        ? warnings
-        : [...warnings, cleanup.reason ?? "LOW_USEFUL_OUTPUT"];
+      const content = cleanup.content || (cleanup.useful ? rawContent : "Aillame Nano geçerli bir yanıt üretemedi.");
 
       return {
         content,
         plan,
-        usedLocalEngine: engineGenerated,
-        warnings: warningsForOutput,
+        usedLocalEngine: true,
+        warnings: cleanup.useful ? [] : [cleanup.reason ?? "LOW_USEFUL_OUTPUT"],
         rawContent,
         engineDebug: {
           nativeEngineAvailable: true,
           checkpointLoaded: true,
-          checkpointPath: init.checkpoint.checkpointPath,
-          generatedTokenCount: extraction.generatedIds.length,
-          decodedLength: cleanup.content.length,
+          generatedTokenCount: rawContent.length, 
+          decodedLength: content.length,
           usefulOutput: cleanup.useful,
-          cleanupReason: cleanup.reason,
-          removedPromptEcho: extraction.removedPromptEcho,
-          reason: engineGenerated ? undefined : cleanup.reason ?? "EMPTY_ENGINE_OUTPUT",
+          reason: undefined,
         },
       };
     } catch (error) {
       const message = error instanceof Error ? error.message : "Unknown local generation error.";
       warnings.push(message);
       return {
-        content: buildFallbackAnswer(plan),
+        content: buildFallbackAnswer(plan, message),
         plan,
         usedLocalEngine: false,
         warnings,

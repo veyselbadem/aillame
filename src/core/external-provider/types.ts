@@ -22,6 +22,8 @@ export type ExternalProviderError = {
 export type ExternalChatData = {
   message: string;
   content: string;
+  structured?: any;
+  meta?: Record<string, any>;
   runtime: string;
   usedLocalRuntime: boolean;
   degraded: boolean;

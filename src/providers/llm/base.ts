@@ -17,4 +17,5 @@ export interface LLMProvider {
     options?: LLMGenerateOptions
   ): Promise<string | any>;
   analyze?(file: any): Promise<any>;
+  getStatus?(): Promise<any>;
 }

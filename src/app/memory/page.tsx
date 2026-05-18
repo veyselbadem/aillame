@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { LocalMemoryStore } from '@providers/memory/local';
+import { safeConfirm } from '@/lib/confirm';
 import { FiDatabase, FiTrash2, FiMessageSquare, FiClock, FiAlertTriangle, FiLayers } from 'react-icons/fi';
 
 interface ConversationEntry {
@@ -50,13 +51,13 @@ export default function MemoryPage() {
   }, []);
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Bu sohbeti hafızadan silmek istiyor musun?')) return;
+    if (!await safeConfirm('Bu sohbeti hafızadan silmek istiyor musun?', { title: 'Hafızadan Sil' })) return;
     await memory.deleteConversation(id);
     loadMemory();
   };
 
   const handleClearAll = async () => {
-    if (!confirm('Tüm tarayıcı sohbet hafızası silinecek. Emin misin?')) return;
+    if (!await safeConfirm('Tüm tarayıcı sohbet hafızası silinecek. Emin misin?', { title: 'Tüm Hafızayı Temizle' })) return;
     setClearing(true);
     for (const conv of conversations) {
       await memory.deleteConversation(conv.id);

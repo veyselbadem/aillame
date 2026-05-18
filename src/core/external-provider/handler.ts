@@ -1,3 +1,5 @@
+import { routeAillameRequest } from "@core/aillame-router/router";
+import { handleDoomsgameModelResponse, isDoomsgameIntent } from "@core/integrations/doomsgame";
 import { getRuntimeStatus } from "@core/api-gateway/runtime-status";
 import type { AillameApiHeaders } from "@core/api-gateway/types";
 import type { AillameTaskType } from "@core/contracts/aillame-request";
@@ -61,7 +63,10 @@ export async function handleExternalProviderChat(input: {
 }): Promise<ExternalProviderHttpResponse> {
   const requestId = requestIdFromBody(input.body);
   const auth = authorizeExternalProviderRequest(input.headers);
-  if (!auth.ok) return error(auth.statusCode, requestId, auth.code, auth.message);
+  if (!auth.ok) {
+    const errorAuth = auth as { statusCode: number; code: string; message: string };
+    return error(errorAuth.statusCode, requestId, errorAuth.code, errorAuth.message);
+  }
 
   if (!isRecord(input.body)) return error(400, requestId, "INVALID_JSON_BODY", "Request body must be a JSON object.");
   const identityResult = identityFromBody(input.body, input.projectIdOverride);
@@ -69,6 +74,13 @@ export async function handleExternalProviderChat(input: {
 
   const message = stringValue(input.body.message) ?? stringValue(input.body.prompt);
   if (!message) return error(400, identityResult.identity.requestId, "INVALID_MESSAGE", "message or prompt is required.");
+
+  // Faz 12: Doomsgame bağlamı ve intent tespiti için router'ı çalıştırıyoruz
+  const route = routeAillameRequest({
+    prompt: message,
+    projectId: identityResult.identity.projectId,
+    taskType: identityResult.identity.taskType as any,
+  });
 
   const memory = getDefaultProjectMemoryStore();
   const recalled = identityResult.identity.memoryScope === "none"
@@ -86,7 +98,7 @@ export async function handleExternalProviderChat(input: {
   const runtime = await generateWithBestTextRuntime({
     projectId: identityResult.identity.projectId,
     mode: normalizeCoreMode(identityResult.identity.mode),
-    taskType: taskTypeForRuntime(identityResult.identity.taskType),
+    taskType: route.taskType,
     prompt: `${message}${memoryContext}`,
     maxTokens: typeof input.body.maxTokens === "number" ? input.body.maxTokens : undefined,
     temperature: typeof input.body.temperature === "number" ? input.body.temperature : undefined,
@@ -107,9 +119,28 @@ export async function handleExternalProviderChat(input: {
       })
     : undefined;
 
+  // Faz 12: Doomsgame structured response üretimi
+  let structured: any = undefined;
+  let meta: any = {
+    projectId: identityResult.identity.projectId,
+    intent: route.intent,
+  };
+
+  const isDoomsgame = identityResult.identity.projectId.startsWith("doomsgame");
+  if (isDoomsgame && isDoomsgameIntent(route.intent)) {
+    structured = handleDoomsgameModelResponse({
+      intent: route.intent,
+      rawContent: runtime.generation.content,
+      projectId: identityResult.identity.projectId,
+    });
+    meta.responseType = structured.type;
+  }
+
   const data: ExternalChatData = {
     message,
     content: runtime.generation.content,
+    structured,
+    meta,
     runtime: runtime.generation.runtimeKind,
     usedLocalRuntime: runtime.generation.usedLocalRuntime,
     degraded: runtime.generation.degraded,
@@ -130,6 +161,10 @@ export async function handleExternalProviderChat(input: {
       auth: auth.mode,
       preset: identityResult.preset.label,
       route: runtime.route.reason,
+      routingDetails: {
+        intent: route.intent,
+        confidence: route.confidence,
+      },
       runtimeDiagnostics: runtime.generation.diagnostics,
       memoryDiagnostics: recalled?.diagnostics,
     },
@@ -142,7 +177,10 @@ export function handleExternalProviderTask(input: {
 }): ExternalProviderHttpResponse {
   const requestId = requestIdFromBody(input.body);
   const auth = authorizeExternalProviderRequest(input.headers);
-  if (!auth.ok) return error(auth.statusCode, requestId, auth.code, auth.message);
+  if (!auth.ok) {
+    const errorAuth = auth as { statusCode: number; code: string; message: string };
+    return error(errorAuth.statusCode, requestId, errorAuth.code, errorAuth.message);
+  }
   if (!isRecord(input.body)) return error(400, requestId, "INVALID_JSON_BODY", "Request body must be a JSON object.");
 
   const identityResult = identityFromBody(input.body);
@@ -185,27 +223,33 @@ export function handleExternalProviderTask(input: {
 export function handleExternalProviderRuntimeStatus(headers?: AillameApiHeaders): ExternalProviderHttpResponse {
   const requestId = `req_${Date.now().toString(36)}`;
   const auth = authorizeExternalProviderRequest(headers);
-  if (!auth.ok) return error(auth.statusCode, requestId, auth.code, auth.message);
+  if (!auth.ok) {
+    const errorAuth = auth as { statusCode: number; code: string; message: string };
+    return error(errorAuth.statusCode, requestId, errorAuth.code, errorAuth.message);
+  }
   return json(200, {
     success: true,
     requestId,
     projectId: "general",
     mode: "general",
     data: getRuntimeStatus(),
-    diagnostics: { auth: auth.mode },
+    diagnostics: { auth: (auth as any).mode },
   });
 }
 
 export function handleExternalProviderProjects(headers?: AillameApiHeaders): ExternalProviderHttpResponse {
   const requestId = `req_${Date.now().toString(36)}`;
   const auth = authorizeExternalProviderRequest(headers);
-  if (!auth.ok) return error(auth.statusCode, requestId, auth.code, auth.message);
+  if (!auth.ok) {
+    const errorAuth = auth as { statusCode: number; code: string; message: string };
+    return error(errorAuth.statusCode, requestId, errorAuth.code, errorAuth.message);
+  }
   return json(200, {
     success: true,
     requestId,
     projectId: "general",
     mode: "general",
     data: { projects: listProjectPresets() },
-    diagnostics: { auth: auth.mode },
+    diagnostics: { auth: (auth as any).mode },
   });
 }

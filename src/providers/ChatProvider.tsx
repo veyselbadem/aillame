@@ -14,19 +14,29 @@ const ChatContext = createContext<ChatContextType | undefined>(undefined);
 const memory = new LocalMemoryStore();
 
 export function ChatProvider({ children }: { children: React.ReactNode }) {
-  const [conversationId, setConversationId] = useState<string | undefined>(undefined);
+  const [conversationId, setConversationId] = useState<string | undefined>(() => Date.now().toString());
 
   useEffect(() => {
-    // Initial conversation
-    if (!conversationId) {
-      memory.getAllConversations().then(ids => {
+    let cancelled = false;
+
+    memory.getAllConversations()
+      .then((ids) => {
+        if (cancelled) return;
         if (ids.length > 0) {
           setConversationId(ids[ids.length - 1]);
-        } else {
+          return;
+        }
+        startNewChat();
+      })
+      .catch(() => {
+        if (!cancelled) {
           startNewChat();
         }
       });
-    }
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const startNewChat = async () => {

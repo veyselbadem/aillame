@@ -20,22 +20,53 @@ export async function DELETE(request: NextRequest) {
   const assetId = searchParams.get('assetId');
 
   if (!assetId) {
-    return NextResponse.json({ success: false, error: 'Asset ID is required' }, { status: 400 });
+    return NextResponse.json(
+      { ok: false, success: false, error: 'assetId zorunludur' },
+      { status: 400 }
+    );
   }
 
   try {
-    const success = await imageAssetStore.deleteAsset(assetId);
-    if (!success) {
-      console.log('Asset not found in store:', assetId);
-      return NextResponse.json({ success: false, error: 'Asset not found' }, { status: 404 });
+    const { imageJobStore } = await import('@/core/runtime/image/jobs/image-job-file-store');
+
+    const asset = await imageAssetStore.getAsset(assetId);
+
+    if (!asset) {
+      console.warn(`[ImageAssetDelete] Asset store'da bulunamadı: ${assetId} — hayalet kayıt, job referansları temizleniyor.`);
+
+      // Asset store'da kayıt yoksa ölümcül hata saymıyoruz.
+      // Job referanslarını yine de temizlemeye çalış (eski/senkron dışı durumlar için).
+      try {
+        await imageJobStore.removeAssetIdFromJobs(assetId);
+      } catch {
+        // Job store temizleme opsiyonel, hata fırlatmasın
+      }
+
+      return NextResponse.json({
+        ok: true,
+        success: true,
+        deleted: false,
+        reason: "Asset store'da bulunamadı. Muhtemelen eski, senkron dışı veya daha önce silinmiş kayıt.",
+        assetId,
+      });
     }
 
-    // Cleanup job records as well
-    const { imageJobStore } = require('@/core/runtime/image/jobs/image-job-file-store');
-    await imageJobStore.removeAssetIdFromJobs(assetId);
+    // Asset bulundu — sil
+    const deleted = await imageAssetStore.deleteAsset(assetId);
 
-    return NextResponse.json({ success: true });
+    // Job store'dan referansı da kaldır
+    try {
+      await imageJobStore.removeAssetIdFromJobs(assetId);
+    } catch {
+      // Job store temizleme opsiyonel
+    }
+
+    return NextResponse.json({ ok: true, success: true, deleted, assetId });
   } catch (error: any) {
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    console.error('[ImageAssetDelete] Silme hatası:', error);
+    return NextResponse.json(
+      { ok: false, success: false, error: 'Görsel asset silinirken hata oluştu' },
+      { status: 500 }
+    );
   }
 }

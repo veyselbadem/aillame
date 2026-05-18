@@ -1,0 +1,18 @@
+{
+  "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
+  "identifier": "runtime-sidecar",
+  "description": "Permissions for Aillame Local Runtime Sidecar",
+  "windows": ["main"],
+  "permissions": [
+    {
+      "identifier": "shell:allow-execute",
+      "allow": [
+        {
+          "args": true,
+          "name": "aillame-runtime",
+          "sidecar": true
+        }
+      ]
+    }
+  ]
+}

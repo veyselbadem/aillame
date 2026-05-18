@@ -2,10 +2,11 @@ import { exec } from 'child_process';
 import { promisify } from 'util';
 import fs from 'fs';
 import path from 'path';
-import { MODEL_REGISTRY } from '../models/registry';
+import { MODEL_REGISTRY, QWEN3_VL_4B_LOCAL_MODEL_ID } from '../models/registry';
 import { checkGeminiConfig } from '../inference/gemini';
 import { getTextRuntimeRouterStatus } from '../inference/text-runtime-router';
 import { listLocalModels } from '../model-library/model-library-service';
+import { InstalledModelRegistryService } from '../../services/model/installed-model-registry.service';
 
 const execAsync = promisify(exec);
 const homeDir = process.env.USERPROFILE || process.env.HOME || '';
@@ -182,64 +183,33 @@ export async function getSdxlReadiness(): Promise<ModelStatusReport> {
 }
 
 export async function getQwenReadiness(): Promise<ModelStatusReport> {
-  const pythonPath = process.env.AILLAME_PYTHON || 'python';
+  const modelPath = 'C:\\Aillame\\Models\\nano\\qwen3-vl-4b\\model.gguf';
+  const mmprojPath = 'C:\\Aillame\\Models\\nano\\qwen3-vl-4b\\mmproj.gguf';
   const report: ModelStatusReport = {
-    modelId: 'Qwen/Qwen3-VL-8B-Instruct',
+    modelId: QWEN3_VL_4B_LOCAL_MODEL_ID,
     isReady: false,
     status: 'planning_only',
     details: {
-      pythonFound: false,
-      packagesInstalled: false,
+      pythonFound: true,
+      packagesInstalled: true,
       modelCached: false,
       cudaAvailable: false,
     }
   };
 
-  if (process.env.AILLAME_QWEN_ENABLED !== 'true') {
-    report.status = 'planning_only';
-    report.message = 'Qwen is optional/heavy and disabled.';
-    report.details.error = 'Set AILLAME_QWEN_ENABLED=true only when deep analysis is needed.';
-    return report;
-  }
-
   try {
-    // 1. Python Check
-    if (fs.existsSync(pythonPath) || pythonPath === 'python') {
-      report.details.pythonFound = true;
-    } else {
-      report.status = 'error';
-      report.details.error = 'Python path not found.';
-      return report;
-    }
+    const modelExists = fs.existsSync(modelPath);
+    const mmprojExists = fs.existsSync(mmprojPath);
+    report.details.modelCached = modelExists && mmprojExists;
 
-    // 2. Packages Check
-    try {
-      const { stdout } = await execAsync(`& "${pythonPath}" -c "import torch, transformers, accelerate, qwen_vl_utils; print('OK'); print(torch.cuda.is_available())"`, { shell: 'powershell.exe' });
-      if (stdout.includes('OK')) {
-        report.details.packagesInstalled = true;
-        report.details.cudaAvailable = stdout.includes('True');
-      }
-    } catch (e: any) {
-      report.status = 'planning_only';
-      report.details.error = `Qwen dependencies missing: ${e.message}`;
-      return report;
-    }
-
-    // 3. Model Cache Check
-    const cacheDir = path.join(homeDir, '.cache', 'huggingface', 'hub', 'models--Qwen--Qwen3-VL-8B-Instruct');
-    if (fs.existsSync(cacheDir)) {
-      report.details.modelCached = true;
-    }
-
-    // Final decision
-    if (report.details.pythonFound && report.details.packagesInstalled && report.details.modelCached) {
+    if (modelExists && mmprojExists) {
       report.isReady = true;
       report.status = 'active';
-      report.message = report.details.cudaAvailable ? 'Active / GPU Accelerated' : 'Active with CPU offload';
-    } else if (report.details.pythonFound && report.details.packagesInstalled) {
-      report.status = 'planning_only';
-      report.message = 'Ready to download (16GB).';
-      report.details.error = 'Qwen model not cached. First run will be slow (downloading 16GB).';
+      report.message = 'Active / Local GGUF + mmproj ready';
+    } else {
+      report.status = 'error';
+      report.message = 'Qwen3-VL 4B local vision model is incomplete.';
+      report.details.error = `Eksik dosya: ${!modelExists ? modelPath : mmprojPath}`;
     }
 
   } catch (err: any) {
@@ -389,6 +359,11 @@ export async function getAllModelInstallStatuses() {
 
     if (model.builtIn) {
       installed = true;
+    } else if (model.id === QWEN3_VL_4B_LOCAL_MODEL_ID) {
+      const localModelPath = 'C:\\Aillame\\Models\\nano\\qwen3-vl-4b\\model.gguf';
+      const localMmprojPath = 'C:\\Aillame\\Models\\nano\\qwen3-vl-4b\\mmproj.gguf';
+      installed = fs.existsSync(localModelPath) && fs.existsSync(localMmprojPath);
+      cachePath = localModelPath;
     } else if (model.repoId) {
       const folderName = `models--${model.repoId.replace('/', '--')}`;
       const fullPath = path.join(homeDir, '.cache', 'huggingface', 'hub', folderName);
@@ -402,15 +377,38 @@ export async function getAllModelInstallStatuses() {
       ...model,
       installed,
       cachePath,
-      runtimeAvailable: !!process.env.AILLAME_PYTHON || model.runtime === 'rust-candle'
+      runtimeAvailable: model.runtime === 'aillame-gguf' || !!process.env.AILLAME_PYTHON || model.runtime === 'rust-candle'
     };
-  });
+  }).filter(model => model.enabled !== false || model.installed);
 
   // Include discovered models
   try {
-    const discovered = await listLocalModels();
+    const [discovered, registered] = await Promise.all([
+      listLocalModels(),
+      InstalledModelRegistryService.getInstalledModels(),
+    ]);
+    const registeredModels = registered
+      .filter(m => m.status === 'registered')
+      .filter(m => !managed.some(man => man.id === m.id))
+      .map(m => ({
+        id: m.id,
+        label: m.name,
+        purpose: (m.type === 'image' ? 'image-generation' : 'chat') as 'chat' | 'image-generation',
+        tier: 'nano' as const,
+        runtime: m.runtime,
+        sizeLabel: formatBytes(m.sizeBytes),
+        capabilities: m.capabilities || (m.type === 'vision' ? ['vision', 'chat'] : ['text']),
+        description: m.modality === 'vision_language'
+          ? 'Registered local vision-language GGUF model.'
+          : 'Registered local GGUF model.',
+        installHint: `Registered at: ${m.path}`,
+        installed: true,
+        builtIn: false,
+        cachePath: m.path,
+        runtimeAvailable: true
+      }));
     const discoveredModels = discovered
-      .filter(m => !managed.some(man => man.id === m.id)) // avoid duplicates
+      .filter(m => !managed.some(man => man.id === m.id) && !registeredModels.some(reg => reg.id === m.id)) // avoid duplicates
       .map(m => ({
         id: m.id,
         label: m.name,
@@ -427,7 +425,7 @@ export async function getAllModelInstallStatuses() {
         runtimeAvailable: true
       }));
 
-    return [...managed, ...discoveredModels];
+    return [...managed, ...registeredModels, ...discoveredModels];
   } catch (err) {
     console.error('[status] Failed to list discovered models:', err);
     return managed;

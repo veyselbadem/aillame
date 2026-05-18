@@ -12,6 +12,12 @@ export type NanoTaskKind =
   | "education"
   | "creative"
   | "image"
+  | "game_design"
+  | "game_scene"
+  | "game_asset"
+  | "game_script"
+  | "game_error_fix"
+  | "engine_query"
   | "unknown";
 
 export type NanoDifficulty = "low" | "medium" | "high";
@@ -23,8 +29,11 @@ export type NanoLanguage = "tr" | "en" | "mixed";
 export type NanoUserInput = {
   prompt: string;
   images?: ImageAttachment[];
+  profile?: NanoProfileType;
   maxTokens?: number;
   temperature?: number;
+  onToken?: (token: string) => void;
+  signal?: AbortSignal;
   sessionSummary?: string;
 };
 
@@ -41,10 +50,10 @@ export type NanoTaskAnalysis = {
 
 export type NanoKnowledgeHit = {
   id: string;
-  title: string;
-  domain: string;
-  content: string;
-  score: number;
+  title?: string;
+  domain?: string;
+  content?: string;
+  score?: number;
 };
 
 export type NanoGenerationSettings = NanoGenerationConfig;
@@ -56,6 +65,8 @@ export type NanoControlPlan = {
   systemPrompt: string;
   modelPrompt: string;
   settings: NanoGenerationSettings;
+  profile?: NanoProfileType;
+  memoryContext?: string[];
   capabilityHooks?: NanoLongTermCapabilityHooks;
 };
 
@@ -118,3 +129,14 @@ export type NanoAnswer = {
     reason?: string;
   };
 };
+
+export type NanoProfileType = 'fast' | 'balanced' | 'quality';
+
+export interface NanoProfile {
+  id: NanoProfileType;
+  label: string;
+  description: string;
+  maxTokens: number;
+  temperature: number;
+  topP: number;
+}

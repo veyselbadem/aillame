@@ -1,8 +1,7 @@
 'use client';
 
 import Sidebar from '@/components/Sidebar';
-import ModelLibraryPanel from '@/components/admin/ModelLibraryPanel';
-import GgufModelManager from '@/components/admin/GgufModelManager';
+import GgufModelSelector from '@/components/admin/GgufModelSelector';
 import { useState, useEffect } from 'react';
 import { FiPackage, FiCpu } from 'react-icons/fi';
 import { ADMIN_TOKEN_KEY } from '@/lib/admin-fetch';
@@ -29,7 +28,7 @@ export default function ModelLibraryPage() {
             <a href="/admin/login" className="text-xs text-indigo-500 hover:underline">Giriş sayfasına git</a>
           </div>
         ) : (
-          <div className="mx-auto max-w-6xl px-6 py-10 animate-fade-in">
+          <div className="mx-auto max-w-5xl px-6 py-10 animate-fade-in">
             <header className="mb-10">
               <div className="mb-2 flex items-center gap-3">
                 <div className="w-10 h-10 rounded-2xl bg-indigo-500/10 flex items-center justify-center text-indigo-500">
@@ -38,53 +37,31 @@ export default function ModelLibraryPage() {
                 <h1 className="text-3xl font-black theme-title tracking-tight">Model Kütüphanesi</h1>
               </div>
               <p className="text-sm theme-muted max-w-2xl">
-                Yerel yapay zeka varlıklarınızı yönetin, çalışma zamanı (runtime) hazır olma durumunu doğrulayın ve yeni modeller keşfedin.
+                Yerel yapay zeka varlıklarınızı yönetin, GGUF modellerini aktif çalışma zamanına bağlayın ve çıkarım durumunu izleyin.
               </p>
             </header>
 
             <div className="grid gap-8">
-              {/* GGUF Management Section */}
-              <section className="space-y-4">
-                <div className="flex items-center gap-2 px-1">
-                  <div className="w-1.5 h-1.5 rounded-full bg-indigo-500" />
-                  <h2 className="text-[10px] font-black uppercase tracking-[0.3em] theme-muted">Yerel GGUF Runtime</h2>
-                </div>
-                <div className="theme-surface rounded-[24px] p-6">
-                  <GgufModelManager />
-                </div>
-              </section>
-
-              {/* Global Registry Section */}
-              <section className="space-y-4">
-                <div className="flex items-center gap-2 px-1">
-                  <div className="w-1.5 h-1.5 rounded-full bg-indigo-500" />
-                  <h2 className="text-[10px] font-black uppercase tracking-[0.3em] theme-muted">Merkezi Model Kaydı (Registry)</h2>
-                </div>
-                <div className="theme-surface rounded-[24px] p-8">
-                  <ModelLibraryPanel />
-                </div>
-              </section>
-
+              <GgufModelSelector />
+              
               {/* Discovery / Help Section */}
-              <section className="theme-soft-panel rounded-2xl p-6 flex items-start gap-4">
-                <div className="p-2 rounded-lg bg-indigo-500/10 text-indigo-500 shrink-0">
-                  <FiCpu size={20} />
+              <section className="theme-soft-panel rounded-[32px] p-8 flex items-start gap-6 border border-white/5 bg-indigo-500/[0.02]">
+                <div className="p-3 rounded-2xl bg-indigo-500/10 text-indigo-500 shrink-0">
+                  <FiCpu size={24} />
                 </div>
                 <div>
-                  <h3 className="text-sm font-bold theme-title mb-1">Yerel Kaynak Optimizasyonu</h3>
-                  <p className="text-xs theme-muted leading-relaxed max-w-3xl">
+                  <h3 className="text-lg font-black theme-title mb-2">Yerel Kaynak Optimizasyonu</h3>
+                  <p className="text-sm theme-muted leading-relaxed">
                     Aillame, CPU/GPU bellek paylaşımını optimize etmek için metin üretimi tarafında GGUF formatını kullanır. 
                     Tüketici sınıfı donanımlar için Quantization (Q4_K_M gibi) şiddetle önerilir. 
-                    Görsel üretimi, tek adımlı çıkarım performansı için SDXL Turbo diffusers kullanır.
+                    Model yükleme sırasında sistem kaynaklarınızın yeterli olduğundan emin olun.
                   </p>
                 </div>
               </section>
             </div>
           </div>
-
         )}
       </main>
     </div>
-
   );
 }

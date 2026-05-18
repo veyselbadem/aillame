@@ -6,6 +6,7 @@ const SETTINGS_KEY = 'aillame-settings';
 type SavedSettings = {
   llmMode?: LLMMode;
   tier?: AillameTier;
+  nanoProfile?: string;
 };
 
 function getSavedSettings(): SavedSettings {
@@ -18,6 +19,7 @@ function getSavedSettings(): SavedSettings {
     return {
       llmMode: parsed.llmMode,
       tier: parsed.tier,
+      nanoProfile: parsed.nanoProfile,
     };
   } catch {
     return {};
@@ -27,6 +29,7 @@ function getSavedSettings(): SavedSettings {
 export function useSettings() {
   const [llmMode, setLlmMode] = useState<LLMMode>('local');
   const [tier, setTier] = useState<AillameTier>('nano');
+  const [nanoProfile, setNanoProfile] = useState<string>('balanced');
 
   useEffect(() => {
     const saved = getSavedSettings();
@@ -36,6 +39,9 @@ export function useSettings() {
     if (saved.tier) {
       setTier(saved.tier);
     }
+    if (saved.nanoProfile) {
+      setNanoProfile(saved.nanoProfile);
+    }
   }, []);
 
   const persist = (settings: SavedSettings) => {
@@ -44,6 +50,7 @@ export function useSettings() {
       globalWindow.localStorage.setItem(SETTINGS_KEY, JSON.stringify({
         llmMode,
         tier,
+        nanoProfile,
         ...settings,
       }));
     }
@@ -59,5 +66,17 @@ export function useSettings() {
     persist({ tier: nextTier });
   };
 
-  return { llmMode, setLlmMode: updateMode, tier, setTier: updateTier };
+  const updateNanoProfile = (profile: string) => {
+    setNanoProfile(profile);
+    persist({ nanoProfile: profile });
+  };
+
+  return { 
+    llmMode, 
+    setLlmMode: updateMode, 
+    tier, 
+    setTier: updateTier,
+    nanoProfile,
+    setNanoProfile: updateNanoProfile
+  };
 }

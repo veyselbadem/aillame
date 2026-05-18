@@ -1,6 +1,6 @@
 import { readFile, writeFile } from 'fs/promises';
 import path from 'path';
-import { resolveProjectRelative } from '@/core/project-root';
+import { resolveProjectRelative } from '../project-root';
 import type { DistillationPreview, DistillationPreviewStatus, CreateDistillationPreviewInput } from './types';
 
 const DISTILLATION_PREVIEW_STORE_PATH = resolveProjectRelative('.aillame-data/stores/distillation-preview-store.json');

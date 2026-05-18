@@ -5,6 +5,7 @@ import type {
   AillameSafetyFlags,
 } from '@core/aillame-router/types';
 import type { ModelAdapterId } from '@core/model-adapters/base';
+import type { ChatMessageUiMetadata } from '@core/chat/message-metadata-types';
 
 export type MessageRoutingMetadata = {
   primaryMode: AillameMode;
@@ -23,6 +24,25 @@ export type MessageRoutingErrorMetadata = {
 export type MessageMetadata = {
   routing?: MessageRoutingMetadata;
   routingError?: MessageRoutingErrorMetadata;
+  uiContextMetadata?: ChatMessageUiMetadata;
+  degraded?: boolean;
+  errorCode?: string;
+  latencyMs?: number;
+  model?: {
+    provider: string;
+    name: string;
+    runtime?: string;
+    localFirst?: boolean;
+  };
+  runtime?: {
+    used: boolean;
+    runtime?: string;
+    errorCode?: string;
+    unsupportedReason?: string;
+  };
+  toolExecuted?: string;
+  toolRiskLevel?: string;
+  toolOk?: boolean;
 };
 
 export type Message = {
