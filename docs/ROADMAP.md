@@ -83,10 +83,15 @@ Faz 23.3 ile 390px mobil ekranda composer, hiz secici ve shortcut kartlari viewp
 - Sohbeti Temizle UI aksiyonu.
 - HIZLI dropdown z-index/tiklanabilirlik duzeltmesi.
 - 390px/768px responsive composer ve shortcut layout duzeltmesi.
+- Port 3000 tanilama ve kullanici dostu uyari akisi.
+- Ilk Acilis Rehberi / readiness paneli.
 
 ### Kalan v1.4.0 Adaylari
 - Ilk acilis/onboarding rehberinin ileride modal veya ilk calistirma tercihiyle genisletilmesi.
 - Model path wizard icin daha rehberli kurulum ve hata cozum adimlari.
+- Hafiza duzenleme ve export/import akisi.
+- Proje presetleri.
+- SDXL prompt presetleri.
 
 ## 6. v1.4.0 Port 3000 Tanilama ve Uyari Akisi
 

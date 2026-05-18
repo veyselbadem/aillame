@@ -14,6 +14,7 @@ v1.4.0-dev hatti, v1.3.0 stabil release tag'ini degistirmeden model yolu dogrula
 *   **models.pathHealth Tool'u:** Nano safe tool-use hatti uzerinden model yolu saglik bilgisini guvenli sekilde raporlar.
 *   **Destek Ozeti Kopyala:** Model yolu durumunu paylasilabilir, secret ve kisisel path icermeyen bir destek metnine donusturur.
 *   **Sohbeti Temizle:** Aktif sohbet ekranindaki mesajlari, taslagi ve aktif gorsel eki temizleyen UI aksiyonu geri getirildi.
+*   **Port 3000 Health Diagnostics:** `/api/aillame/runtime/port-health` yerel sunucu portunu read-only olarak kontrol eder ve Aillame'in kendi runtime'ini false conflict saymaz.
 *   **Ilk Acilis Rehberi / İlk Açılış Rehberi:** Ayarlar ekraninda model dosyalari, Port 3000, yerel veri ve guvenlik durumunu read-only olarak ozetleyen onboarding/readiness paneli eklendi.
 
 ### Fixed
@@ -39,6 +40,7 @@ v1.4.0-dev hatti, v1.3.0 stabil release tag'ini degistirmeden model yolu dogrula
 *   `npm run typecheck` gecti.
 *   `npm run build` gecti.
 *   `npx tsx scripts/smoke-phase22-model-path-health-validation.ts` 25/25 gecti.
+*   `npx tsx scripts/smoke-phase24-port-health-validation.ts` 9/9 gecti.
 *   `npx tsx scripts/smoke-phase25-onboarding-readiness-validation.ts` onboarding/readiness kaynaklarini ve UI metinlerini dogrular.
 *   `npx tsx scripts/smoke-phase7.1-all-validations.ts` 7/7 gecti.
 *   `npx tsx scripts/smoke-phase8.1-project-context-validation.ts` 11/11 gecti.
