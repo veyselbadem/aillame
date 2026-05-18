@@ -10,10 +10,8 @@ Aillame, ** Next.js (Frontend) + Tauri Rust (Desktop Shell) + aillame-runtime (S
 
 Production derleme denetimi `npx tauri build` ile **%100 BAŞARIYLA** tamamlanmış ve aşağıdaki kararlı installer paketleri (release artifacts) üretilmiştir:
 
-*   **MSI Paketi:** `src-tauri\target\release\bundle\msi\Aillame_1.4.0_x64_en-US.msi`
-    *   **Boyut:** ~4.2 MB (4,435,968 byte)
-*   **NSIS Kurulum Dosyası (EXE):** `src-tauri\target\release\bundle\nsis\Aillame_1.4.0_x64-setup.exe`
-    *   **Boyut:** ~2.7 MB (2,866,083 byte)
+*   **MSI Paketi:** `src-tauri\target\release\bundle\msi\Aillame_1.4.1_x64_en-US.msi`
+*   **NSIS Kurulum Dosyası (EXE):** `src-tauri\target\release\bundle\nsis\Aillame_1.4.1_x64-setup.exe`
 
 ---
 
@@ -110,4 +108,12 @@ Aillame v1.4.0 masaüstü paketinin gerçek Windows ortamında uçtan uca doğru
 *   **Güncelleme Modeli:** Şu anda Aillame otomatik güncelleme (Tauri Auto-Updater) özelliğini aktif **etmemiştir.** Sürüm yükseltmeleri GitHub Releases üzerinden yayınlanan installer binaries (.exe ve .msi) ile manuel olarak gerçekleştirilir.
 *   **İleride Auto-Updater Entegrasyonu:** Eğer otomatik güncelleme aktif edilecek olursa, Tauri standard güncelleme JSON uç noktası ve Windows Code Signing (kod imzalama) sertifikaları gerekecektir.
 *   **Model Ayrımı Güvencesi:** Auto-updater entegre edilse dahi, büyük model dosyaları (`C:\Aillame\Models`) kesinlikle güncelleme kanallarından taşınmayacak ve yerel diskte dokunulmadan korunacaktır.
+
+---
+
+## 9. Sürüm v1.4.1 Hotfix Paketleme Notları
+*   **Sürüm:** v1.4.1
+*   **Değişiklik Türü:** UI Kontrast İyileştirmeleri ve IndexedDB Kalıcı Mesaj Temizleme (deep pruning).
+*   **Paket Boyutları:** MSI ~4.2 MB ve NSIS EXE ~2.7 MB düzeyindedir. Büyük model dosyaları ve kullanıcı verileri (`.aillame-data`) bundle dışı bırakılmıştır.
+*   **Kaldırma (Uninstall) Güvenliği:** Kaldırma aracı (`uninstall.exe`) v1.4.1 sürümünde de model klasörlerine (`C:\Aillame\Models`) ve `.aillame-data` kullanıcı dizinlerine asla dokunmaz, diskte korur.
 

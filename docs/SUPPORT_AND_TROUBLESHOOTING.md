@@ -64,18 +64,16 @@ Bu doküman, **Aillame Local AI Foundation** masaüstü uygulamasının çalış
 
 ---
 
-## 5. Sohbeti Temizle
-*   **Açıklama:** Sohbet ekranındaki **Sohbeti Temizle** butonu yalnızca aktif ekranda görünen sohbet mesajlarını temizler.
-*   **Kapsam:** Mevcut mesaj listesi, yazma alanındaki taslak metin ve aktif görsel ek temizlenir.
+## 5. Sohbeti Temizle (Kalıcı Veri Budama - v1.4.1)
+*   **Açıklama:** Sohbet ekranındaki **Sohbeti Temizle** butonu, v1.4.1 ile birlikte yalnızca arayüzdeki React durumunu değil, **IndexedDB** üzerindeki ilgili konuşma mesajlarını da kalıcı ve fiziksel olarak diskten budar (pruning).
+*   **Kapsam:** Mevcut mesaj listesi, yazma alanındaki taslak metin, yüklenmiş görsel ekler ve veri tabanındaki fiziksel mesaj kayıtları silinir.
 *   **Veri güvenliği:** Aillame Hafızası, Proje Bağlamı, Nano Öğrenme/Distillation verileri, model registry kayıtları ve yerel model dosyaları silinmez veya değiştirilmez.
-*   **Kalıcı veri yönetimi:** Hafıza, proje bağlamı veya öğrenme verilerini yönetmek için Ayarlar ekranındaki ilgili paneller kullanılmalıdır.
+*   **Geri döndürülemezlik:** Temizlenen mesajlar cihazdan tamamen silindiği için geri yüklenemez. Hafıza, proje bağlamı veya öğrenme verilerini yönetmek için Ayarlar ekranındaki ilgili paneller kullanılmalıdır.
 
 ---
 
-## 6. Ilk Acilis Rehberi
-*   **Aciklama:** Ayarlar ekranindaki **İlk Açılış Rehberi**, Aillame'in yerel sunucu portunu, model dosyalarini, yerel veri politikasini ve guvenlik sinirlarini tek yerde ozetler.
-*   **Port durumu karti:** `3000` portunun `Aillame calisiyor`, `Kullanilabilir`, `Port kullanimda` veya `Kontrol edilemedi` durumlarini gosterir.
-*   **Model yolu karti:** Qwen3-VL 4B, SDXL Turbo, Aillame Nano ve Tiny SD durumlarini gosterir. Tiny SD artık aktif model değildir; eksikliği hata değildir.
-*   **Yerel veri notu:** Hafiza, proje baglami ve ogrenme verileri cihazda saklanir; otomatik buluta gonderim yapilmaz.
-*   **Guvenlik notu:** Rehber yalnizca okuma yapar; model indirmez, silmez, process kapatmaz ve Shell/PowerShell/CMD calistirma yetkisi eklemez.
-*   **Destek ozeti:** Rehberdeki **Destek Özeti Kopyala** aksiyonu, model yolu durumunu hassas veri icermeyen kisa bir destek metni olarak hazirlar.
+## 6. Sürüm v1.4.1 Hotfix Güncellemeleri
+*   **Hotfix Amacı:** v1.4.0 sürümü sonrasında açık temada (Light Theme) tespit edilen düşük kontrastlı kartlar, uyarı kutuları, butonlar ve proje kartı detayları gibi okunabilirlik sorunları tamamen çözülmüştür.
+*   **Sohbeti Temizleme Düzeltmesi:** Eski sürümlerde sadece React state sıfırlanırken, v1.4.1 ile IndexedDB veritabanı düzeyinde fiziksel budama (deep pruning) doğrulanmış ve kalıcı hale getirilmiştir.
+*   **Model ve Kullanıcı Verileri:** Model dosyaları (`C:\Aillame\Models`) kesinlikle Tauri release paketi içine gömülmez ve kaldırıldığında (uninstall) bu veriler ile `.aillame-data` kullanıcı dizini asla silinmez.
+*   **İlk Açılış Rehberi:** Ayarlar ekranındaki rehber kartı artık tamamen tema-duyarlı (light/dark responsive) olup, her iki temada da mükemmel kontrast sunar.

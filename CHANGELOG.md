@@ -4,6 +4,28 @@ Tüm önemli değişiklikler bu dosyada belgelenecektir. Bu projenin sürüm şe
 
 ---
 
+## v1.4.1 - Post-release UI and Persistence Fixes
+
+### Fixed
+*   **Açık temada okunması zor olan kart, uyarı ve sohbet balonu renkleri iyileştirildi.**
+*   **Sohbeti Temizle sonrası mesajların uygulama yeniden açıldığında geri gelmesi düzeltildi.**
+*   **IndexedDB üzerinde ilgili konuşma mesajlarının güvenli şekilde budanması sağlandı.**
+*   **Desktop Readiness CUDA/OOM uyarıları açık/koyu temada okunabilir hale getirildi.**
+*   **AI Lab, Release Candidate ve Settings içindeki bazı düşük kontrastlı geliştirici uyarıları düzeltildi.**
+*   **Projeler sayfasındaki kategori ve açıklama metinleri açık temada daha okunabilir hale getirildi.**
+
+### Changed
+*   **Geliştirici/diagnostic alanları kullanıcıya daha net açıklanacak şekilde iyileştirildi.**
+*   **Light/dark tema uyumluluğu güçlendirildi.**
+
+### Tests
+*   `npm run typecheck`
+*   `npm run build`
+*   Faz 22 / 24 / 25 / 7.1 / 8.1 / 9 smoke testleri
+*   Browser açık/koyu tema kontrast kontrolleri
+
+---
+
 ## v1.4.0 - Local AI Usability Update
 
 v1.4.0 sürümü, yerel yapay zeka deneyimini iyileştiren model yolu doğrulama, güvenli sohbet temizleme ve ana sohbet ekranındaki mobil/dropdown UX düzeltmelerini içerir.

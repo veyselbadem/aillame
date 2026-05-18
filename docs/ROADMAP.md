@@ -122,3 +122,12 @@ Faz 25 ile Ayarlar ekranina **İlk Açılış Rehberi** eklendi. Rehber ilk acil
 - Guvenlik karti Shell/PowerShell/CMD serbest calistirilmayacagini, token/env/sifre gosteriminin engellendigini ve model dosyalarinin otomatik silinmeyecegini/indirilmeyecegini belirtir.
 
 Bu rehber yeni model indirmez, inference baslatmaz, process kapatmaz ve runtime/model davranisini degistirmez. Aksiyonlari yalnizca `GET /api/aillame/models/path-health`, `GET /api/aillame/runtime/port-health` ve mevcut **Destek Ozeti Kopyala** akisini kullanir.
+
+## 8. v1.4.1 Hotfix UI ve IndexedDB Budama
+
+Durum: **main hattında tamamlandı.**
+
+v1.4.1 hotfix sürümü, v1.4.0 sürümünün yayınlanmasının ardından kullanıcılardan gelen geri bildirimler doğrultusunda geliştirilmiştir:
+- **Açık Tema Kontrast Düzeltmeleri:** Açık tema altında okunabilirliği düşük olan İlk Açılış Rehberi kartları, durum rozetleri, donanım hata kutuları, AI Lab uyarı panelleri ve Projeler sayfası kategori/açıklama metinleri yüksek kontrastlı ve tema-duyarlı olacak şekilde iyileştirilmiştir.
+- **Kalıcı Sohbet Temizleme:** Sohbeti Temizle butonunun, sadece React durumunu temizlemekle kalmayıp, arka planda **IndexedDB** veritabanı düzeyinde ilgili konuşma mesajlarını fiziksel ve kalıcı olarak budaması (pruning) doğrulanmıştır.
+- **Güvenlik Korunumu:** Bu hotfix ile hiçbir yeni model indirilmemiş, silinmemiş veya runtime davranışı değiştirilmemiştir. Model dosyaları (`C:\Aillame\Models`) ve kullanıcı verileri (`.aillame-data`) Tauri installer paketine gömülmez ve uninstaller çalıştırıldığında diskten silinmez.
