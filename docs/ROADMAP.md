@@ -55,6 +55,8 @@ Herhangi bir minor (`v1.4.0`) veya patch (`v1.3.1`) yayını öncesinde aşağı
 
 ## 5. v1.4.0 Model Yolu Doğrulama Sihirbazı
 
+Durum: **v1.4.0-dev hattinda tamamlandi.**
+
 Model Yolu Doğrulama Sihirbazı, kullanıcının kurulumdan sonra yerel model dosyalarının doğru yerde olup olmadığını Ayarlar ekranından read-only olarak kontrol etmesini sağlar.
 
 Kontrol edilen aktif yollar:
@@ -69,3 +71,20 @@ Faz 22.1 ile Ayarlar paneline son kontrol zamanı, hazır/eksik/uyarı/legacy ö
 Faz 22.2 ile **Sohbeti Temizle** butonu güvenli bir UI aksiyonu olarak geri getirildi. Bu aksiyon yalnızca aktif sohbet ekranındaki mesajları, taslak metni ve aktif görsel eki temizler; Hafıza, Proje Bağlamı, Nano Öğrenme/Distillation verileri, model registry ve yerel dosyalar etkilenmez.
 
 Faz 22.3 ile Model Yolu Doğrulama paneline **Destek Özeti Kopyala** eklendi. Bu özet token, şifre, `.env` içeriği veya kişisel kullanıcı yolu içermez; yalnızca dosya varlığı, boyut, durum ve temel GGUF imza bilgisini paylaşılabilir şekilde özetler. Tiny SD kaldırılmış legacy model olarak kalır; eksikliği hata değildir.
+
+Faz 23.1 ve 23.2 ile ana sohbet ekranindaki **HIZLI** hiz secici dropdown'unun shortcut ikon kartlarinin arkasinda kalmasi ve secenek tiklamalarinin alttaki kartlar tarafindan yakalanmasi duzeltildi. Dropdown/composer/shortcut stacking sirasi netlestirildi; runtime veya model davranisi degistirilmedi.
+
+Faz 23.3 ile 390px mobil ekranda composer, hiz secici ve shortcut kartlari viewport disina tasmayacak sekilde responsive duzen guncellendi. Mobilde sidebar baslangicta kapali gelir, kapali sidebar bos alan birakmaz ve shortcut kartlari iki sutun grid olarak sarilir.
+
+### v1.4.0-dev Tamamlananlar
+- Model Yolu Dogrulama endpoint'i ve Settings paneli.
+- `models.pathHealth` read-only tool'u.
+- Destek Ozeti Kopyala aksiyonu.
+- Sohbeti Temizle UI aksiyonu.
+- HIZLI dropdown z-index/tiklanabilirlik duzeltmesi.
+- 390px/768px responsive composer ve shortcut layout duzeltmesi.
+
+### Kalan v1.4.0 Adaylari
+- Port 3000 otomatik algilama ve kurtarma akisi.
+- Ilk acilis/onboarding iyilestirmeleri.
+- Model path wizard icin daha rehberli kurulum ve hata cozum adimlari.
