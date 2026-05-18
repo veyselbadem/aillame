@@ -36,11 +36,21 @@ export default function ReleaseCandidatePage() {
 
   return (
     <div className="min-h-screen theme-shell p-8 font-sans">
+      <div className="mb-6 rounded-2xl border border-amber-500/35 dark:border-amber-500/20 bg-amber-500/10 px-5 py-4 text-sm text-amber-900 dark:text-amber-200">
+        <div className="flex items-center gap-2">
+          <RiErrorWarningLine size={18} className="text-amber-600 dark:text-amber-400" />
+          <span className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-700 dark:text-amber-300">Geliştirici Paneli</span>
+        </div>
+        <p className="mt-1 font-semibold leading-relaxed text-amber-950 dark:text-amber-200">
+          ⚠️ BU SAYFA YALNIZCA GELİŞTİRİCİLER İÇİNDİR. Üretim sürüm adayları, QA test sonuçları, bilinen hatalar ve sistem entegrasyonu durumu burada izlenir.
+        </p>
+      </div>
+
       <div className="mb-10 flex flex-col gap-4 border-b pb-6 theme-divider lg:flex-row lg:items-center lg:justify-between">
         <div>
           <h1 className="flex items-center text-3xl font-bold tracking-tight theme-title">
             <RiFlagLine className="mr-4 text-emerald-600 dark:text-emerald-300" />
-            Beta Yayın Adayı (RC)
+            Beta Sürüm Adayı (RC) Analizi
           </h1>
           <p className="mt-2 text-sm theme-muted">
             Beta Foundation RC ve Live Runtime Acceptance ayrı izlenir. LLM ve IGM gerçek üretim yapmadan final-ready sayılmaz.

@@ -75,10 +75,10 @@ function getGpuLockMessage(lock?: { locked?: boolean; message?: string } | null)
 
 function getToneClass(tone: 'ready' | 'warning' | 'danger' | 'muted') {
   const tones = {
-    ready: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20',
-    warning: 'bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-500/25',
-    danger: 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/25',
-    muted: 'bg-zinc-500/10 text-[var(--text-muted)] border-[var(--glass-border)]',
+    ready: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20',
+    warning: 'bg-amber-500/10 text-amber-800 dark:text-amber-300 border-amber-500/25',
+    danger: 'bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-500/25',
+    muted: 'bg-zinc-500/10 text-zinc-700 dark:text-zinc-300 border-[var(--glass-border)]',
   };
   return tones[tone];
 }
@@ -412,9 +412,9 @@ export default function AiLabPage() {
       <main className="flex-1 overflow-y-auto p-4 md:p-8 custom-scrollbar">
         <header className="mb-8 flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-black tracking-tight text-gradient">Nano Lab</h1>
+            <h1 className="text-3xl font-black tracking-tight text-gradient">Nano Lab (Geliştirici Laboratuvarı)</h1>
             <p className="text-[var(--text-muted)] mt-1 font-medium">
-              Hızlı testleri, uyumluluk kontrollerini ve küçük deneyleri yönetin.
+              Hızlı testleri, donanım uyumluluk kontrollerini ve yerel model simülasyon deneylerini yönetin.
             </p>
           </div>
           <div className="flex items-center gap-3">
@@ -422,10 +422,10 @@ export default function AiLabPage() {
           </div>
         </header>
 
-        <section className="mb-6 rounded-2xl border border-amber-500/25 bg-amber-500/10 px-5 py-4 text-sm text-amber-800 dark:text-amber-200">
-          <p className="font-black uppercase tracking-[0.18em] text-[10px]">Deney Alanı</p>
-          <p className="mt-1 font-medium">
-            Tema uyumluluğu, cihaz/ekran uyumluluğu, performans testleri ve küçük sistem kontrolleri bu alanda izlenir.
+        <section className="mb-6 rounded-2xl border border-indigo-500/30 dark:border-indigo-500/20 bg-indigo-500/10 px-5 py-4 text-sm text-indigo-950 dark:text-indigo-200 leading-relaxed font-medium">
+          <p className="font-black uppercase tracking-[0.18em] text-[10px] text-indigo-800 dark:text-indigo-300">Laboratuvarın Amacı</p>
+          <p className="mt-1.5">
+            ⚠️ <strong>NANO LAB</strong>, Aillame Nano yerel yapay zeka motorunun donanım uyumluluğunu (VRAM, RAM), multimodal (görsel anlama) sağlık durumunu ve SDXL-like görsel üretim iş akışlarını kontrollü olarak simüle etmek ve test etmek için tasarlanmış bir <strong>Geliştirici Laboratuvarıdır</strong>. Burada yapılan tüm işlemler geliştirici denetimi ve yerel sistem doğrulaması içindir.
           </p>
         </section>
 
@@ -785,23 +785,23 @@ export default function AiLabPage() {
             </div>
             <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
               {[
-                { name: 'Nano Değerlendirme', status: 'AKTİF', color: 'text-emerald-300', desc: 'Danışman', icon: <FiCpu className="text-emerald-300" /> },
-                { name: 'Sağlayıcı Çıktısı', status: 'ÖNİZLEME', color: 'text-cyan-300', desc: 'Kıyaslama', icon: <FiSearch className="text-cyan-300" /> },
-                { name: 'LLM Profilleri', status: 'TANILAMA', color: 'text-amber-300', desc: 'Uyumluluk', icon: <FiTerminal className="text-amber-300" /> },
-                { name: 'IGM Profilleri', status: 'TANILAMA', color: 'text-amber-300', desc: 'Uyumluluk', icon: <FiImage className="text-amber-300" /> },
+                { name: 'Nano Değerlendirme', status: 'SİMÜLASYON / AKTİF', color: 'text-emerald-600 dark:text-emerald-400 border-emerald-500/10 bg-emerald-500/5', desc: 'Geliştirici değerlendirme motoru.', icon: <FiCpu className="text-emerald-500" /> },
+                { name: 'Sağlayıcı Çıktısı', status: 'UYUMLULUK / ÖNİZLEME', color: 'text-cyan-600 dark:text-cyan-400 border-cyan-500/10 bg-cyan-500/5', desc: 'Farklı yerel model mimarilerinin kıyaslanması.', icon: <FiSearch className="text-cyan-500" /> },
+                { name: 'LLM Profilleri', status: 'GELİŞTİRİCİ TANILAMA', color: 'text-amber-600 dark:text-amber-400 border-amber-500/10 bg-amber-500/5', desc: 'GGUF yükleyici ve donanım limitleri.', icon: <FiTerminal className="text-amber-500" /> },
+                { name: 'IGM Profilleri', status: 'GELİŞTİRİCİ TANILAMA', color: 'text-amber-600 dark:text-amber-400 border-amber-500/10 bg-amber-500/5', desc: 'Görsel üretici worker ve VRAM eşikleri.', icon: <FiImage className="text-amber-500" /> },
               ].map(m => (
-                <div key={m.name} className="theme-surface rounded-2xl p-4 transition-all hover:border-indigo-500/25 group">
+                <div key={m.name} className={`theme-surface rounded-2xl p-4 transition-all border hover:border-indigo-500/25 group ${m.color}`}>
                   <div className="flex items-center justify-between gap-2">
-                    <div className="text-[10px] text-[var(--text-muted)] font-black uppercase tracking-widest group-hover:text-indigo-500 transition-colors">{m.name}</div>
+                    <div className="text-[10px] theme-title font-black uppercase tracking-widest group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">{m.name}</div>
                     {m.icon}
                   </div>
-                  <div className={`mt-1 font-black text-xs ${m.color}`}>{m.status}</div>
-                  <div className="mt-2 text-[10px] text-[var(--text-muted)] font-bold italic opacity-60 leading-tight">{m.desc}</div>
+                  <div className="mt-1.5 font-black text-[9px] uppercase tracking-wide">{m.status}</div>
+                  <div className="mt-2 text-[10px] theme-muted font-medium leading-normal opacity-90">{m.desc}</div>
                 </div>
               ))}
             </div>
             <p className="mt-4 text-[11px] font-medium leading-relaxed theme-muted">
-              Model yönetimi, API key, release readiness, patch workflow ve document library kendi admin sayfalarında yönetilir. Lab yalnızca güvenli deney ve değerlendirme alanıdır.
+              ℹ️ <strong>Geliştirici Notu:</strong> Yukarıdaki paneller ve donanım metrikleri, Aillame yerel yapay zeka orkestrasyonunun dahili tanılamalarını ve QA kriterlerini gösterir. Normal kullanıcıların sohbet deneyimini etkilemeyen, yalnızca geliştirme ve optimizasyon amaçlı teknik arayüzlerdir. Model yönetimi ve diğer ayarlar için ilgili menüleri kullanınız.
             </p>
           </div>        </section>
 

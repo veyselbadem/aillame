@@ -269,30 +269,30 @@ export default function ImageGenerationPanel() {
   return (
     <div className="w-full max-w-6xl mx-auto px-4 pt-12 md:pt-20 pb-12 animate-fade-in">
       <header className="mb-8">
-        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 mb-4">
-          <FiImage size={14} className="text-indigo-300" />
-          <span className="text-[10px] font-black uppercase tracking-[0.3em] text-indigo-400">Image Workflow Foundation</span>
+        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 mb-4 animate-fade-in">
+          <FiImage size={14} className="text-indigo-600 dark:text-indigo-400" />
+          <span className="text-[10px] font-black uppercase tracking-[0.3em] text-indigo-700 dark:text-indigo-400">Image Workflow Foundation</span>
         </div>
-        <h1 className="text-4xl md:text-6xl font-black tracking-tight text-white">Görsel Üretim</h1>
-        <p className="mt-3 text-gray-400 max-w-2xl">
+        <h1 className="text-4xl md:text-6xl font-black tracking-tight text-zinc-950 dark:text-white">Görsel Üretim</h1>
+        <p className="mt-3 text-zinc-600 dark:text-gray-400 max-w-2xl font-medium leading-relaxed">
           {model.label} ile yerel görsel üretim arayüzü. Faz 4 foundation: workflow JSON, job queue ve SDXL-like adapter şu an güvenli preview/not-configured modundadır.
         </p>
       </header>
 
       <section className="mb-6 grid gap-3 md:grid-cols-4">
         {FOUNDATION_STATUS.map(([label, value]) => (
-          <div key={label} className="glass-card rounded-2xl border-white/5 p-4">
-            <p className="text-[10px] font-black uppercase tracking-[0.22em] text-gray-500">{label}</p>
-            <p className="mt-2 text-sm font-semibold text-gray-200">{value}</p>
+          <div key={label} className="glass-card rounded-2xl border-zinc-200 dark:border-white/5 p-4 transition-all duration-300">
+            <p className="text-[10px] font-black uppercase tracking-[0.22em] text-zinc-500 dark:text-gray-500">{label}</p>
+            <p className="mt-2 text-sm font-semibold text-zinc-800 dark:text-gray-200">{value}</p>
           </div>
         ))}
       </section>
 
-      <section className="mb-6 glass-card rounded-[28px] border-white/5 p-5">
+      <section className="mb-6 glass-card rounded-[28px] border-zinc-200 dark:border-white/5 p-5">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div>
             <div className="flex flex-wrap items-center gap-2">
-              <h2 className="text-lg font-black text-white">SDXL Turbo Durumu</h2>
+              <h2 className="text-lg font-black text-zinc-900 dark:text-white">SDXL Turbo Durumu</h2>
               <StatusPill
                 label={runtimeEnabled ? 'Runtime Açık' : 'Runtime Kapalı'}
                 ok={runtimeEnabled}
@@ -302,7 +302,7 @@ export default function ImageGenerationPanel() {
                 ok={preflightOk}
               />
             </div>
-            <p className="mt-2 max-w-3xl text-sm text-gray-400">
+            <p className="mt-2 max-w-3xl text-sm text-zinc-600 dark:text-gray-400 font-medium">
               Görsel üretim başlamadan önce model dosyaları, runtime ve güvenli çalışma koşulları kontrol edilir.
             </p>
           </div>
@@ -310,7 +310,7 @@ export default function ImageGenerationPanel() {
             type="button"
             onClick={refreshHealth}
             disabled={healthLoading}
-            className="h-10 shrink-0 rounded-xl border border-white/10 bg-white/5 px-4 text-[10px] font-black uppercase tracking-[0.18em] text-gray-200 transition-all hover:bg-white/10 disabled:opacity-50"
+            className="h-10 shrink-0 rounded-xl border border-zinc-200 dark:border-white/10 bg-zinc-100 dark:bg-white/5 px-4 text-[10px] font-black uppercase tracking-[0.18em] text-zinc-700 dark:text-gray-200 transition-all hover:bg-zinc-200 dark:hover:bg-white/10 disabled:opacity-50"
           >
             <span className="inline-flex items-center gap-2">
               <FiRefreshCw className={healthLoading ? 'animate-spin' : ''} />
@@ -322,8 +322,8 @@ export default function ImageGenerationPanel() {
         <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <div className={`rounded-2xl border p-4 lg:col-span-2 ${
             gpuHeavyLock?.locked
-              ? 'border-amber-400/20 bg-amber-500/10 text-amber-200'
-              : 'border-emerald-400/20 bg-emerald-500/10 text-emerald-200'
+              ? 'border-amber-400/30 bg-amber-500/10 text-amber-800 dark:text-amber-200'
+              : 'border-emerald-400/30 bg-emerald-500/10 text-emerald-800 dark:text-emerald-200'
           }`}>
             <p className="text-[10px] font-black uppercase tracking-[0.22em] opacity-70">GPU Durumu</p>
             <p className="mt-2 text-sm font-black">{getGpuLockMessage(gpuHeavyLock)}</p>
@@ -332,98 +332,98 @@ export default function ImageGenerationPanel() {
               <span className="font-bold">{formatGpuLockOwner(gpuHeavyLock?.owner)}</span>
             </div>
           </div>
-          <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
-            <p className="text-[10px] font-black uppercase tracking-[0.22em] text-gray-500">Aktif Model</p>
-            <p className={`mt-2 text-sm font-black ${activeImageModelId === 'sdxl-turbo-1.0' ? 'text-emerald-300' : 'text-amber-300'}`}>
+          <div className="rounded-2xl border border-zinc-200/60 dark:border-white/10 bg-zinc-50 dark:bg-black/20 p-4">
+            <p className="text-[10px] font-black uppercase tracking-[0.22em] text-zinc-500 dark:text-gray-500">Aktif Model</p>
+            <p className={`mt-2 text-sm font-black ${activeImageModelId === 'sdxl-turbo-1.0' ? 'text-emerald-600 dark:text-emerald-300' : 'text-amber-600 dark:text-amber-300'}`}>
               {activeImageModelId || health?.model?.id || 'Bilinmiyor'}
             </p>
           </div>
-          <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
-            <p className="text-[10px] font-black uppercase tracking-[0.22em] text-gray-500">Model Dosyaları</p>
-            <p className={`mt-2 text-sm font-black ${filesReady === undefined ? 'text-gray-400' : filesReady ? 'text-emerald-300' : 'text-rose-300'}`}>
+          <div className="rounded-2xl border border-zinc-200/60 dark:border-white/10 bg-zinc-50 dark:bg-black/20 p-4">
+            <p className="text-[10px] font-black uppercase tracking-[0.22em] text-zinc-500 dark:text-gray-500">Model Dosyaları</p>
+            <p className={`mt-2 text-sm font-black ${filesReady === undefined ? 'text-zinc-500 dark:text-gray-400' : filesReady ? 'text-emerald-600 dark:text-emerald-300' : 'text-rose-600 dark:text-rose-300'}`}>
               {filesReady === undefined ? 'Kontrol ediliyor' : filesReady ? 'Hazır' : 'Eksik'}
             </p>
           </div>
-          <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
-            <p className="text-[10px] font-black uppercase tracking-[0.22em] text-gray-500">CPU Fallback</p>
-            <p className={`mt-2 text-sm font-black ${cpuFallbackAllowed ? 'text-amber-300' : 'text-gray-400'}`}>
+          <div className="rounded-2xl border border-zinc-200/60 dark:border-white/10 bg-zinc-50 dark:bg-black/20 p-4">
+            <p className="text-[10px] font-black uppercase tracking-[0.22em] text-zinc-500 dark:text-gray-500">CPU Fallback</p>
+            <p className={`mt-2 text-sm font-black ${cpuFallbackAllowed ? 'text-amber-600 dark:text-amber-300' : 'text-zinc-500 dark:text-gray-400'}`}>
               {cpuFallbackAllowed ? 'Aktif' : 'Kapalı'}
             </p>
           </div>
-          <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
-            <p className="text-[10px] font-black uppercase tracking-[0.22em] text-gray-500">Son Kontrol</p>
-            <p className="mt-2 text-sm font-black text-gray-200">{healthCheckedAt || 'Bekleniyor'}</p>
+          <div className="rounded-2xl border border-zinc-200/60 dark:border-white/10 bg-zinc-50 dark:bg-black/20 p-4">
+            <p className="text-[10px] font-black uppercase tracking-[0.22em] text-zinc-500 dark:text-gray-500">Son Kontrol</p>
+            <p className="mt-2 text-sm font-black text-zinc-800 dark:text-gray-200">{healthCheckedAt || 'Bekleniyor'}</p>
           </div>
         </div>
 
         <div className="mt-3 grid gap-3 sm:grid-cols-3">
-          <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
-            <p className="text-[10px] font-black uppercase tracking-[0.22em] text-gray-500">RAM</p>
-            <p className={`mt-2 text-sm font-black ${ramReady === undefined ? 'text-gray-400' : ramReady ? 'text-emerald-300' : 'text-rose-300'}`}>
+          <div className="rounded-2xl border border-zinc-200/60 dark:border-white/10 bg-zinc-50 dark:bg-black/20 p-4">
+            <p className="text-[10px] font-black uppercase tracking-[0.22em] text-zinc-500 dark:text-gray-500">RAM</p>
+            <p className={`mt-2 text-sm font-black ${ramReady === undefined ? 'text-zinc-500 dark:text-gray-400' : ramReady ? 'text-emerald-600 dark:text-emerald-300' : 'text-rose-600 dark:text-rose-300'}`}>
               {ramReady === undefined ? 'Ölçülüyor' : ramReady ? 'Yeterli' : 'Yetersiz'}
             </p>
-            <p className="mt-1 text-[10px] text-gray-500">{formatMb(safeRuntime?.freeRamMb)} / min {formatMb(safeRuntime?.minFreeRamMb)}</p>
+            <p className="mt-1 text-[10px] text-zinc-500 dark:text-gray-500 font-semibold">{formatMb(safeRuntime?.freeRamMb)} / min {formatMb(safeRuntime?.minFreeRamMb)}</p>
           </div>
-          <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
-            <p className="text-[10px] font-black uppercase tracking-[0.22em] text-gray-500">VRAM</p>
-            <p className={`mt-2 text-sm font-black ${vramReady === undefined ? 'text-gray-400' : vramReady ? 'text-emerald-300' : 'text-rose-300'}`}>
+          <div className="rounded-2xl border border-zinc-200/60 dark:border-white/10 bg-zinc-50 dark:bg-black/20 p-4">
+            <p className="text-[10px] font-black uppercase tracking-[0.22em] text-zinc-500 dark:text-gray-500">VRAM</p>
+            <p className={`mt-2 text-sm font-black ${vramReady === undefined ? 'text-zinc-500 dark:text-gray-400' : vramReady ? 'text-emerald-600 dark:text-emerald-300' : 'text-rose-600 dark:text-rose-300'}`}>
               {vramReady === undefined ? 'Ölçülüyor' : vramReady ? 'Yeterli' : 'Yetersiz'}
             </p>
-            <p className="mt-1 text-[10px] text-gray-500">{formatMb(safeRuntime?.freeVramMb)} / min {formatMb(safeRuntime?.minFreeVramMb)}</p>
+            <p className="mt-1 text-[10px] text-zinc-500 dark:text-gray-500 font-semibold">{formatMb(safeRuntime?.freeVramMb)} / min {formatMb(safeRuntime?.minFreeVramMb)}</p>
           </div>
-          <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
-            <p className="text-[10px] font-black uppercase tracking-[0.22em] text-gray-500">Preflight</p>
-            <p className={`mt-2 text-sm font-black ${preflightOk ? 'text-emerald-300' : 'text-amber-300'}`}>
+          <div className="rounded-2xl border border-zinc-200/60 dark:border-white/10 bg-zinc-50 dark:bg-black/20 p-4">
+            <p className="text-[10px] font-black uppercase tracking-[0.22em] text-zinc-500 dark:text-gray-500">Preflight</p>
+            <p className={`mt-2 text-sm font-black ${preflightOk ? 'text-emerald-600 dark:text-emerald-300' : 'text-amber-600 dark:text-amber-300'}`}>
               {preflightOk ? 'Geçti' : 'Engellendi'}
             </p>
-            <p className="mt-1 text-[10px] text-gray-500">{runtimeMessage}</p>
+            <p className="mt-1 text-[10px] text-zinc-500 dark:text-gray-500 font-semibold">{runtimeMessage}</p>
           </div>
         </div>
 
-        <div className="mt-4 rounded-2xl border border-indigo-400/15 bg-indigo-500/10 px-4 py-3 text-xs font-medium text-indigo-100">
+        <div className="mt-4 rounded-2xl border border-indigo-400/20 bg-indigo-500/10 px-4 py-3 text-xs font-semibold text-indigo-900 dark:text-indigo-200 leading-relaxed">
           Aillame Nano görsel üretim isteğini SDXL Turbo'ya yönlendirir. Nano şu anda doğrudan görsel üretmez; gelecekte yerel üretim yetenekleri genişletilebilir.
         </div>
 
         {safeRuntime?.warnings?.length ? (
-          <div className="mt-3 rounded-2xl border border-amber-400/20 bg-amber-500/10 px-4 py-3 text-xs font-medium text-amber-200">
+          <div className="mt-3 rounded-2xl border border-amber-400/30 bg-amber-500/10 px-4 py-3 text-xs font-semibold text-amber-800 dark:text-amber-200">
             {safeRuntime.warnings.join(' | ')}
           </div>
         ) : null}
 
         {(healthError || safeRuntime?.errors?.length) ? (
-          <div className="mt-3 rounded-2xl border border-rose-400/20 bg-rose-500/10 px-4 py-3 text-xs font-medium text-rose-200">
+          <div className="mt-3 rounded-2xl border border-rose-400/30 bg-rose-500/10 px-4 py-3 text-xs font-semibold text-rose-800 dark:text-rose-200">
             {healthError || safeRuntime?.errors?.join(' | ')}
           </div>
         ) : null}
       </section>
 
       <div className="grid grid-cols-1 lg:grid-cols-[420px_1fr] gap-5">
-        <section className="glass-card rounded-[28px] p-5 border-white/5">
+        <section className="glass-card rounded-[28px] p-5 border-zinc-200 dark:border-white/5">
           <div className="space-y-5 relative z-10">
             <div>
-              <label className="block text-[10px] font-black uppercase tracking-[0.25em] text-gray-500 mb-2">Prompt</label>
+              <label className="block text-[10px] font-black uppercase tracking-[0.25em] text-zinc-500 dark:text-gray-500 mb-2">Prompt</label>
               <textarea
                 value={prompt}
                 onChange={(event) => setPrompt(event.target.value)}
                 rows={6}
-                className="w-full rounded-2xl bg-black/30 border border-white/10 px-4 py-3 text-sm text-white placeholder-gray-600 outline-none focus:border-indigo-400/40 resize-none"
+                className="w-full rounded-2xl bg-zinc-100/50 dark:bg-black/30 border border-zinc-200 dark:border-white/10 px-4 py-3 text-sm text-zinc-900 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-600 outline-none focus:border-indigo-400/40 dark:focus:border-indigo-400/40 resize-none transition-colors"
                 placeholder="Sinema ışığında, detaylı, yüksek kaliteli..."
               />
             </div>
 
             <div>
-              <label className="block text-[10px] font-black uppercase tracking-[0.25em] text-gray-500 mb-2">Negatif Prompt</label>
+              <label className="block text-[10px] font-black uppercase tracking-[0.25em] text-zinc-500 dark:text-gray-500 mb-2">Negatif Prompt</label>
               <textarea
                 value={negativePrompt}
                 onChange={(event) => setNegativePrompt(event.target.value)}
                 rows={3}
-                className="w-full rounded-2xl bg-black/30 border border-white/10 px-4 py-3 text-sm text-white placeholder-gray-600 outline-none focus:border-indigo-400/40 resize-none"
+                className="w-full rounded-2xl bg-zinc-100/50 dark:bg-black/30 border border-zinc-200 dark:border-white/10 px-4 py-3 text-sm text-zinc-900 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-600 outline-none focus:border-indigo-400/40 dark:focus:border-indigo-400/40 resize-none transition-colors"
                 placeholder="bulanık, düşük kalite, deforme..."
               />
             </div>
 
             <div>
-              <label className="block text-[10px] font-black uppercase tracking-[0.25em] text-gray-500 mb-2">Boyut</label>
+              <label className="block text-[10px] font-black uppercase tracking-[0.25em] text-zinc-500 dark:text-gray-500 mb-2">Boyut</label>
               <div className="grid grid-cols-3 gap-2">
                 {PRESETS.map(([key, item]) => (
                   <button
@@ -432,8 +432,8 @@ export default function ImageGenerationPanel() {
                     onClick={() => setPreset(key)}
                     className={`rounded-2xl px-3 py-3 border text-left transition-all ${
                       preset === key
-                        ? 'border-indigo-400/40 bg-indigo-500/15 text-indigo-100'
-                        : 'border-white/10 bg-black/20 text-gray-400 hover:text-gray-200'
+                        ? 'border-indigo-400/40 bg-indigo-500/15 text-indigo-800 dark:text-indigo-100'
+                        : 'border-zinc-200 dark:border-white/10 bg-zinc-100 dark:bg-black/20 text-zinc-500 dark:text-gray-400 hover:text-zinc-800 dark:hover:text-gray-200'
                     }`}
                   >
                     <span className="block text-xs font-black">{item.label}</span>
@@ -445,14 +445,14 @@ export default function ImageGenerationPanel() {
 
             <div>
               <div className="flex items-center justify-between mb-2">
-                <label className="block text-[10px] font-black uppercase tracking-[0.25em] text-gray-500">Adım</label>
-                <span className="text-xs font-mono text-gray-500">{steps}</span>
+                <label className="block text-[10px] font-black uppercase tracking-[0.25em] text-zinc-500 dark:text-gray-500">Adım</label>
+                <span className="text-xs font-mono text-zinc-500 dark:text-gray-500 font-bold">{steps}</span>
               </div>
               <input type="range" min={10} max={60} value={steps} onChange={(event) => setSteps(Number(event.target.value))} className="w-full" />
             </div>
 
             {error && (
-              <div className="rounded-2xl border border-rose-500/20 bg-rose-500/10 px-4 py-3 text-xs text-rose-200">
+              <div className="rounded-2xl border border-rose-500/20 bg-rose-500/10 px-4 py-3 text-xs text-rose-800 dark:text-rose-200 font-bold">
                 {error}
               </div>
             )}
@@ -461,35 +461,35 @@ export default function ImageGenerationPanel() {
               type="button"
               onClick={generate}
               disabled={loading || !prompt.trim()}
-              className="w-full h-12 rounded-2xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-black uppercase tracking-[0.2em] text-xs flex items-center justify-center gap-2 disabled:opacity-40 disabled:grayscale transition-all hover:shadow-lg hover:shadow-indigo-500/20"
+              className="w-full h-12 rounded-2xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-black uppercase tracking-[0.2em] text-xs flex items-center justify-center gap-2 disabled:opacity-40 disabled:grayscale transition-all hover:shadow-lg hover:shadow-indigo-500/20 active:scale-95"
             >
               {loading ? <FiLoader className="animate-spin" /> : <FiZap />}
               {jobStatus === 'queued' ? 'Sırada...' : jobStatus === 'running' ? 'Üretiliyor...' : 'Üret'}
             </button>
-            <div className={`rounded-2xl border px-4 py-3 text-xs font-medium ${
+            <div className={`rounded-2xl border px-4 py-3 text-xs font-semibold leading-relaxed ${
               runtimeEnabled && preflightOk
-                ? 'border-emerald-400/20 bg-emerald-500/10 text-emerald-200'
-                : 'border-amber-400/20 bg-amber-500/10 text-amber-200'
+                ? 'border-emerald-400/20 bg-emerald-500/10 text-emerald-800 dark:text-emerald-200'
+                : 'border-amber-400/20 bg-amber-500/10 text-amber-800 dark:text-amber-200'
             }`}>
               {generateHint}
             </div>
           </div>
         </section>
 
-        <section className="glass-card rounded-[28px] min-h-[560px] p-5 border-white/5 flex items-center justify-center overflow-hidden">
+        <section className="glass-card rounded-[28px] min-h-[560px] p-5 border-zinc-200 dark:border-white/5 flex items-center justify-center overflow-hidden">
           <div className="relative z-10 w-full h-full flex items-center justify-center">
             {image ? (
               <div className="w-full h-full flex flex-col gap-4">
-                <div className="flex-1 min-h-[420px] rounded-[24px] overflow-hidden bg-black/30 border border-white/10 flex items-center justify-center">
+                <div className="flex-1 min-h-[420px] rounded-[24px] overflow-hidden bg-zinc-100/50 dark:bg-black/30 border border-zinc-200 dark:border-white/10 flex items-center justify-center">
                   <img src={image} alt={prompt} className="max-h-full max-w-full object-contain" />
                 </div>
                 <div className="flex items-center justify-between gap-3">
-                  <span className="text-[10px] font-mono text-gray-500">Seed: {seed ?? 'auto'}</span>
+                  <span className="text-[10px] font-mono text-zinc-500 dark:text-zinc-500 font-bold">Seed: {seed ?? 'auto'}</span>
                   <button
                     type="button"
                     onClick={handleDownload}
                     disabled={downloading}
-                    className="h-10 px-4 rounded-xl bg-white/5 hover:bg-white/10 text-gray-200 text-xs font-bold uppercase tracking-widest flex items-center gap-2 disabled:opacity-50 disabled:cursor-wait transition-all active:scale-95"
+                    className="h-10 px-4 rounded-xl bg-zinc-100 dark:bg-white/5 hover:bg-zinc-200 dark:hover:bg-white/10 text-zinc-800 dark:text-gray-200 text-xs font-bold uppercase tracking-widest flex items-center gap-2 disabled:opacity-50 disabled:cursor-wait transition-all active:scale-95 border border-zinc-200 dark:border-transparent"
                     title="Görseli indir"
                   >
                     {downloading ? <FiLoader size={14} className="animate-spin" /> : <FiDownload size={14} />}
@@ -498,10 +498,10 @@ export default function ImageGenerationPanel() {
                 </div>
               </div>
             ) : (
-              <div className="text-center opacity-50">
-                <FiImage size={96} className="mx-auto mb-4" />
-                <p className="text-[10px] font-black uppercase tracking-[0.4em]">SDXL-like Önizleme</p>
-                <p className="mt-2 text-xs text-gray-500">Gerçek model çalıştırma bu fazda kapalıdır.</p>
+              <div className="text-center opacity-60">
+                <FiImage size={96} className="mx-auto mb-4 text-zinc-300 dark:text-zinc-700" />
+                <p className="text-[10px] font-black uppercase tracking-[0.4em] text-zinc-700 dark:text-zinc-400">SDXL-like Önizleme</p>
+                <p className="mt-2 text-xs text-zinc-500 dark:text-zinc-500 font-medium">Gerçek model çalıştırma bu fazda kapalıdır.</p>
               </div>
             )}
           </div>

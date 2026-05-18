@@ -84,24 +84,24 @@ export default function MessageItem({
         )}
 
         {isFallback ? (
-          <div className="relative rounded-2xl rounded-tl-sm border border-amber-400/20 bg-amber-500/10 px-5 py-4 text-sm text-amber-100 shadow-2xl backdrop-blur-sm transition-all duration-300">
+          <div className="relative rounded-2xl rounded-tl-sm border border-amber-400/35 dark:border-amber-400/20 bg-amber-500/10 px-5 py-4 text-sm text-amber-900 dark:text-amber-100 shadow-2xl backdrop-blur-sm transition-all duration-300">
             <button
               onClick={handleCopy}
-              className="absolute right-3 top-3 rounded-xl border border-amber-500/10 bg-amber-500/5 p-2 text-amber-300 opacity-0 backdrop-blur-md transition-all duration-300 hover:bg-amber-500/10 group-hover:opacity-100"
+              className="absolute right-3 top-3 rounded-xl border border-amber-500/20 dark:border-amber-500/10 bg-amber-500/10 dark:bg-amber-500/5 p-2 text-amber-700 dark:text-amber-300 opacity-0 backdrop-blur-md transition-all duration-300 hover:bg-amber-500/20 dark:hover:bg-amber-500/10 group-hover:opacity-100"
               title="Kopyala"
               aria-label={copied ? 'Mesaj kopyalandı' : 'Mesajı kopyala'}
             >
-              {copied ? <FiCheck size={14} className="text-emerald-500" /> : <FiCopy size={14} />}
+              {copied ? <FiCheck size={14} className="text-emerald-600 dark:text-emerald-500" /> : <FiCopy size={14} />}
             </button>
             <div className="mb-2 flex items-center gap-2">
               <div className="flex h-5 w-5 items-center justify-center rounded-lg bg-amber-500/20">
-                <FiAlertTriangle size={10} className="flex-shrink-0 text-amber-300" />
+                <FiAlertTriangle size={10} className="flex-shrink-0 text-amber-600 dark:text-amber-300" />
               </div>
-              <span className="text-[10px] font-black uppercase tracking-[0.25em] text-amber-100/70">
+              <span className="text-[10px] font-black uppercase tracking-[0.25em] text-amber-700 dark:text-amber-100/70">
                 Sistem · Fallback
               </span>
             </div>
-            <div className="whitespace-pre-wrap break-words pr-8 font-semibold leading-relaxed">
+            <div className="whitespace-pre-wrap break-words pr-8 font-semibold leading-relaxed text-amber-950 dark:text-amber-100">
               {message.content}
             </div>
             {conversationId && (
@@ -113,36 +113,36 @@ export default function MessageItem({
             className={`relative rounded-2xl border px-5 py-4 text-sm leading-relaxed shadow-2xl transition-all duration-300 ${
               isUser
                 ? 'rounded-tr-sm border-white/10 bg-gradient-to-br from-indigo-600 via-indigo-700 to-indigo-800 text-white shadow-indigo-500/20'
-                : 'rounded-tl-sm border-white/10 bg-slate-900/60 text-gray-100 backdrop-blur-xl'
+                : 'rounded-tl-sm border-zinc-200 dark:border-white/10 bg-white/70 dark:bg-slate-900/60 text-zinc-800 dark:text-gray-100 backdrop-blur-xl'
             }`}
           >
             {!isUser && (
-              <div className="mb-3 flex flex-col gap-1.5 border-b border-white/5 pb-2.5">
+              <div className="mb-3 flex flex-col gap-1.5 border-b border-zinc-200/50 dark:border-white/5 pb-2.5">
                 <div className="flex items-center justify-between gap-3">
                   <div className="flex items-center gap-2">
                     <span className={`text-[10px] font-black uppercase tracking-[0.25em] ${
                       message.metadata?.model?.provider === 'qwen'
-                        ? 'text-fuchsia-400'
+                        ? 'text-fuchsia-600 dark:text-fuchsia-400'
                         : message.metadata?.model?.provider === 'sdxl'
-                          ? 'text-cyan-400'
+                          ? 'text-cyan-600 dark:text-cyan-400'
                           : message.metadata?.model?.provider === 'ollama'
-                            ? 'text-purple-400'
+                            ? 'text-purple-600 dark:text-purple-400'
                             : message.metadata?.model?.name?.includes('Teşhis') || message.metadata?.model?.name?.includes('Lab')
-                              ? 'text-emerald-400'
-                              : 'text-indigo-400'
+                              ? 'text-emerald-600 dark:text-emerald-400'
+                              : 'text-indigo-600 dark:text-indigo-400'
                     }`}>
                       {message.metadata?.model?.name || 'Aillame Nano'}
                     </span>
                     <span className={`rounded px-1 py-0.2 text-[8px] font-extrabold uppercase tracking-widest ${
                       message.metadata?.model?.provider === 'qwen'
-                        ? 'border border-fuchsia-500/20 bg-fuchsia-500/10 text-fuchsia-300'
+                        ? 'border border-fuchsia-500/20 bg-fuchsia-500/10 text-fuchsia-700 dark:text-fuchsia-300'
                         : message.metadata?.model?.provider === 'sdxl'
-                          ? 'border border-cyan-500/20 bg-cyan-500/10 text-cyan-300'
+                          ? 'border border-cyan-500/20 bg-cyan-500/10 text-cyan-700 dark:text-cyan-300'
                           : message.metadata?.model?.provider === 'ollama'
-                            ? 'border border-purple-500/20 bg-purple-500/10 text-purple-300'
+                            ? 'border border-purple-500/20 bg-purple-500/10 text-purple-700 dark:text-purple-300'
                             : message.metadata?.model?.name?.includes('Teşhis')
-                              ? 'border border-emerald-500/20 bg-emerald-500/10 text-emerald-300'
-                              : 'border border-indigo-500/20 bg-indigo-500/10 text-indigo-300'
+                              ? 'border border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'
+                              : 'border border-indigo-500/20 bg-indigo-500/10 text-indigo-700 dark:text-indigo-300'
                     }`}>
                       {message.metadata?.model?.provider === 'qwen'
                         ? 'Vision'

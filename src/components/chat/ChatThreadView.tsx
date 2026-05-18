@@ -41,16 +41,16 @@ function ModelInlineNotice({
   if (isModelLoaded) return null;
 
   return (
-    <div className="rounded-2xl border border-amber-400/20 bg-amber-500/10 px-4 py-3 text-sm text-amber-100 shadow-xl shadow-amber-500/5">
+    <div className="rounded-2xl border border-amber-400/35 dark:border-amber-400/20 bg-amber-500/10 px-4 py-3 text-sm text-amber-800 dark:text-amber-100 shadow-xl shadow-amber-500/5">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="min-w-0">
           <div className="flex items-center gap-2">
-            <FiAlertCircle size={16} className="text-amber-300" />
-            <span className="text-[11px] font-black uppercase tracking-[0.22em] text-amber-200">
+            <FiAlertCircle size={16} className="text-amber-600 dark:text-amber-300" />
+            <span className="text-[11px] font-black uppercase tracking-[0.22em] text-amber-700 dark:text-amber-200">
               Model durumu
             </span>
           </div>
-          <p className="mt-1 text-xs leading-relaxed text-amber-100/75">
+          <p className="mt-1 text-xs leading-relaxed text-amber-800/80 dark:text-amber-100/75 font-semibold">
             {activeModelId
               ? `${activeModelId} seçili, ancak yanıt üretimi için henüz hazır değil. Sohbet akışı açık kalır.`
               : 'Yanıt üretimi için bir model hazırlanmalı. Sohbet akışı açık kalır.'}
@@ -59,14 +59,14 @@ function ModelInlineNotice({
 
         <button
           onClick={onLoadModel}
-          className="shrink-0 rounded-xl border border-amber-300/20 bg-amber-300/10 px-3 py-2 text-[10px] font-black uppercase tracking-widest text-amber-100 transition hover:bg-amber-300/15"
+          className="shrink-0 rounded-xl border border-amber-400/40 dark:border-amber-300/20 bg-amber-500/10 dark:bg-amber-300/10 px-3 py-2 text-[10px] font-black uppercase tracking-widest text-amber-700 dark:text-amber-100 transition hover:bg-amber-500/20 dark:hover:bg-amber-300/15"
         >
           Hazırla
         </button>
       </div>
 
       {loadError && (
-        <div className="mt-3 rounded-xl border border-rose-400/20 bg-rose-500/10 px-3 py-2 text-xs font-semibold text-rose-100">
+        <div className="mt-3 rounded-xl border border-rose-400/20 bg-rose-500/10 px-3 py-2 text-xs font-semibold text-rose-800 dark:text-rose-100">
           {loadError}
         </div>
       )}
@@ -146,7 +146,7 @@ export function ChatThreadView({
           </div>
 
           {clearNotice && (
-            <div className="rounded-xl border border-amber-400/25 bg-amber-500/10 px-3 py-2 text-xs font-semibold text-amber-100">
+            <div className="rounded-xl border border-amber-400/35 dark:border-amber-400/25 bg-amber-500/10 px-3 py-2 text-xs font-semibold text-amber-800 dark:text-amber-100">
               {clearNotice}
             </div>
           )}

@@ -234,6 +234,19 @@ export default function DesktopReadinessPage() {
   );
 }
 
+function translateDeviceReason(reason: string): string {
+  const lower = reason.toLowerCase();
+  let tr = "";
+  if (lower.includes("cuda kernel incompatibility") || lower.includes("cuda kernel")) {
+    tr += "⚠️ CUDA çekirdek uyumsuzluğu tespit edildi. (GPU sürücünüz güncel olmayabilir veya PyTorch CUDA sürümüyle eşleşmiyor.)";
+  }
+  if (lower.includes("oom") || lower.includes("out of memory") || lower.includes("yetersiz bellek")) {
+    if (tr) tr += "\n";
+    tr += "⚠️ GPU Bellek Yetersiz (OOM). İşlem için ayrılan VRAM aşıldı.";
+  }
+  return tr || reason;
+}
+
 function RuntimeRequirementCard({ 
   icon, 
   title, 
@@ -290,8 +303,13 @@ function RuntimeRequirementCard({
             </span>
           </div>
           {deviceReason && (
-            <div className="p-2 rounded-lg bg-amber-500/5 border border-amber-500/10 text-[9px] theme-secondary italic">
-              {deviceReason}
+            <div className="p-2.5 rounded-xl bg-amber-500/10 dark:bg-amber-500/5 border border-amber-500/20 dark:border-amber-500/10 text-[10px] text-amber-950 dark:text-amber-200 font-bold leading-relaxed">
+              <p className="font-semibold text-amber-950 dark:text-amber-200">{deviceReason}</p>
+              {translateDeviceReason(deviceReason) !== deviceReason && (
+                <p className="mt-1.5 border-t border-amber-500/20 pt-1.5 text-rose-800 dark:text-rose-300 font-extrabold uppercase tracking-wide">
+                  {translateDeviceReason(deviceReason)}
+                </p>
+              )}
             </div>
           )}
           {performanceWarning && (

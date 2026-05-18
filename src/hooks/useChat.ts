@@ -129,6 +129,12 @@ export function useChat(conversationId?: string, runtimeSettings?: UseChatRuntim
       return false;
     }
 
+    if (conversationId) {
+      memory.clearConversationMessages(conversationId).catch(() => {
+        // Safe diagnostic fallback
+      });
+    }
+
     setMessages([]);
     setInput('');
     setAttachments([]);

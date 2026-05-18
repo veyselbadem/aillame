@@ -115,10 +115,10 @@ function pathStatusLabel(status: ModelPathStatus) {
 }
 
 function pathStatusClass(status: ModelPathStatus) {
-  if (status === 'ready') return 'bg-emerald-500/10 text-emerald-300 border-emerald-500/20';
-  if (status === 'missing') return 'bg-rose-500/10 text-rose-300 border-rose-500/25';
-  if (status === 'warning' || status === 'optional_missing') return 'bg-amber-500/10 text-amber-300 border-amber-500/25';
-  return 'bg-slate-500/10 text-slate-300 border-slate-500/20';
+  if (status === 'ready') return 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/20';
+  if (status === 'missing') return 'bg-rose-500/10 text-rose-700 dark:text-rose-300 border-rose-500/25';
+  if (status === 'warning' || status === 'optional_missing') return 'bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-500/25';
+  return 'bg-slate-500/10 text-slate-700 dark:text-slate-300 border-slate-500/20';
 }
 
 function formatBytes(bytes: number) {
@@ -203,10 +203,10 @@ function buildModelPathSupportSummary(pathHealth: ModelPathHealth) {
 }
 
 function readinessBadgeClass(status: 'ready' | 'missing' | 'warning' | 'info') {
-  if (status === 'ready') return 'bg-emerald-500/10 text-emerald-300 border-emerald-500/20';
-  if (status === 'missing') return 'bg-rose-500/10 text-rose-300 border-rose-500/25';
-  if (status === 'warning') return 'bg-amber-500/10 text-amber-300 border-amber-500/25';
-  return 'bg-indigo-500/10 text-indigo-200 border-indigo-500/20';
+  if (status === 'ready') return 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/20';
+  if (status === 'missing') return 'bg-rose-500/10 text-rose-700 dark:text-rose-300 border-rose-500/25';
+  if (status === 'warning') return 'bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-500/25';
+  return 'bg-indigo-500/10 text-indigo-700 dark:text-indigo-200 border-indigo-500/20';
 }
 
 function getModelGuideStatus(pathHealth: ModelPathHealth | null, modelId: string) {
@@ -263,11 +263,11 @@ function OnboardingReadinessGuide({
   ];
 
   return (
-    <section className="glass-card rounded-[28px] p-5 border-white/5">
+    <section className="glass-card rounded-[28px] p-5 border-zinc-200/60 dark:border-white/5">
       <div className="flex items-start justify-between gap-3 mb-4">
         <div>
-          <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">İlk Açılış Rehberi</h2>
-          <p className="mt-1 text-[10px] leading-relaxed text-gray-500">
+          <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-700 dark:text-gray-400">İlk Açılış Rehberi</h2>
+          <p className="mt-1 text-[10px] leading-relaxed text-zinc-500 dark:text-gray-500">
             Aillame'in yerel modelleri, port durumu ve güvenlik ayarlarını hızlıca kontrol edin.
           </p>
         </div>
@@ -276,17 +276,17 @@ function OnboardingReadinessGuide({
         </span>
       </div>
 
-      <div className="rounded-2xl border border-indigo-500/20 bg-indigo-500/10 px-3 py-2 text-[10px] leading-relaxed text-indigo-200">
+      <div className="rounded-2xl border border-indigo-500/20 bg-indigo-500/10 px-3 py-2 text-[10px] leading-relaxed text-indigo-950 dark:text-indigo-200">
         <p className="font-bold">{mainReady ? 'Temel sistem hazır görünüyor.' : 'Bazı hazırlık kontrolleri tamamlanmadı veya uyarı veriyor.'}</p>
         <p className="mt-1">Bu kontroller yalnızca okuma yapar, dosya indirmez veya silmez.</p>
       </div>
 
       <div className="mt-4 grid grid-cols-1 gap-3">
-        <article className="rounded-2xl border border-white/10 bg-black/20 p-3">
+        <article className="rounded-2xl border border-zinc-200/60 dark:border-white/10 bg-white/40 dark:bg-black/20 p-3">
           <div className="flex items-start justify-between gap-3">
             <div>
-              <p className="text-xs font-black text-white">Yerel Sunucu</p>
-              <p className="mt-1 text-[10px] leading-relaxed text-gray-500">
+              <p className="text-xs font-black text-zinc-950 dark:text-white">Yerel Sunucu</p>
+              <p className="mt-1 text-[10px] leading-relaxed text-zinc-600 dark:text-gray-400">
                 Port: {portHealth?.port ?? 3000}. Port başka uygulama tarafından kullanılıyorsa Aillame açılmayabilir.
               </p>
             </div>
@@ -294,44 +294,44 @@ function OnboardingReadinessGuide({
               {portStatus.label}
             </span>
           </div>
-          <p className="mt-2 text-[10px] leading-relaxed text-gray-500">
+          <p className="mt-2 text-[10px] leading-relaxed text-zinc-500 dark:text-slate-400">
             {portHealth?.message ?? portHealthError ?? 'Port durumu henüz kontrol edilmedi.'}
           </p>
         </article>
 
-        <article className="rounded-2xl border border-white/10 bg-black/20 p-3">
-          <p className="text-xs font-black text-white">Model Dosyaları</p>
+        <article className="rounded-2xl border border-zinc-200/60 dark:border-white/10 bg-white/40 dark:bg-black/20 p-3">
+          <p className="text-xs font-black text-zinc-950 dark:text-white">Model Dosyaları</p>
           <div className="mt-3 grid grid-cols-1 gap-2">
             {statusRows.map(item => (
-              <div key={item.label} className="flex items-center justify-between gap-2 rounded-xl border border-white/5 bg-black/20 px-3 py-2">
-                <span className="text-[10px] font-bold text-gray-300">{item.label}</span>
+              <div key={item.label} className="flex items-center justify-between gap-2 rounded-xl border border-zinc-200/40 dark:border-white/5 bg-white/20 dark:bg-black/20 px-3 py-2">
+                <span className="text-[10px] font-bold text-zinc-700 dark:text-gray-300">{item.label}</span>
                 <span className={`shrink-0 rounded-full border px-2 py-0.5 text-[8px] font-black uppercase tracking-widest ${readinessBadgeClass(item.status)}`}>
                   {item.value}
                 </span>
               </div>
             ))}
           </div>
-          <p className="mt-2 text-[10px] leading-relaxed text-gray-500">
+          <p className="mt-2 text-[10px] leading-relaxed text-zinc-500 dark:text-slate-400">
             Tiny SD artık aktif model değildir; eksikliği hata değildir.
           </p>
         </article>
 
-        <article className="rounded-2xl border border-white/10 bg-black/20 p-3">
-          <p className="text-xs font-black text-white">Yerel Veri</p>
-          <p className="mt-1 text-[10px] leading-relaxed text-gray-500">
+        <article className="rounded-2xl border border-zinc-200/60 dark:border-white/10 bg-white/40 dark:bg-black/20 p-3">
+          <p className="text-xs font-black text-zinc-950 dark:text-white">Yerel Veri</p>
+          <p className="mt-1 text-[10px] leading-relaxed text-zinc-600 dark:text-gray-400">
             Verileriniz cihazınızda saklanır. Hafıza, proje bağlamı ve öğrenme verileri otomatik buluta gönderilmez.
           </p>
-          <p className="mt-2 text-[10px] leading-relaxed text-gray-500">
+          <p className="mt-2 text-[10px] leading-relaxed text-zinc-500 dark:text-slate-400">
             Sohbeti Temizle kalıcı hafızayı silmez; yalnızca ekrandaki aktif sohbeti, taslağı ve görsel eki temizler.
           </p>
         </article>
 
-        <article className="rounded-2xl border border-white/10 bg-black/20 p-3">
-          <p className="text-xs font-black text-white">Güvenlik</p>
-          <p className="mt-1 text-[10px] leading-relaxed text-gray-500">
+        <article className="rounded-2xl border border-zinc-200/60 dark:border-white/10 bg-white/40 dark:bg-black/20 p-3">
+          <p className="text-xs font-black text-zinc-950 dark:text-white">Güvenlik</p>
+          <p className="mt-1 text-[10px] leading-relaxed text-zinc-600 dark:text-gray-400">
             Shell/PowerShell/CMD serbest çalıştırılmaz. Token/env/şifre gösterme engellenir.
           </p>
-          <p className="mt-2 text-[10px] leading-relaxed text-gray-500">
+          <p className="mt-2 text-[10px] leading-relaxed text-zinc-500 dark:text-slate-400">
             Model dosyaları otomatik silinmez veya indirilmez.
           </p>
         </article>
@@ -342,7 +342,7 @@ function OnboardingReadinessGuide({
           type="button"
           onClick={loadPathHealth}
           disabled={loadingPathHealth}
-          className="h-8 px-3 rounded-xl bg-white/5 hover:bg-white/10 text-gray-300 text-[9px] font-black uppercase tracking-widest flex items-center gap-1.5 disabled:opacity-50"
+          className="h-8 px-3 rounded-xl bg-zinc-200/60 hover:bg-zinc-300/80 dark:bg-white/5 dark:hover:bg-white/10 text-zinc-800 dark:text-gray-300 text-[9px] font-black uppercase tracking-widest flex items-center gap-1.5 disabled:opacity-50 transition-colors"
         >
           <FiLoader size={11} className={loadingPathHealth ? 'animate-spin' : ''} />
           Model Yollarını Kontrol Et
@@ -351,7 +351,7 @@ function OnboardingReadinessGuide({
           type="button"
           onClick={loadPortHealth}
           disabled={loadingPortHealth}
-          className="h-8 px-3 rounded-xl bg-white/5 hover:bg-white/10 text-gray-300 text-[9px] font-black uppercase tracking-widest flex items-center gap-1.5 disabled:opacity-50"
+          className="h-8 px-3 rounded-xl bg-zinc-200/60 hover:bg-zinc-300/80 dark:bg-white/5 dark:hover:bg-white/10 text-zinc-800 dark:text-gray-300 text-[9px] font-black uppercase tracking-widest flex items-center gap-1.5 disabled:opacity-50 transition-colors"
         >
           <FiLoader size={11} className={loadingPortHealth ? 'animate-spin' : ''} />
           Port Durumunu Kontrol Et
@@ -360,14 +360,14 @@ function OnboardingReadinessGuide({
           type="button"
           onClick={copyPathHealthSupportSummary}
           disabled={!pathHealth || loadingPathHealth}
-          className="h-8 px-3 rounded-xl bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/20 text-indigo-200 text-[9px] font-black uppercase tracking-widest flex items-center gap-1.5 disabled:opacity-50"
+          className="h-8 px-3 rounded-xl bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/20 text-indigo-700 dark:text-indigo-200 text-[9px] font-black uppercase tracking-widest flex items-center gap-1.5 disabled:opacity-50 transition-colors"
         >
           <FiCopy size={11} />
           Destek Özeti Kopyala
         </button>
         <a
           href="/admin/desktop-readiness"
-          className="h-8 px-3 rounded-xl bg-white/5 hover:bg-white/10 text-gray-300 text-[9px] font-black uppercase tracking-widest flex items-center gap-1.5"
+          className="h-8 px-3 rounded-xl bg-zinc-200/60 hover:bg-zinc-300/80 dark:bg-white/5 dark:hover:bg-white/10 text-zinc-800 dark:text-gray-300 text-[9px] font-black uppercase tracking-widest flex items-center gap-1.5 transition-colors"
         >
           <FiCpu size={11} />
           Sorun Giderme Rehberini Aç
@@ -375,7 +375,7 @@ function OnboardingReadinessGuide({
       </div>
 
       {pathHealthCopyMessage && (
-        <p className="mt-3 rounded-2xl border border-emerald-500/20 bg-emerald-500/10 px-3 py-2 text-[10px] leading-relaxed text-emerald-200">
+        <p className="mt-3 rounded-2xl border border-emerald-500/20 bg-emerald-500/10 px-3 py-2 text-[10px] leading-relaxed text-emerald-700 dark:text-emerald-200">
           {pathHealthCopyMessage}
         </p>
       )}

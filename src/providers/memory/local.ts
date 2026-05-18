@@ -123,4 +123,21 @@ export class LocalMemoryStore implements MemoryStore {
     }
     await tx.done;
   }
+
+  async clearConversationMessages(conversationId: string): Promise<void> {
+    const db = await this.getDb();
+    if (!db) {
+      this.fallbackMessages.set(conversationId, []);
+      return;
+    }
+
+    const tx = db.transaction('messages', 'readwrite');
+    const msgStore = tx.objectStore('messages');
+    const index = msgStore.index('by-conversation');
+    const keys = await index.getAllKeys(conversationId);
+    for (const key of keys) {
+      await msgStore.delete(key);
+    }
+    await tx.done;
+  }
 }

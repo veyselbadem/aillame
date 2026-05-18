@@ -33,11 +33,13 @@ export class ActiveModelStateService {
   static async getActiveState(): Promise<ActiveModelState> {
     let state = await readJsonSafe<ActiveModelState>(STATE_FILE);
     
+    // Fetch installed models to validate registration
+    const installed = await InstalledModelRegistryService.getInstalledModels();
+    
     // Fallback: If canonical state is missing but local store has one, try to reconstruct
     if (!state && getActiveChatModelId()) {
       const localId = getActiveChatModelId()!;
-      const installed = await InstalledModelRegistryService.getInstalledModels();
-      const model = installed.find(m => m.id === localId);
+      const model = installed.find(m => m.id === localId && m.status === 'registered');
       if (model) {
         state = {
           text: {
@@ -54,6 +56,16 @@ export class ActiveModelStateService {
     }
 
     const finalState: ActiveModelState = state || { text: null, image: null, code: null, vision: null };
+    
+    // In-line validation: Check if active model exists in registry and is registered
+    if (finalState.text) {
+      const activeModel = installed.find(m => m.id === finalState.text!.modelId);
+      if (!activeModel || activeModel.status !== 'registered') {
+        // Clear active model automatically since it was removed or isn't registered
+        finalState.text = null;
+        this.clearActiveModel('text').catch(() => {});
+      }
+    }
     
     // Consistency check
     const localId = getActiveChatModelId();
