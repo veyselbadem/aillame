@@ -162,8 +162,8 @@ export default function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
   return (
     <>
       <aside
-        className={`fixed left-0 top-0 z-[10001] h-full overflow-hidden p-2 transition-all duration-500 ${
-          isOpen ? 'w-[316px]' : 'w-0 p-0'
+        className={`fixed left-0 top-0 z-[10001] h-full overflow-hidden transition-all duration-500 ${
+          isOpen ? 'w-[316px] p-2' : 'w-0 p-0'
         }`}
       >
         <div className="relative z-20 flex h-full w-[300px] flex-col overflow-hidden rounded-[18px] border border-zinc-300/60 bg-[#fffdf7]/90 shadow-[0_18px_70px_rgba(75,63,42,0.12)] backdrop-blur-xl transition-all duration-500 dark:border-white/[0.08] dark:bg-white/[0.03] dark:shadow-[0_18px_70px_rgba(0,0,0,0.38)]">

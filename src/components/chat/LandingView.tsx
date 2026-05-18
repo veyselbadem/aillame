@@ -131,11 +131,11 @@ export const LandingView: React.FC<LandingViewProps> = ({
   };
 
   return (
-    <section className="chat-landing relative h-full overflow-y-auto px-5 pb-14 pt-[120px] custom-scrollbar sm:px-8 lg:pt-[150px]">
+    <section className="chat-landing relative h-full overflow-y-auto px-3 pb-14 pt-[96px] custom-scrollbar sm:px-8 sm:pt-[120px] lg:pt-[150px]">
       <div className="pointer-events-none absolute inset-0 neural-grid opacity-60" />
       <div className="chat-ambient pointer-events-none absolute inset-0" />
 
-      <div className="relative z-10 mx-auto flex w-full max-w-[1120px] flex-col items-center">
+      <div className="relative z-10 mx-auto flex w-full min-w-0 max-w-[1120px] flex-col items-center">
         <div className="mb-10 text-center animate-fade-in sm:mb-11">
           <FiStar className="mx-auto mb-4 text-purple-500 dark:text-purple-300 sparkle-glow" size={32} />
           <h1 className="bg-gradient-to-r from-purple-400 via-indigo-400 to-sky-400 bg-clip-text text-[64px] font-extrabold leading-none text-transparent sm:text-[80px] lg:text-[96px]">
@@ -146,9 +146,9 @@ export const LandingView: React.FC<LandingViewProps> = ({
           </p>
         </div>
 
-        <div className="relative z-30 w-full animate-fade-in" style={{ animationDelay: '0.08s' }}>
+        <div className="relative z-30 w-full min-w-0 animate-fade-in" style={{ animationDelay: '0.08s' }}>
           <div className="chat-composer-shell group relative w-full rounded-[29px] p-[1px] shadow-[0_24px_80px_rgba(15,23,42,0.16),0_0_42px_rgba(96,165,250,0.12)] transition-shadow group-focus-within:shadow-[0_24px_80px_rgba(15,23,42,0.18),0_0_70px_rgba(139,92,246,0.22)]">
-            <div className="chat-composer relative min-h-[170px] overflow-visible rounded-[28px] p-5 backdrop-blur-xl sm:p-7">
+            <div className="chat-composer relative min-h-[170px] overflow-visible rounded-[28px] p-4 backdrop-blur-xl sm:p-7">
               {attachments.length > 0 && (
                 <div className="mb-4 flex gap-3 overflow-x-auto custom-scrollbar">
                   {attachments.map((attachment) => (
@@ -191,7 +191,7 @@ export const LandingView: React.FC<LandingViewProps> = ({
                 data-landing-prompt="true"
               />
 
-              <div className="relative z-20 mt-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="relative z-20 mt-4 flex min-w-0 flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex items-center">
                   <input
                     ref={fileInputRef}
@@ -213,7 +213,7 @@ export const LandingView: React.FC<LandingViewProps> = ({
                   </button>
                 </div>
 
-                <div className="flex items-center justify-between gap-4 sm:justify-end">
+                <div className="flex w-full min-w-0 items-center justify-between gap-2 sm:w-auto sm:justify-end sm:gap-4">
                   <AillameModelSelector />
                   <button
                     type="button"
@@ -232,7 +232,7 @@ export const LandingView: React.FC<LandingViewProps> = ({
         </div>
 
         <div
-          className="relative z-0 mt-8 flex w-full flex-wrap items-center justify-center gap-4 animate-fade-in"
+          className="relative z-0 mt-8 grid w-full grid-cols-2 place-items-center gap-3 animate-fade-in sm:flex sm:flex-wrap sm:items-center sm:justify-center sm:gap-4"
           style={{ animationDelay: '0.16s' }}
         >
           {quickActions.map((action) => (

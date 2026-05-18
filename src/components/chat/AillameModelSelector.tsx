@@ -24,11 +24,11 @@ export const AillameModelSelector: React.FC = () => {
   }, [open]);
 
   return (
-    <div ref={rootRef} className="relative z-[120]">
+    <div ref={rootRef} className="relative z-[120] min-w-0 flex-1 sm:flex-none">
       <button
         type="button"
         onClick={() => setOpen((value) => !value)}
-        className="chat-composer-control group flex h-12 min-w-[156px] items-center justify-between gap-2 rounded-xl border px-4 text-left backdrop-blur-md transition"
+        className="chat-composer-control group flex h-11 w-full min-w-0 items-center justify-between gap-2 rounded-xl border px-3 text-left backdrop-blur-md transition sm:h-12 sm:min-w-[156px] sm:px-4"
         aria-haspopup="listbox"
         aria-expanded={open}
         aria-label="Model seç"
@@ -47,7 +47,7 @@ export const AillameModelSelector: React.FC = () => {
 
       {open && (
         <div
-          className="theme-surface pointer-events-auto absolute right-0 top-[calc(100%+10px)] z-[120] w-64 overflow-hidden rounded-2xl p-1.5 shadow-2xl backdrop-blur-xl"
+          className="theme-surface pointer-events-auto absolute right-0 top-[calc(100%+10px)] z-[120] w-64 max-w-[calc(100vw-2rem)] overflow-hidden rounded-2xl p-1.5 shadow-2xl backdrop-blur-xl"
           role="listbox"
         >
           {profileEntries.length === 0 ? (
