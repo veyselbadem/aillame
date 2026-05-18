@@ -146,7 +146,7 @@ export const LandingView: React.FC<LandingViewProps> = ({
           </p>
         </div>
 
-        <div className="w-full animate-fade-in" style={{ animationDelay: '0.08s' }}>
+        <div className="relative z-30 w-full animate-fade-in" style={{ animationDelay: '0.08s' }}>
           <div className="chat-composer-shell group relative w-full rounded-[29px] p-[1px] shadow-[0_24px_80px_rgba(15,23,42,0.16),0_0_42px_rgba(96,165,250,0.12)] transition-shadow group-focus-within:shadow-[0_24px_80px_rgba(15,23,42,0.18),0_0_70px_rgba(139,92,246,0.22)]">
             <div className="chat-composer relative min-h-[170px] overflow-visible rounded-[28px] p-5 backdrop-blur-xl sm:p-7">
               {attachments.length > 0 && (
@@ -232,7 +232,7 @@ export const LandingView: React.FC<LandingViewProps> = ({
         </div>
 
         <div
-          className="mt-8 flex w-full flex-wrap items-center justify-center gap-4 animate-fade-in"
+          className="relative z-0 mt-8 flex w-full flex-wrap items-center justify-center gap-4 animate-fade-in"
           style={{ animationDelay: '0.16s' }}
         >
           {quickActions.map((action) => (

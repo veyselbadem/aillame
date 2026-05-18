@@ -14,7 +14,7 @@ export const QuickActionCard: React.FC<QuickActionCardProps> = ({ icon: Icon, ti
     <button
       type="button"
       onClick={onClick}
-      className="theme-surface group relative flex h-20 w-20 items-center justify-center overflow-hidden rounded-[20px] text-left shadow-xl transition-all duration-300 hover:-translate-y-1 hover:border-purple-300/40 hover:shadow-purple-500/10"
+      className="theme-surface group relative z-0 flex h-20 w-20 items-center justify-center overflow-hidden rounded-[20px] text-left shadow-xl transition-all duration-300 hover:-translate-y-1 hover:border-purple-300/40 hover:shadow-purple-500/10"
       aria-label={title}
       title={title}
     >

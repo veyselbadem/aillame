@@ -13,6 +13,8 @@
 # ---- Next.js build çıktısı --------------------------------
 .next/
 out/
+dist/
+dist_old/
 
 # ---- Node bağımlılıkları ----------------------------------
 node_modules/
@@ -65,6 +67,7 @@ Thumbs.db
 # ---- Runtime Data -----------------------------------------
 data/
 !/data/
+data/*
 !/data/nano/
 !/data/nano/**
 /data/nano/**/*.jsonl
@@ -93,6 +96,7 @@ audit_logs.json
 node_modules/
 data/
 !/data/
+data/*
 !/data/nano/
 !/data/nano/**
 /data/nano/**/*.jsonl

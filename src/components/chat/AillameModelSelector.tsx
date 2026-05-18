@@ -24,7 +24,7 @@ export const AillameModelSelector: React.FC = () => {
   }, [open]);
 
   return (
-    <div ref={rootRef} className="relative z-[100]">
+    <div ref={rootRef} className="relative z-[120]">
       <button
         type="button"
         onClick={() => setOpen((value) => !value)}
@@ -47,7 +47,7 @@ export const AillameModelSelector: React.FC = () => {
 
       {open && (
         <div
-          className="theme-surface pointer-events-auto absolute right-0 top-[calc(100%+10px)] z-[100] w-64 overflow-hidden rounded-2xl p-1.5 shadow-2xl backdrop-blur-xl"
+          className="theme-surface pointer-events-auto absolute right-0 top-[calc(100%+10px)] z-[120] w-64 overflow-hidden rounded-2xl p-1.5 shadow-2xl backdrop-blur-xl"
           role="listbox"
         >
           {profileEntries.length === 0 ? (
