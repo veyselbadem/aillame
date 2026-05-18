@@ -56,6 +56,7 @@ Aillame desktop yetkilendirmesi, en yüksek derecede zırhlanmış **En Az Yetki
 
 *   **API Entegrasyonu (Hybrid Bridge):** Next.js App Router altında dinamik API routes (`/api/...`) barındırdığından, Next.js pure static export (`output: 'export'`) ile derlendiğinde API rotalarını tanımaz ve hata verir.
 *   **Çalışma Zamanı Çözümü:** Aillame production'da arka planda bir yerel Next.js/Node.js web sunucusu (`http://127.0.0.1:3000`) ayağa kaldırır. Tauri Webview ise bu yerel sunucuya bağlanarak sayfaları yükler. Tauri API Bridge (`src/lib/bridge.ts`) ise Tauri algılandığında native Rust invoke komutlarını (`commands::models::safe_model_infer` vb.) çağırırken, web fallback durumunda HTTP API isteklerini yürütür.
+*   **Port 3000 Çakışma Tanısı:** Geliştirme modunda `beforeDevCommand`, `scripts/ensure-dev-port-free.mjs` ile 3000 portunu read-only olarak kontrol eder. Port doluysa Aillame kullanıcıya anlaşılır bir uyarı verir ve başka process'i otomatik sonlandırmaz. Masaüstü Hazırlığı ekranı port durumunu `Kullanılabilir`, `Aillame Çalışıyor` veya `Çakışma` olarak gösterir.
 
 ---
 
@@ -109,5 +110,4 @@ Aillame v1.3.0 masaüstü paketinin gerçek Windows ortamında uçtan uca doğru
 *   **Güncelleme Modeli:** Şu anda Aillame otomatik güncelleme (Tauri Auto-Updater) özelliğini aktif **etmemiştir.** Sürüm yükseltmeleri GitHub Releases üzerinden yayınlanan installer binaries (.exe ve .msi) ile manuel olarak gerçekleştirilir.
 *   **İleride Auto-Updater Entegrasyonu:** Eğer otomatik güncelleme aktif edilecek olursa, Tauri standard güncelleme JSON uç noktası ve Windows Code Signing (kod imzalama) sertifikaları gerekecektir.
 *   **Model Ayrımı Güvencesi:** Auto-updater entegre edilse dahi, büyük model dosyaları (`C:\Aillame\Models`) kesinlikle güncelleme kanallarından taşınmayacak ve yerel diskte dokunulmadan korunacaktır.
-
 

@@ -22,7 +22,7 @@ Acil bir yama sürümü (`v1.3.1`) yalnızca ve yalnızca aşağıdaki **kritik 
 | Özellik Adı | Öncelik Seviyesi | Risk Seviyesi | Mimari Etki |
 | :--- | :--- | :--- | :--- |
 | **Model Path Doğrulama Sihirbazı** | **Must-Have** | **Düşük** | UX / Ayarlar |
-| **Port 3000 Çakışma Otomatik Kurtarma** | **Must-Have** | **Düşük** | Sunucu Başlangıcı |
+| **Port 3000 Çakışma Tanısı ve Uyarısı** | **Must-Have** | **Düşük** | Sunucu Başlangıcı |
 | **Hafıza Düzenleme ve İçe/Dışa Aktarma** | **Should-Have** | **Düşük** | Hafıza Servisi |
 | **Görsel Sohbet Geçmişi ve Önizleme** | **Should-Have** | **Orta** | VLM Inference |
 | **Read-only Doküman Arama ve Test Araçları** | **Should-Have** | **Düşük** | Safe Tool-Use |
@@ -85,6 +85,17 @@ Faz 23.3 ile 390px mobil ekranda composer, hiz secici ve shortcut kartlari viewp
 - 390px/768px responsive composer ve shortcut layout duzeltmesi.
 
 ### Kalan v1.4.0 Adaylari
-- Port 3000 otomatik algilama ve kurtarma akisi.
+- Port 3000 tanilama ve kullanici dostu uyari akisi.
 - Ilk acilis/onboarding iyilestirmeleri.
 - Model path wizard icin daha rehberli kurulum ve hata cozum adimlari.
+
+## 6. v1.4.0 Port 3000 Tanilama ve Uyari Akisi
+
+Durum: **v1.4.0-dev hattinda tamamlandi.**
+
+Aillame yerel Next/Node sunucusu varsayilan olarak `127.0.0.1:3000` uzerinden calisir. Faz 24 ile bu port icin read-only saglik kontrolu eklendi:
+- Port bossa `Kullanilabilir` olarak raporlanir.
+- Port Aillame health endpoint'i tarafindan yanitlaniyorsa `Aillame calisiyor` olarak raporlanir ve false-positive conflict uretilmez.
+- Port dolu ama Aillame health yaniti yoksa kullaniciya `3000 portu baska bir uygulama tarafindan kullaniliyor olabilir` uyarisi gosterilir.
+
+Bu akis baska process'i otomatik oldurmez, serbest shell/PowerShell/CMD yetkisi eklemez ve kullanicidan onay almadan port degistirmez.

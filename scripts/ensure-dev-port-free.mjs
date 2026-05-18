@@ -55,7 +55,6 @@ function isSafeAillameDevProcess(processInfo) {
   const commandLine = String(processInfo.CommandLine || '').toLowerCase();
 
   if (!name.includes('node')) return false;
-
   if (!commandLine) return true;
 
   return (
@@ -66,48 +65,36 @@ function isSafeAillameDevProcess(processInfo) {
   );
 }
 
-async function stopProcess(pid) {
-  await runPowerShell(`Stop-Process -Id ${pid} -Force`);
-}
-
 async function main() {
   if (process.platform !== 'win32') {
-    console.log(`[Aillame] Port ${PORT} kontrolü Windows dışı ortamda atlandı.`);
+    console.log(`[Aillame] Port ${PORT} kontrolu Windows disi ortamda atlandi.`);
     return;
   }
 
   const owners = await getPortOwners(PORT);
 
   if (owners.length === 0) {
-    console.log(`[Aillame] Port ${PORT} boş. Dev sunucusu başlatılabilir.`);
+    console.log(`[Aillame] Port ${PORT} bos. Dev sunucusu baslatilabilir.`);
     return;
   }
 
   for (const owner of owners) {
-    if (!isSafeAillameDevProcess(owner)) {
-      console.error(`[Aillame] Port ${PORT} kullanımda, ancak süreç otomatik kapatılmadı.`);
-      console.error(`[Aillame] PID ${owner.ProcessId}: ${owner.Name}`);
-      console.error('[Aillame] Bu süreç Aillame/Next dev sunucusu gibi görünmüyor. Lütfen portu manuel boşaltın.');
-      process.exit(1);
-    }
-
-    console.log(`[Aillame] Eski dev sunucusu kapatılıyor: PID ${owner.ProcessId} (${owner.Name})`);
-    await stopProcess(owner.ProcessId);
+    const looksLikeAillame = isSafeAillameDevProcess(owner);
+    console.error(`[Aillame] Port ${PORT} kullanimda, surec otomatik kapatilmadi.`);
+    console.error(`[Aillame] PID ${owner.ProcessId}: ${owner.Name}`);
+    console.error(
+      looksLikeAillame
+        ? '[Aillame] Bu surec Aillame/Next dev sunucusu gibi gorunuyor. Lutfen manuel kapatip tekrar deneyin.'
+        : '[Aillame] Bu surec Aillame/Next dev sunucusu gibi gorunmuyor. Lutfen portu manuel bosaltin.',
+    );
   }
 
-  await new Promise((resolve) => setTimeout(resolve, 1000));
-
-  const remainingOwners = await getPortOwners(PORT);
-  if (remainingOwners.length > 0) {
-    console.error(`[Aillame] Port ${PORT} hala kullanımda. Dev sunucusu güvenli şekilde başlatılamadı.`);
-    process.exit(1);
-  }
-
-  console.log(`[Aillame] Port ${PORT} temizlendi.`);
+  console.error('[Aillame] Aillame baska processleri otomatik sonlandirmaz.');
+  process.exit(1);
 }
 
 main().catch((error) => {
-  console.error('[Aillame] Dev port kontrolü başarısız oldu.');
+  console.error('[Aillame] Dev port kontrolu basarisiz oldu.');
   console.error(error instanceof Error ? error.message : String(error));
   process.exit(1);
 });

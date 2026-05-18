@@ -8,6 +8,17 @@ export interface DesktopRuntimeAcceptance {
   blockers: string[];
 }
 
+export interface DesktopPortHealth {
+  ok: boolean;
+  host: string;
+  port: number;
+  available: boolean;
+  occupied: boolean;
+  owner: 'available' | 'aillame' | 'unknown';
+  message: string;
+  recommendation?: string;
+}
+
 export interface DesktopPackagingReadiness {
   manifestValid: boolean;
   iconsAvailable: boolean;
@@ -19,6 +30,7 @@ export interface DesktopReadinessReport {
   shellAvailable: boolean;
   localServerBootPlanned: boolean;
   healthCheckReady: boolean;
+  portHealth: DesktopPortHealth;
   runtimeAcceptance: DesktopRuntimeAcceptance;
   storageReady: boolean;
   securityReady: boolean;

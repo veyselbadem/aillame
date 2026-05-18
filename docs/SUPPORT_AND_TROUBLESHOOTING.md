@@ -12,9 +12,12 @@ Bu doküman, **Aillame Local AI Foundation** masaüstü uygulamasının çalış
 
 ### B) Port 3000 Çakışması (Next.js Sunucusu)
 *   **Açıklama:** Aillame, arka planda 3000 portundan hizmet alan yerel bir sunucu başlatır. Başka bir uygulama (örn. başka bir React/Next projesi) 3000 portunu kullanıyorsa Aillame açılamaz.
-*   **Çözüm:** 
-    1.  Terminali açıp `npm run ensure-dev-port-free.mjs` komutunu çalıştırarak çakışan süreci temizleyin.
-    2.  Veya `.env` dosyasındaki `AILLAME_LOCAL_SERVER_PORT` değerini boş bir porta (örn. 3005) güncelleyin.
+*   **Kullanıcı mesajı:** "Aillame yerel sunucusu başlatılamadı. 3000 portu başka bir uygulama tarafından kullanılıyor olabilir."
+*   **Çözüm:**
+    1.  Açık olan başka Next.js, React veya yerel geliştirme sunucularını kapatıp Aillame'i tekrar başlatın.
+    2.  Geliştirici ortamında `node scripts/ensure-dev-port-free.mjs` komutu port sahibini raporlar; Aillame başka process'leri otomatik sonlandırmaz.
+    3.  Gerekirse `.env` dosyasındaki `AILLAME_LOCAL_SERVER_PORT` değerini boş bir porta (örn. 3005) güncelleyin ve Tauri/Next ayarlarıyla uyumlu olduğundan emin olun.
+*   **Tanılama:** Masaüstü Hazırlığı ekranındaki "Port Durumu" satırı `Kullanılabilir`, `Aillame Çalışıyor` veya `Çakışma` durumunu gösterir. `Aillame Çalışıyor`, runtime'ın kendi portunu yanlış çakışma saymadığı anlamına gelir.
 
 ---
 

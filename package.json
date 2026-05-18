@@ -145,6 +145,7 @@
     "smoke:agent-path-containment": "npx tsx scripts/smoke-agent-path-containment.ts",
     "smoke:live-runtime-acceptance": "node scripts/smoke-live-runtime-acceptance.mjs",
     "smoke:desktop-readiness": "node scripts/smoke-desktop-readiness.mjs",
+    "smoke:phase24-port-health": "npx tsx scripts/smoke-phase24-port-health-validation.ts",
     "smoke:beta-rc": "node scripts/smoke-beta-rc.mjs",
     "smoke:legacy-cleanup": "node scripts/smoke-legacy-cleanup.mjs",
     "smoke:ui-cleanup": "node scripts/smoke-ui-cleanup.mjs",

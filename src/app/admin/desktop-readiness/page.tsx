@@ -155,6 +155,32 @@ export default function DesktopReadinessPage() {
                 <div className="grid gap-5">
                   <KeyValue label="Host" value={data?.desktop?.bootPlan?.defaultHost} />
                   <KeyValue label="Hedef Port" value={data?.desktop?.bootPlan?.defaultPort} />
+                  {data?.desktop?.portHealth && (
+                    <div className="rounded-2xl border border-transparent theme-elevated p-4">
+                      <div className="flex items-center justify-between gap-3">
+                        <span className="text-[9px] theme-muted uppercase font-black tracking-widest">Port Durumu</span>
+                        <StatusBadge
+                          variant={data.desktop.portHealth.ok ? 'ready' : 'warning'}
+                          label={
+                            data.desktop.portHealth.owner === 'aillame'
+                              ? 'AILLAME ÇALIŞIYOR'
+                              : data.desktop.portHealth.available
+                                ? 'KULLANILABİLİR'
+                                : 'ÇAKIŞMA'
+                          }
+                          className="!px-3 !py-1 !text-[9px] !font-black"
+                        />
+                      </div>
+                      <p className="mt-3 text-xs font-semibold theme-title">
+                        {data.desktop.portHealth.message}
+                      </p>
+                      {data.desktop.portHealth.recommendation && (
+                        <p className="mt-2 text-[10px] leading-relaxed theme-muted">
+                          {data.desktop.portHealth.recommendation}
+                        </p>
+                      )}
+                    </div>
+                  )}
                   <div className="space-y-2">
                     <p className="text-[9px] theme-muted uppercase font-black tracking-widest">Başlatma Komutu</p>
                     <div className="p-4 rounded-xl theme-elevated font-mono text-[11px] theme-secondary break-all border border-transparent hover:border-indigo-500/20 transition-all">

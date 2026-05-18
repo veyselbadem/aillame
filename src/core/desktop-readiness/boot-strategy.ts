@@ -29,6 +29,7 @@ export class LocalServerBootStrategy {
       requiresUserAction: false,
       productionNotes: [
         "Windows Firewall may require port permission for non-localhost binding.",
+        "If port 3000 is occupied by another local dev server, Aillame reports a user-facing warning and does not terminate that process.",
         "Ensure no other Aillame instances are running on the same port.",
         "Local API keys are required for desktop-to-server communication in production."
       ]
