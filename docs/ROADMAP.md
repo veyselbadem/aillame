@@ -85,8 +85,7 @@ Faz 23.3 ile 390px mobil ekranda composer, hiz secici ve shortcut kartlari viewp
 - 390px/768px responsive composer ve shortcut layout duzeltmesi.
 
 ### Kalan v1.4.0 Adaylari
-- Port 3000 tanilama ve kullanici dostu uyari akisi.
-- Ilk acilis/onboarding iyilestirmeleri.
+- Ilk acilis/onboarding rehberinin ileride modal veya ilk calistirma tercihiyle genisletilmesi.
 - Model path wizard icin daha rehberli kurulum ve hata cozum adimlari.
 
 ## 6. v1.4.0 Port 3000 Tanilama ve Uyari Akisi
@@ -99,3 +98,16 @@ Aillame yerel Next/Node sunucusu varsayilan olarak `127.0.0.1:3000` uzerinden ca
 - Port dolu ama Aillame health yaniti yoksa kullaniciya `3000 portu baska bir uygulama tarafindan kullaniliyor olabilir` uyarisi gosterilir.
 
 Bu akis baska process'i otomatik oldurmez, serbest shell/PowerShell/CMD yetkisi eklemez ve kullanicidan onay almadan port degistirmez.
+
+## 7. v1.4.0 Ilk Acilis Rehberi ve Readiness UX
+
+Durum: **v1.4.0-dev hattinda tamamlandi.**
+
+Faz 25 ile Ayarlar ekranina **İlk Açılış Rehberi** eklendi. Rehber ilk acilista kullanicinin sistemin temel hazirlik durumunu anlamasini saglar:
+- Yerel Sunucu karti Port 3000 durumunu read-only olarak gosterir.
+- Model Dosyalari karti Qwen3-VL 4B, SDXL Turbo, Aillame Nano ve Tiny SD durumlarini ozetler.
+- Tiny SD kaldirilmis legacy modeldir; eksikligi hata degildir.
+- Yerel Veri karti hafiza, proje baglami ve ogrenme verilerinin cihazda saklandigini anlatir.
+- Guvenlik karti Shell/PowerShell/CMD serbest calistirilmayacagini, token/env/sifre gosteriminin engellendigini ve model dosyalarinin otomatik silinmeyecegini/indirilmeyecegini belirtir.
+
+Bu rehber yeni model indirmez, inference baslatmaz, process kapatmaz ve runtime/model davranisini degistirmez. Aksiyonlari yalnizca `GET /api/aillame/models/path-health`, `GET /api/aillame/runtime/port-health` ve mevcut **Destek Ozeti Kopyala** akisini kullanir.

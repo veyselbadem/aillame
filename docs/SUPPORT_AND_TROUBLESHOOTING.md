@@ -69,3 +69,13 @@ Bu doküman, **Aillame Local AI Foundation** masaüstü uygulamasının çalış
 *   **Kapsam:** Mevcut mesaj listesi, yazma alanındaki taslak metin ve aktif görsel ek temizlenir.
 *   **Veri güvenliği:** Aillame Hafızası, Proje Bağlamı, Nano Öğrenme/Distillation verileri, model registry kayıtları ve yerel model dosyaları silinmez veya değiştirilmez.
 *   **Kalıcı veri yönetimi:** Hafıza, proje bağlamı veya öğrenme verilerini yönetmek için Ayarlar ekranındaki ilgili paneller kullanılmalıdır.
+
+---
+
+## 6. Ilk Acilis Rehberi
+*   **Aciklama:** Ayarlar ekranindaki **İlk Açılış Rehberi**, Aillame'in yerel sunucu portunu, model dosyalarini, yerel veri politikasini ve guvenlik sinirlarini tek yerde ozetler.
+*   **Port durumu karti:** `3000` portunun `Aillame calisiyor`, `Kullanilabilir`, `Port kullanimda` veya `Kontrol edilemedi` durumlarini gosterir.
+*   **Model yolu karti:** Qwen3-VL 4B, SDXL Turbo, Aillame Nano ve Tiny SD durumlarini gosterir. Tiny SD artık aktif model değildir; eksikliği hata değildir.
+*   **Yerel veri notu:** Hafiza, proje baglami ve ogrenme verileri cihazda saklanir; otomatik buluta gonderim yapilmaz.
+*   **Guvenlik notu:** Rehber yalnizca okuma yapar; model indirmez, silmez, process kapatmaz ve Shell/PowerShell/CMD calistirma yetkisi eklemez.
+*   **Destek ozeti:** Rehberdeki **Destek Özeti Kopyala** aksiyonu, model yolu durumunu hassas veri icermeyen kisa bir destek metni olarak hazirlar.

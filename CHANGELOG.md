@@ -14,6 +14,7 @@ v1.4.0-dev hatti, v1.3.0 stabil release tag'ini degistirmeden model yolu dogrula
 *   **models.pathHealth Tool'u:** Nano safe tool-use hatti uzerinden model yolu saglik bilgisini guvenli sekilde raporlar.
 *   **Destek Ozeti Kopyala:** Model yolu durumunu paylasilabilir, secret ve kisisel path icermeyen bir destek metnine donusturur.
 *   **Sohbeti Temizle:** Aktif sohbet ekranindaki mesajlari, taslagi ve aktif gorsel eki temizleyen UI aksiyonu geri getirildi.
+*   **Ilk Acilis Rehberi / İlk Açılış Rehberi:** Ayarlar ekraninda model dosyalari, Port 3000, yerel veri ve guvenlik durumunu read-only olarak ozetleyen onboarding/readiness paneli eklendi.
 
 ### Fixed
 *   **HIZLI Dropdown Layering:** Hiz secici menunun shortcut ikon kartlarinin arkasinda kalmasi giderildi.
@@ -26,16 +27,19 @@ v1.4.0-dev hatti, v1.3.0 stabil release tag'ini degistirmeden model yolu dogrula
 *   **Mobil Sidebar Varsayilani:** Dar ekranlarda sidebar baslangicta kapali gelir.
 *   **Shortcut Mobil Grid:** Shortcut ikonlari mobilde iki sutun grid olarak sarilir.
 *   **Okunabilir Dosya Boyutlari:** Model yolu saglik panelinde dosya boyutlari GB/MB formatinda gosterilir.
+*   **Readiness UX:** Port durumu karti, model yolu karti, yerel veri notu ve guvenlik notu tek rehber alaninda toplandi.
 
 ### Security
 *   **Read-only Model Health:** Model silme, indirme, duzenleme veya geri yukleme istekleri engellenir.
 *   **Gizli Veri Koruma:** Destek ozeti token, `.env`, sifre, private key veya `C:\Users\...` gibi kisisel kullanici yolu icermez.
 *   **Safe Chat Clearing:** Sohbeti Temizle hafiza, proje baglami, distillation dataset, registry veya yerel dosyalari silmez.
+*   **Read-only Onboarding:** Ilk Acilis Rehberi dosya indirmez, silmez, process kapatmaz, shell/PowerShell/CMD calistirma yetkisi eklemez.
 
 ### Tests
 *   `npm run typecheck` gecti.
 *   `npm run build` gecti.
 *   `npx tsx scripts/smoke-phase22-model-path-health-validation.ts` 25/25 gecti.
+*   `npx tsx scripts/smoke-phase25-onboarding-readiness-validation.ts` onboarding/readiness kaynaklarini ve UI metinlerini dogrular.
 *   `npx tsx scripts/smoke-phase7.1-all-validations.ts` 7/7 gecti.
 *   `npx tsx scripts/smoke-phase8.1-project-context-validation.ts` 11/11 gecti.
 *   `npx tsx scripts/smoke-phase9-distillation-dataset-validation.ts` 17/17 gecti.

@@ -88,6 +88,17 @@ type ModelPathHealth = {
   message: string;
 };
 
+type RuntimePortHealth = {
+  ok: boolean;
+  host: string;
+  port: number;
+  available: boolean;
+  occupied: boolean;
+  owner: 'available' | 'aillame' | 'unknown';
+  message: string;
+  recommendation?: string;
+};
+
 function purposeLabel(purpose: ModelStatus['purpose']) {
   return purpose === 'chat' ? 'Chat / LLM' : 'Görsel Üretim';
 }
@@ -189,6 +200,187 @@ function buildModelPathSupportSummary(pathHealth: ModelPathHealth) {
   );
 
   return lines.join('\n');
+}
+
+function readinessBadgeClass(status: 'ready' | 'missing' | 'warning' | 'info') {
+  if (status === 'ready') return 'bg-emerald-500/10 text-emerald-300 border-emerald-500/20';
+  if (status === 'missing') return 'bg-rose-500/10 text-rose-300 border-rose-500/25';
+  if (status === 'warning') return 'bg-amber-500/10 text-amber-300 border-amber-500/25';
+  return 'bg-indigo-500/10 text-indigo-200 border-indigo-500/20';
+}
+
+function getModelGuideStatus(pathHealth: ModelPathHealth | null, modelId: string) {
+  const model = pathHealth?.models.find(item => item.id === modelId);
+  if (!model) return { label: 'Kontrol bekliyor', status: 'warning' as const };
+  if (model.status === 'ready') return { label: 'Hazır', status: 'ready' as const };
+  if (model.status === 'missing') return { label: 'Eksik', status: 'missing' as const };
+  if (model.status === 'warning') return { label: 'Uyarı', status: 'warning' as const };
+  if (model.status === 'legacy_absent') return { label: 'Kaldırılmış Legacy', status: 'info' as const };
+  return { label: 'Opsiyonel Eksik', status: 'warning' as const };
+}
+
+function getPortGuideStatus(portHealth: RuntimePortHealth | null, loadingPortHealth: boolean) {
+  if (loadingPortHealth) return { label: 'Kontrol ediliyor', status: 'warning' as const };
+  if (!portHealth) return { label: 'Kontrol bekliyor', status: 'warning' as const };
+  if (portHealth.owner === 'aillame') return { label: 'Aillame çalışıyor', status: 'ready' as const };
+  if (portHealth.available) return { label: 'Kullanılabilir', status: 'ready' as const };
+  if (portHealth.occupied) return { label: 'Port kullanımda', status: 'missing' as const };
+  return { label: 'Kontrol edilemedi', status: 'warning' as const };
+}
+
+function OnboardingReadinessGuide({
+  pathHealth,
+  loadingPathHealth,
+  loadPathHealth,
+  copyPathHealthSupportSummary,
+  pathHealthCopyMessage,
+  portHealth,
+  loadingPortHealth,
+  portHealthError,
+  loadPortHealth,
+}: {
+  pathHealth: ModelPathHealth | null;
+  loadingPathHealth: boolean;
+  loadPathHealth: () => void;
+  copyPathHealthSupportSummary: () => void;
+  pathHealthCopyMessage: string | null;
+  portHealth: RuntimePortHealth | null;
+  loadingPortHealth: boolean;
+  portHealthError: string | null;
+  loadPortHealth: () => void;
+}) {
+  const portStatus = getPortGuideStatus(portHealth, loadingPortHealth);
+  const qwenStatus = getModelGuideStatus(pathHealth, 'qwen3-vl-4b-instruct-q4-k-m');
+  const sdxlStatus = getModelGuideStatus(pathHealth, 'sdxl-turbo-1.0');
+  const nanoStatus = getModelGuideStatus(pathHealth, 'aillame-nano-v1');
+  const tinyStatus = getModelGuideStatus(pathHealth, 'tiny-sd');
+  const mainReady = Boolean(pathHealth?.ok && portHealth?.ok);
+  const statusRows = [
+    { label: 'Qwen3-VL 4B', value: qwenStatus.label, status: qwenStatus.status },
+    { label: 'SDXL Turbo', value: sdxlStatus.label, status: sdxlStatus.status },
+    { label: 'Aillame Nano', value: nanoStatus.label, status: nanoStatus.status },
+    { label: 'Tiny SD', value: tinyStatus.label, status: 'info' as const },
+  ];
+
+  return (
+    <section className="glass-card rounded-[28px] p-5 border-white/5">
+      <div className="flex items-start justify-between gap-3 mb-4">
+        <div>
+          <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">İlk Açılış Rehberi</h2>
+          <p className="mt-1 text-[10px] leading-relaxed text-gray-500">
+            Aillame'in yerel modelleri, port durumu ve güvenlik ayarlarını hızlıca kontrol edin.
+          </p>
+        </div>
+        <span className={`shrink-0 rounded-full border px-2.5 py-1 text-[8px] font-black uppercase tracking-widest ${readinessBadgeClass(mainReady ? 'ready' : 'warning')}`}>
+          {mainReady ? 'Hazır' : 'Kontrol'}
+        </span>
+      </div>
+
+      <div className="rounded-2xl border border-indigo-500/20 bg-indigo-500/10 px-3 py-2 text-[10px] leading-relaxed text-indigo-200">
+        <p className="font-bold">{mainReady ? 'Temel sistem hazır görünüyor.' : 'Bazı hazırlık kontrolleri tamamlanmadı veya uyarı veriyor.'}</p>
+        <p className="mt-1">Bu kontroller yalnızca okuma yapar, dosya indirmez veya silmez.</p>
+      </div>
+
+      <div className="mt-4 grid grid-cols-1 gap-3">
+        <article className="rounded-2xl border border-white/10 bg-black/20 p-3">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <p className="text-xs font-black text-white">Yerel Sunucu</p>
+              <p className="mt-1 text-[10px] leading-relaxed text-gray-500">
+                Port: {portHealth?.port ?? 3000}. Port başka uygulama tarafından kullanılıyorsa Aillame açılmayabilir.
+              </p>
+            </div>
+            <span className={`shrink-0 rounded-full border px-2 py-0.5 text-[8px] font-black uppercase tracking-widest ${readinessBadgeClass(portStatus.status)}`}>
+              {portStatus.label}
+            </span>
+          </div>
+          <p className="mt-2 text-[10px] leading-relaxed text-gray-500">
+            {portHealth?.message ?? portHealthError ?? 'Port durumu henüz kontrol edilmedi.'}
+          </p>
+        </article>
+
+        <article className="rounded-2xl border border-white/10 bg-black/20 p-3">
+          <p className="text-xs font-black text-white">Model Dosyaları</p>
+          <div className="mt-3 grid grid-cols-1 gap-2">
+            {statusRows.map(item => (
+              <div key={item.label} className="flex items-center justify-between gap-2 rounded-xl border border-white/5 bg-black/20 px-3 py-2">
+                <span className="text-[10px] font-bold text-gray-300">{item.label}</span>
+                <span className={`shrink-0 rounded-full border px-2 py-0.5 text-[8px] font-black uppercase tracking-widest ${readinessBadgeClass(item.status)}`}>
+                  {item.value}
+                </span>
+              </div>
+            ))}
+          </div>
+          <p className="mt-2 text-[10px] leading-relaxed text-gray-500">
+            Tiny SD artık aktif model değildir; eksikliği hata değildir.
+          </p>
+        </article>
+
+        <article className="rounded-2xl border border-white/10 bg-black/20 p-3">
+          <p className="text-xs font-black text-white">Yerel Veri</p>
+          <p className="mt-1 text-[10px] leading-relaxed text-gray-500">
+            Verileriniz cihazınızda saklanır. Hafıza, proje bağlamı ve öğrenme verileri otomatik buluta gönderilmez.
+          </p>
+          <p className="mt-2 text-[10px] leading-relaxed text-gray-500">
+            Sohbeti Temizle kalıcı hafızayı silmez; yalnızca ekrandaki aktif sohbeti, taslağı ve görsel eki temizler.
+          </p>
+        </article>
+
+        <article className="rounded-2xl border border-white/10 bg-black/20 p-3">
+          <p className="text-xs font-black text-white">Güvenlik</p>
+          <p className="mt-1 text-[10px] leading-relaxed text-gray-500">
+            Shell/PowerShell/CMD serbest çalıştırılmaz. Token/env/şifre gösterme engellenir.
+          </p>
+          <p className="mt-2 text-[10px] leading-relaxed text-gray-500">
+            Model dosyaları otomatik silinmez veya indirilmez.
+          </p>
+        </article>
+      </div>
+
+      <div className="mt-4 flex flex-wrap gap-2">
+        <button
+          type="button"
+          onClick={loadPathHealth}
+          disabled={loadingPathHealth}
+          className="h-8 px-3 rounded-xl bg-white/5 hover:bg-white/10 text-gray-300 text-[9px] font-black uppercase tracking-widest flex items-center gap-1.5 disabled:opacity-50"
+        >
+          <FiLoader size={11} className={loadingPathHealth ? 'animate-spin' : ''} />
+          Model Yollarını Kontrol Et
+        </button>
+        <button
+          type="button"
+          onClick={loadPortHealth}
+          disabled={loadingPortHealth}
+          className="h-8 px-3 rounded-xl bg-white/5 hover:bg-white/10 text-gray-300 text-[9px] font-black uppercase tracking-widest flex items-center gap-1.5 disabled:opacity-50"
+        >
+          <FiLoader size={11} className={loadingPortHealth ? 'animate-spin' : ''} />
+          Port Durumunu Kontrol Et
+        </button>
+        <button
+          type="button"
+          onClick={copyPathHealthSupportSummary}
+          disabled={!pathHealth || loadingPathHealth}
+          className="h-8 px-3 rounded-xl bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/20 text-indigo-200 text-[9px] font-black uppercase tracking-widest flex items-center gap-1.5 disabled:opacity-50"
+        >
+          <FiCopy size={11} />
+          Destek Özeti Kopyala
+        </button>
+        <a
+          href="/admin/desktop-readiness"
+          className="h-8 px-3 rounded-xl bg-white/5 hover:bg-white/10 text-gray-300 text-[9px] font-black uppercase tracking-widest flex items-center gap-1.5"
+        >
+          <FiCpu size={11} />
+          Sorun Giderme Rehberini Aç
+        </a>
+      </div>
+
+      {pathHealthCopyMessage && (
+        <p className="mt-3 rounded-2xl border border-emerald-500/20 bg-emerald-500/10 px-3 py-2 text-[10px] leading-relaxed text-emerald-200">
+          {pathHealthCopyMessage}
+        </p>
+      )}
+    </section>
+  );
 }
 
 function ModelCard({
@@ -339,6 +531,9 @@ export default function SettingsPage() {
   const [pathHealthStatusMessage, setPathHealthStatusMessage] = useState('Henüz kontrol yapılmadı');
   const [pathHealthCopyMessage, setPathHealthCopyMessage] = useState<string | null>(null);
   const [pathHealthSupportText, setPathHealthSupportText] = useState<string | null>(null);
+  const [portHealth, setPortHealth] = useState<RuntimePortHealth | null>(null);
+  const [loadingPortHealth, setLoadingPortHealth] = useState(false);
+  const [portHealthError, setPortHealthError] = useState<string | null>(null);
 
   // Aillame Hafıza ve Bağlam Yönetimi Durum Bildirimleri ve Fonksiyonları (Phase 6)
   const [activeTab, setActiveTab] = useState<'models' | 'memory' | 'projects' | 'distillation'>('models');
@@ -679,6 +874,24 @@ export default function SettingsPage() {
     }
   }, []);
 
+  const loadPortHealth = useCallback(async () => {
+    setLoadingPortHealth(true);
+    setPortHealthError(null);
+    try {
+      const response = await fetch('/api/aillame/runtime/port-health', { cache: 'no-store' });
+      const payload = await response.json();
+      setPortHealth(payload);
+      if (!response.ok && payload?.message) {
+        setPortHealthError(payload.message);
+      }
+    } catch (error) {
+      setPortHealthError(error instanceof Error ? error.message : 'Port durumu alınamadı.');
+      setPortHealth(null);
+    } finally {
+      setLoadingPortHealth(false);
+    }
+  }, []);
+
   const copyPathHealthSupportSummary = useCallback(async () => {
     if (!pathHealth) {
       setPathHealthCopyMessage('Önce model yolu kontrolü yapılmalı.');
@@ -703,6 +916,7 @@ export default function SettingsPage() {
 
   useEffect(() => { loadModels(); }, [loadModels]);
   useEffect(() => { loadPathHealth(); }, [loadPathHealth]);
+  useEffect(() => { loadPortHealth(); }, [loadPortHealth]);
 
   useEffect(() => {
     let cancelled = false;
@@ -832,6 +1046,18 @@ export default function SettingsPage() {
         <div className="grid grid-cols-1 lg:grid-cols-[340px_1fr] gap-5">
           {/* Left panel */}
           <div className="space-y-4">
+            <OnboardingReadinessGuide
+              pathHealth={pathHealth}
+              loadingPathHealth={loadingPathHealth}
+              loadPathHealth={loadPathHealth}
+              copyPathHealthSupportSummary={copyPathHealthSupportSummary}
+              pathHealthCopyMessage={pathHealthCopyMessage}
+              portHealth={portHealth}
+              loadingPortHealth={loadingPortHealth}
+              portHealthError={portHealthError}
+              loadPortHealth={loadPortHealth}
+            />
+
             {/* Active model summary */}
             <section className="glass-card rounded-[28px] p-5 border-white/5">
               <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 mb-4">Aktif Modeller</h2>
